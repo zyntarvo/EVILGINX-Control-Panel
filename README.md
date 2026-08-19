@@ -30,9 +30,11 @@ Built for red teamers, pentesters, and anyone who wants Evilginx running in minu
 
 ## Demo
 
-[![Watch the demo](https://img.youtube.com/vi/KupIZHFTL90/maxresdefault.jpg)](https://www.youtube.com/watch?v=KupIZHFTL90)
-
-Full walkthrough: **[EVILGINX Control Panel + Auto Installer](https://www.youtube.com/watch?v=KupIZHFTL90)**
+<p align="center">
+  <a href="https://zyntarvo.github.io/EVILGINX-Control-Panel/">
+    <img src="docs/video-preview.png" alt="Play demo video" width="720">
+  </a>
+</p>
 
 ## A note on authorship
 
