@@ -1,0 +1,4 @@
+flask
+flask-socketio
+simple-websocket
+pyyaml

