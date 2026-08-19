@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="docs/header.png" alt="EVILGINX Control Panel + Auto Installer" width="720">
+  <img src="docs/logo.png" alt="ZynTarvo lynx" width="280">
 </p>
 
 <p align="center">
-  <img src="docs/logo.png" alt="ZynTarvo lynx" width="148">
+  <img src="docs/header.png" alt="EVILGINX Control Panel + Auto Installer" width="720">
 </p>
 
 <p align="center">
