@@ -370,6 +370,35 @@ class Installer:
                 return
         raise RuntimeError("Could not install Python dependencies.\n" + last_err[-1500:])
 
+    def install_mysql_connector_system(self):
+        """Install mysql.connector for /usr/bin/python3.
+
+        Panel packages go into the venv; systemd custom services (cookie bot etc.)
+        run system python3. PEP 668 on Ubuntu 24/26 blocks a plain pip install,
+        so fall back to --break-system-packages.
+        """
+        self.log("[*] mysql-connector-python for system python3")
+        check = 'python3 -c "import mysql.connector"'
+        if self.ssh.ok(check):
+            self.log("[+] mysql.connector already on system python3")
+            return
+        cmds = [
+            "python3 -m pip install mysql-connector-python",
+            "pip3 install mysql-connector-python --break-system-packages",
+            "python3 -m pip install mysql-connector-python --break-system-packages",
+            "pip3 install mysql-connector-python",
+        ]
+        for cmd in cmds:
+            self.log(f"    try: {cmd}")
+            self.ssh.run(cmd, timeout=300)
+            if self.ssh.ok(check):
+                self.log("[+] mysql-connector-python installed")
+                return
+        raise RuntimeError(
+            "Could not install mysql-connector-python for /usr/bin/python3 "
+            "(needed by systemd services such as evilginx_cookie_bot.py)"
+        )
+
     def fix_dns(self):
         self.set_pct(50)
         self.log("[*] Freeing port 53 (systemd-resolved)")
@@ -573,6 +602,7 @@ WantedBy=multi-user.target
         self.remove_old_go()
         self.install_go()
         self.install_python_deps()
+        self.install_mysql_connector_system()
         self.fix_dns()
         self.clone_evilginx()
         self.build_evilginx()

@@ -1058,6 +1058,29 @@ def _systemctl(*args, timeout=20):
     )
     return r.returncode, r.stdout or "", r.stderr or ""
 
+def _ensure_mysql_connector():
+    """Make sure /usr/bin/python3 can import mysql.connector (systemd units use it)."""
+    py = "/usr/bin/python3"
+    check = [py, "-c", "import mysql.connector"]
+    try:
+        if subprocess.run(check, capture_output=True, timeout=20).returncode == 0:
+            return
+    except Exception:
+        pass
+    cmds = [
+        [py, "-m", "pip", "install", "mysql-connector-python"],
+        ["pip3", "install", "mysql-connector-python", "--break-system-packages"],
+        [py, "-m", "pip", "install", "mysql-connector-python", "--break-system-packages"],
+        ["pip3", "install", "mysql-connector-python"],
+    ]
+    for cmd in cmds:
+        try:
+            subprocess.run(cmd, capture_output=True, timeout=300)
+            if subprocess.run(check, capture_output=True, timeout=20).returncode == 0:
+                return
+        except Exception:
+            continue
+
 def _svc_name_ok(name):
     return bool(re.match(r"^[a-zA-Z0-9][a-zA-Z0-9_.-]*$", name or ""))
 
@@ -1203,6 +1226,9 @@ def api_service_create():
             os.chmod(src, os.stat(src).st_mode | 0o111)
         except Exception:
             pass
+
+    if dest.endswith(".py"):
+        _ensure_mysql_connector()
 
     py = "/usr/bin/python3"
     if os.path.isfile("/root/evilginx-panel/venv/bin/python"):
