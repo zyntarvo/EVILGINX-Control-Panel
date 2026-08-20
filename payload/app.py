@@ -144,7 +144,135 @@ class EvilginxManager:
         return self.process.pid if self.process else None
 
 
+class ShellManager:
+    """Interactive login bash PTY — same as a normal Linux console."""
+
+    def __init__(self):
+        self.process = None
+        self.master_fd = None
+        self.output_buffer = []
+        self.max_buffer = 8000
+        self.running = False
+        self._reader = None
+        self._lock = threading.Lock()
+
+    def _shell_bin(self):
+        for p in ("/bin/bash", "/usr/bin/bash", "/bin/sh"):
+            if os.path.isfile(p):
+                return p
+        return "/bin/sh"
+
+    def alive(self):
+        return self.process is not None and self.process.poll() is None
+
+    def ensure(self):
+        if not self.alive():
+            self.start()
+
+    def start(self):
+        with self._lock:
+            self._start_unlocked()
+
+    def _start_unlocked(self):
+        self._stop_unlocked()
+        master, slave = pty.openpty()
+        self.master_fd = master
+        env = os.environ.copy()
+        env["TERM"] = "xterm-256color"
+        env["HOME"] = os.environ.get("HOME") or "/root"
+        env["USER"] = os.environ.get("USER") or "root"
+        env["LOGNAME"] = env["USER"]
+        env["SHELL"] = self._shell_bin()
+        cwd = env["HOME"] if os.path.isdir(env["HOME"]) else "/root"
+        argv = [env["SHELL"]]
+        if os.path.basename(env["SHELL"]) == "bash":
+            argv.append("-l")
+        self.process = subprocess.Popen(
+            argv,
+            stdin=slave, stdout=slave, stderr=slave,
+            cwd=cwd,
+            env=env,
+            preexec_fn=os.setsid,
+        )
+        os.close(slave)
+        self.running = True
+        self._reader = threading.Thread(target=self._read_loop, daemon=True)
+        self._reader.start()
+
+    def stop(self):
+        with self._lock:
+            self._stop_unlocked()
+
+    def _stop_unlocked(self):
+        self.running = False
+        if self.process:
+            try:
+                os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
+                self.process.wait(timeout=2)
+            except Exception:
+                try:
+                    os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
+                except Exception:
+                    pass
+            self.process = None
+        if self.master_fd is not None:
+            try:
+                os.close(self.master_fd)
+            except OSError:
+                pass
+            self.master_fd = None
+
+    def restart(self):
+        self.start()
+
+    def write(self, data):
+        if self.master_fd is None or not self.running:
+            return
+        if not isinstance(data, (bytes, bytearray)):
+            data = str(data or "").encode("utf-8", errors="replace")
+        try:
+            os.write(self.master_fd, data)
+        except OSError:
+            pass
+
+    def resize(self, rows, cols):
+        if self.master_fd is None:
+            return
+        try:
+            ws = struct.pack("HHHH", int(rows) or 24, int(cols) or 80, 0, 0)
+            fcntl.ioctl(self.master_fd, termios.TIOCSWINSZ, ws)
+        except OSError:
+            pass
+
+    def _read_loop(self):
+        proc = self.process
+        while self.running:
+            fd = self.master_fd
+            if fd is None:
+                break
+            try:
+                r, _, _ = select.select([fd], [], [], 0.05)
+                if not r:
+                    continue
+                chunk = os.read(fd, 4096)
+                if not chunk:
+                    break
+                text = chunk.decode("utf-8", errors="replace")
+                self.output_buffer.append(text)
+                if len(self.output_buffer) > self.max_buffer:
+                    self.output_buffer = self.output_buffer[-self.max_buffer:]
+                socketio.emit("shell_out", {"d": text}, namespace="/")
+            except OSError:
+                break
+        if self.process is proc:
+            self.running = False
+            socketio.emit("shell_out", {
+                "d": "\r\n\x1b[33m[shell exited — click Restart]\x1b[0m\r\n"
+            }, namespace="/")
+
+
 egm = EvilginxManager()
+shm = ShellManager()
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  HELPERS
@@ -1419,7 +1547,38 @@ def ws_term_in(data):
 
 @socketio.on("term_resize")
 def ws_term_resize(data):
+    if not session.get("ok"):
+        return
     egm.resize(data.get("rows", 24), data.get("cols", 80))
+
+@socketio.on("shell_in")
+def ws_shell_in(data):
+    if not session.get("ok"):
+        return
+    shm.write((data or {}).get("d", ""))
+
+@socketio.on("shell_resize")
+def ws_shell_resize(data):
+    if not session.get("ok"):
+        return
+    data = data or {}
+    shm.resize(data.get("rows", 24), data.get("cols", 80))
+
+@socketio.on("shell_attach")
+def ws_shell_attach(data=None):
+    if not session.get("ok"):
+        return
+    data = data or {}
+    was_alive = shm.alive()
+    shm.ensure()
+    if data.get("replay") and was_alive and shm.output_buffer:
+        emit("shell_out", {"d": "".join(shm.output_buffer[-200:])})
+
+@socketio.on("shell_restart")
+def ws_shell_restart():
+    if not session.get("ok"):
+        return
+    shm.restart()
 
 @socketio.on("connect")
 def ws_connect():

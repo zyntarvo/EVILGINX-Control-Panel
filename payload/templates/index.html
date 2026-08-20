@@ -145,7 +145,7 @@ tr:hover td{background:var(--accent-dim)}
 .toast.ok{background:rgba(0,255,136,0.08);border-color:var(--accent);color:var(--accent)}
 .toast.err{background:rgba(239,68,68,0.08);border-color:var(--red);color:var(--red)}
 @keyframes toastSlide{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-#terminal-container{height:calc(100vh - 130px);background:#000;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+#terminal-container,#shell-container{height:calc(100vh - 130px);background:#000;border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .search-box{position:relative;display:flex;align-items:center}.search-box input{width:280px;height:40px;padding:0 14px 0 38px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;transition:border-color 0.3s,box-shadow 0.3s}.search-box input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,255,136,0.08)}.search-box input::placeholder{color:var(--text3)}.search-box i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;pointer-events:none}
 .detail-grid{display:grid;grid-template-columns:140px 1fr;gap:10px;font-size:14px;margin-bottom:20px}
 .detail-grid .lbl{color:var(--accent);text-transform:uppercase;letter-spacing:1px;font-size:12px;font-weight:600}
@@ -181,8 +181,8 @@ tr:hover td{background:var(--accent-dim)}
   .topbar{padding:0 16px}
   .filter-row{justify-content:center}
   .filter-spacer{display:none}
-  #page-services .toolbar,#page-phishlets .toolbar,#page-lures .toolbar,#page-files .toolbar,#page-terminal .toolbar{justify-content:center}
-  #page-services .toolbar .btn-group,#page-phishlets .toolbar .btn-group,#page-lures .toolbar .btn-group,#page-files .toolbar .btn-group,#page-terminal .toolbar .btn-group{justify-content:center;width:100%}
+  #page-services .toolbar,#page-phishlets .toolbar,#page-lures .toolbar,#page-files .toolbar,#page-terminal .toolbar,#page-shell .toolbar{justify-content:center}
+  #page-services .toolbar .btn-group,#page-phishlets .toolbar .btn-group,#page-lures .toolbar .btn-group,#page-files .toolbar .btn-group,#page-terminal .toolbar .btn-group,#page-shell .toolbar .btn-group{justify-content:center;width:100%}
 }
 @media(max-width:768px){
   .btn-group{flex-direction:row;gap:4px;align-items:center;justify-content:center;flex-wrap:wrap}
@@ -274,7 +274,8 @@ tr:hover td{background:var(--accent-dim)}
     <a href="#" data-page="notifications"><i class="fa-solid fa-bell"></i>Notifications</a>
     <div class="sep"></div>
     <a href="#" data-page="sessions"><i class="fa-solid fa-shield-halved"></i>Sessions</a>
-    <a href="#" data-page="terminal"><i class="fa-solid fa-terminal"></i>Terminal</a>
+    <a href="#" data-page="terminal"><i class="fa-solid fa-terminal"></i>E-Terminal</a>
+    <a href="#" data-page="shell"><i class="fa-brands fa-linux"></i>Terminal</a>
   </nav>
   <div class="bottom">
     <div class="status" id="evStatus"><div class="dot off" id="evDot"></div><span id="evLabel">CHECKING...</span></div>
@@ -414,6 +415,10 @@ tr:hover td{background:var(--accent-dim)}
   <div class="toolbar"><div class="sec-title" style="margin:0;border:0;padding:0"><i class="fa-solid fa-terminal"></i> Evilginx Terminal</div><div class="btn-group"><button class="btn fill" onclick="restartEvilginx()"><i class="fa-solid fa-arrows-rotate"></i> Restart</button><button class="btn danger" onclick="stopEvilginx()"><i class="fa-solid fa-stop"></i> Stop</button><button class="btn" onclick="startEvilginx()"><i class="fa-solid fa-play"></i> Start</button></div></div>
   <div id="terminal-container"></div>
 </section>
+<section id="page-shell" class="page">
+  <div class="toolbar"><div class="sec-title" style="margin:0;border:0;padding:0"><i class="fa-brands fa-linux"></i> Linux Terminal</div><div class="btn-group"><button class="btn fill" onclick="restartShell()"><i class="fa-solid fa-arrows-rotate"></i> Restart</button></div></div>
+  <div id="shell-container"></div>
+</section>
   </div>
 </div>
 </div>
@@ -432,7 +437,7 @@ function toast(msg,type='ok'){const d=document.createElement('div');d.className=
 function ts(epoch){if(!epoch)return'\u2014';const d=new Date(epoch*1000);return d.toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'})}
 function uptime(sec){const d=Math.floor(sec/86400),h=Math.floor(sec%86400/3600),m=Math.floor(sec%3600/60);return d>0?`${d}d ${h}h`:`${h}h ${m}m`}
 function esc(s){const el=document.createElement('span');el.textContent=s;return el.innerHTML}
-const pageNames={dashboard:'DASHBOARD',phishlets:'PHISHLETS',config:'CONFIGURATION',lures:'LURES',files:'FILE EXPLORER',services:'SERVICES',sessions:'SESSIONS',terminal:'TERMINAL',notifications:'NOTIFICATIONS'};
+const pageNames={dashboard:'DASHBOARD',phishlets:'PHISHLETS',config:'CONFIGURATION',lures:'LURES',files:'FILE EXPLORER',services:'SERVICES',sessions:'SESSIONS',terminal:'E-TERMINAL',shell:'TERMINAL',notifications:'NOTIFICATIONS'};
 function resizeCharts(){
   try{if(chartTL)chartTL.resize();if(chartBD)chartBD.resize()}catch(e){}
 }
@@ -462,7 +467,7 @@ function labelTable(tbody){
   });
 }
 function bindCardTables(){document.querySelectorAll('.tbl-wrap tbody').forEach(labelTable)}
-$$('.sidebar nav a[data-page]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();const pg=a.dataset.page;$$('.sidebar nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active');$$('.page').forEach(p=>p.classList.remove('active'));$(`#page-${pg}`).classList.add('active');$('#pageTitle').textContent=pageNames[pg]||pg.toUpperCase();closeSidebar();if(pg==='dashboard')loadDashboard();if(pg==='phishlets')loadPhishlets();if(pg==='config')loadConfig();if(pg==='lures')loadLures();if(pg==='files')loadFiles();if(pg==='services')loadServices();if(pg==='sessions')loadSessions();if(pg==='notifications')loadNotifications();if(pg==='terminal')initTerminal()})});
+$$('.sidebar nav a[data-page]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();const pg=a.dataset.page;$$('.sidebar nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active');$$('.page').forEach(p=>p.classList.remove('active'));$(`#page-${pg}`).classList.add('active');$('#pageTitle').textContent=pageNames[pg]||pg.toUpperCase();closeSidebar();if(pg==='dashboard')loadDashboard();if(pg==='phishlets')loadPhishlets();if(pg==='config')loadConfig();if(pg==='lures')loadLures();if(pg==='files')loadFiles();if(pg==='services')loadServices();if(pg==='sessions')loadSessions();if(pg==='notifications')loadNotifications();if(pg==='terminal')initTerminal();if(pg==='shell')initShell()})});
 let chartTL=null,chartBD=null;
 function renderCharts(d){
   const tl=d.chart_timeline||{labels:[],total:[],jwt:[],cookies:[],empty:[]};
@@ -692,6 +697,38 @@ async function startEvilginx(){toast('Starting...');const r=await api('/api/ev/s
 async function stopEvilginx(){if(!confirm('Stop evilginx?'))return;toast('Stopping...');const r=await api('/api/ev/stop',{method:'POST'});if(r.ok){toast('Stopped');updateEvStatus(false)}}
 async function restartEvilginx(){toast('Restarting...');const r=await api('/api/ev/restart',{method:'POST'});if(r.ok){toast('Restarted');updateEvStatus(r.running)}else toast('Failed','err')}
 function initTerminal(){if(termReady){fitAddon.fit();return}term=new Terminal({cursorBlink:true,cursorStyle:'bar',fontSize:15,fontFamily:"'JetBrains Mono',monospace",theme:{background:'#0a0e17',foreground:'#00ff88',cursor:'#00ff88',cursorAccent:'#0a0e17',selectionBackground:'rgba(0,255,136,0.15)',black:'#0a0e17',red:'#ef4444',green:'#00ff88',yellow:'#f59e0b',blue:'#22d3ee',magenta:'#a78bfa',cyan:'#22d3ee',white:'#94a3b8',brightBlack:'#475569',brightRed:'#f87171',brightGreen:'#4ade80',brightYellow:'#fbbf24',brightBlue:'#67e8f9',brightMagenta:'#c4b5fd',brightCyan:'#67e8f9',brightWhite:'#f1f5f9'}});fitAddon=new FitAddon.FitAddon();term.loadAddon(fitAddon);term.open($('#terminal-container'));fitAddon.fit();termReady=true;term.onData(data=>{socket.emit('term_in',{d:data})});socket.on('term_out',msg=>{term.write(msg.d)});window.addEventListener('resize',()=>{if(termReady)fitAddon.fit()});new ResizeObserver(()=>{if(termReady){fitAddon.fit();socket.emit('term_resize',{rows:term.rows,cols:term.cols})}}).observe($('#terminal-container'))}
+let shellTerm=null,shellFit=null,shellReady=false;
+function initShell(){
+  if(shellReady){
+    shellFit.fit();
+    socket.emit('shell_attach');
+    socket.emit('shell_resize',{rows:shellTerm.rows,cols:shellTerm.cols});
+    return;
+  }
+  shellTerm=new Terminal({cursorBlink:true,cursorStyle:'bar',fontSize:15,fontFamily:"'JetBrains Mono',monospace",theme:{background:'#0a0e17',foreground:'#f1f5f9',cursor:'#22d3ee',cursorAccent:'#0a0e17',selectionBackground:'rgba(34,211,238,0.18)',black:'#0a0e17',red:'#ef4444',green:'#00ff88',yellow:'#f59e0b',blue:'#22d3ee',magenta:'#a78bfa',cyan:'#22d3ee',white:'#94a3b8',brightBlack:'#475569',brightRed:'#f87171',brightGreen:'#4ade80',brightYellow:'#fbbf24',brightBlue:'#67e8f9',brightMagenta:'#c4b5fd',brightCyan:'#67e8f9',brightWhite:'#f1f5f9'}});
+  shellFit=new FitAddon.FitAddon();
+  shellTerm.loadAddon(shellFit);
+  shellTerm.open($('#shell-container'));
+  shellFit.fit();
+  shellReady=true;
+  shellTerm.onData(function(data){socket.emit('shell_in',{d:data})});
+  socket.on('shell_out',function(msg){if(shellTerm)shellTerm.write(msg.d)});
+  window.addEventListener('resize',function(){if(shellReady)shellFit.fit()});
+  new ResizeObserver(function(){
+    if(!shellReady)return;
+    shellFit.fit();
+    socket.emit('shell_resize',{rows:shellTerm.rows,cols:shellTerm.cols});
+  }).observe($('#shell-container'));
+  socket.emit('shell_attach',{replay:true});
+  socket.emit('shell_resize',{rows:shellTerm.rows,cols:shellTerm.cols});
+}
+function restartShell(){
+  if(shellTerm) shellTerm.reset();
+  socket.emit('shell_restart');
+  setTimeout(function(){
+    if(shellReady&&shellTerm) socket.emit('shell_resize',{rows:shellTerm.rows,cols:shellTerm.cols});
+  },200);
+}
 
 function attachFindReplace(root){
   if(!root)return;

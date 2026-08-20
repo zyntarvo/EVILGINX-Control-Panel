@@ -27,6 +27,7 @@ Built for red teamers, pentesters, and anyone who wants Evilginx running in minu
 - Auto-install on Ubuntu
 - Web C2 panel with login
 - Manage phishlets, lures and captured sessions from the browser
+- E-Terminal (Evilginx CLI) and a full Linux shell in the browser
 
 ## Demo
 
@@ -211,14 +212,25 @@ Mobile view stacks the same table as cards:
 
 <p align="center"><img src="docs/screenshots/16-mobile-sessions.png" alt="Mobile sessions" width="280"></p>
 
-### Terminal
+### E-Terminal
 
-<p align="center"><img src="docs/screenshots/10-terminal.png" alt="Terminal" width="900"></p>
+<p align="center"><img src="docs/screenshots/10-terminal.png" alt="E-Terminal" width="900"></p>
 
-A live Evilginx console in the browser (xterm.js). Same commands as SSH: `phishlets`, `lures`, `config`, `sessions`.
+Live **Evilginx** console in the browser (xterm.js). Same commands as the Evilginx CLI: `phishlets`, `lures`, `config`, `sessions`.
 
 - **Restart** / **Stop** / **Start** the Evilginx process from the toolbar
 - Output, tables, and the `:` prompt stay on the page — no extra SSH client
+
+### Terminal
+
+<p align="center"><img src="docs/screenshots/18-linux-terminal.png" alt="Linux Terminal" width="900"></p>
+
+A real Linux shell on the server — login bash, same as if you opened a normal console over SSH.
+
+- Full interactive PTY: `ls`, `apt`, `systemctl`, editors, pipes, Ctrl+C
+- Runs as the panel user (root on a default install), home directory, `.bashrc` loaded
+- **Restart** if you typed `exit` or the shell died
+- Independent from E-Terminal: Evilginx CLI and Linux do not share a session
 
 ## Layout
 
