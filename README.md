@@ -185,12 +185,27 @@ Telegram alerts when a session actually has tokens — not every empty hit.
 
 The captured-session database.
 
-- Filters: **ALL** / **WITH JWT** / **WITH TOKENS** / **EMPTY**
+- Filters: **ALL** / **WITH JWT** / **WITH TOKENS** / **EMPTY** — each button shows how many records match that filter
+- The line under the filters repeats the count for the active filter (and for search)
 - Search by ID, IP, username
 - **Refresh** / **CLEAR DATABASE**
 - Columns: ID, phishlet, remote IP, cookie count, JWT badge, username, password, time
+- Click the purple **JWT** badge to open the decoder lightbox
 - **View** — full session detail (cookies, tokens)
 - **Delete** — remove one row
+
+### JWT Decoder
+
+<p align="center"><img src="docs/screenshots/17-jwt-decoder.png" alt="JWT Decoder" width="900"></p>
+
+Same lightbox as the other panel forms. Click **JWT** on a session row (or **YES** / the JWT button inside session detail).
+
+- Full encoded token, colored in three parts like [jwt.io](https://jwt.io) (header / payload / signature)
+- Decoded header and payload as JSON
+- Validity dates in plain language, not Unix timestamps — e.g. `20 августа 2026 — 19 августа 2031`
+- Separate issued (`iat`) and expires (`exp`) rows with time
+- **Copy token**
+- If one session has several JWTs, switch between them by cookie name
 
 Mobile view stacks the same table as cards:
 

