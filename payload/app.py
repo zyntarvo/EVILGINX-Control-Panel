@@ -271,8 +271,88 @@ class ShellManager:
             }, namespace="/")
 
 
+class JournalFollower:
+    """One live journalctl -f at a time. Starts only when the UI asks; dies on stop/close."""
+
+    def __init__(self):
+        self.proc = None
+        self.master_fd = None
+        self.sid = None
+        self.unit = None
+        self.running = False
+        self._lock = threading.Lock()
+
+    def start(self, unit, sid):
+        with self._lock:
+            self._stop_unlocked()
+            master, slave = pty.openpty()
+            self.master_fd = master
+            self.sid = sid
+            self.unit = unit
+            self.proc = subprocess.Popen(
+                ["journalctl", "-u", unit, "-n", "120", "-f", "--no-pager", "-o", "short-iso"],
+                stdin=subprocess.DEVNULL,
+                stdout=slave,
+                stderr=slave,
+                preexec_fn=os.setsid,
+                close_fds=True,
+            )
+            os.close(slave)
+            self.running = True
+            threading.Thread(target=self._read_loop, args=(self.proc, sid, master), daemon=True).start()
+
+    def stop(self, sid=None):
+        with self._lock:
+            if sid and self.sid and sid != self.sid:
+                return
+            self._stop_unlocked()
+
+    def _stop_unlocked(self):
+        self.running = False
+        proc = self.proc
+        fd = self.master_fd
+        self.proc = None
+        self.sid = None
+        self.unit = None
+        self.master_fd = None
+        if proc:
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+            except Exception:
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+            try:
+                proc.wait(timeout=1)
+            except Exception:
+                pass
+        if fd is not None:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+
+    def _read_loop(self, proc, sid, fd):
+        while self.running and proc is self.proc and fd is not None:
+            try:
+                r, _, _ = select.select([fd], [], [], 0.2)
+                if not r:
+                    continue
+                chunk = os.read(fd, 4096)
+                if not chunk:
+                    break
+                socketio.emit("journal_out", {"d": chunk.decode("utf-8", errors="replace")},
+                              room=sid, namespace="/")
+            except OSError:
+                break
+        if proc is self.proc:
+            self.running = False
+
+
 egm = EvilginxManager()
 shm = ShellManager()
+jnl = JournalFollower()
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  HELPERS
@@ -1536,6 +1616,204 @@ def api_ev_restart():
     return jsonify(ok=True, running=egm.alive(), pid=egm.pid())
 
 # ═══════════════════════════════════════════════════════════════════════════════
+#  API — HEALTH (cheap /proc reads, only while the page is open)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_health_lock = threading.Lock()
+_health_cache = {"t": 0.0, "data": None}
+_cpu_sample = None   # (mono, total, idle)
+_net_sample = None   # (mono, rx, tx)
+
+
+def _fmt_bytes(n):
+    n = float(n or 0)
+    for u in ("B", "KB", "MB", "GB", "TB"):
+        if abs(n) < 1024 or u == "TB":
+            if u == "B":
+                return "%d %s" % (int(n), u)
+            return "%.1f %s" % (n, u)
+        n /= 1024.0
+    return "%.1f TB" % n
+
+
+def _cpu_times():
+    with open("/proc/stat") as f:
+        parts = f.readline().split()
+    nums = [int(x) for x in parts[1:]]
+    idle = nums[3] + (nums[4] if len(nums) > 4 else 0)
+    return sum(nums), idle
+
+
+def _net_bytes():
+    rx = tx = 0
+    with open("/proc/net/dev") as f:
+        for line in f:
+            if ":" not in line:
+                continue
+            name, rest = line.split(":", 1)
+            name = name.strip()
+            if not name or name == "lo":
+                continue
+            cols = rest.split()
+            if len(cols) < 10:
+                continue
+            rx += int(cols[0])
+            tx += int(cols[8])
+    return rx, tx
+
+
+def _meminfo():
+    info = {}
+    with open("/proc/meminfo") as f:
+        for line in f:
+            if ":" not in line:
+                continue
+            k, v = line.split(":", 1)
+            info[k] = int(v.strip().split()[0]) * 1024
+    total = info.get("MemTotal", 0)
+    avail = info.get("MemAvailable", info.get("MemFree", 0))
+    used = max(0, total - avail)
+    pct = (used / total * 100.0) if total else 0.0
+    return total, used, avail, pct
+
+
+def _disk_root():
+    st = os.statvfs("/")
+    total = st.f_frsize * st.f_blocks
+    free = st.f_frsize * st.f_bavail
+    used = max(0, total - free)
+    pct = (used / total * 100.0) if total else 0.0
+    return total, used, free, pct
+
+
+def _loadavg():
+    with open("/proc/loadavg") as f:
+        a, b, c = f.read().split()[:3]
+    return float(a), float(b), float(c)
+
+
+def _cpu_model():
+    try:
+        with open("/proc/cpuinfo") as f:
+            for line in f:
+                if line.lower().startswith("model name"):
+                    return line.split(":", 1)[1].strip()
+    except Exception:
+        pass
+    return ""
+
+
+def _uptime_sec():
+    with open("/proc/uptime") as f:
+        return float(f.read().split()[0])
+
+
+def _health_grade(pct):
+    if pct >= 92:
+        return "critical"
+    if pct >= 80:
+        return "warning"
+    return "healthy"
+
+
+def _health_collect():
+    global _cpu_sample, _net_sample
+    t0 = time.monotonic()
+    total, idle = _cpu_times()
+    rx, tx = _net_bytes()
+    now = time.monotonic()
+
+    cpu_pct = 0.0
+    if _cpu_sample is None:
+        time.sleep(0.04)
+        total2, idle2 = _cpu_times()
+        now = time.monotonic()
+        dt, di = total2 - total, idle2 - idle
+        cpu_pct = 0.0 if dt <= 0 else max(0.0, min(100.0, (1.0 - (di / float(dt))) * 100.0))
+        _cpu_sample = (now, total2, idle2)
+    else:
+        pt, ptot, pidle = _cpu_sample
+        dt, di = total - ptot, idle - pidle
+        cpu_pct = 0.0 if dt <= 0 else max(0.0, min(100.0, (1.0 - (di / float(dt))) * 100.0))
+        _cpu_sample = (now, total, idle)
+
+    net_in_bps = net_out_bps = 0.0
+    if _net_sample is not None:
+        pt, prx, ptx = _net_sample
+        dt = max(0.001, now - pt)
+        net_in_bps = max(0.0, (rx - prx) / dt)
+        net_out_bps = max(0.0, (tx - ptx) / dt)
+    _net_sample = (now, rx, tx)
+
+    mem_total, mem_used, mem_avail, mem_pct = _meminfo()
+    disk_total, disk_used, disk_free, disk_pct = _disk_root()
+    l1, l5, l15 = _loadavg()
+    cores = os.cpu_count() or 1
+    cpu_status = _health_grade(cpu_pct)
+    ram_status = _health_grade(mem_pct)
+    disk_status = _health_grade(disk_pct)
+    net_busy = (net_in_bps + net_out_bps) > (50 * 1024 * 1024)
+    net_status = "warning" if net_busy else "healthy"
+    worst = "healthy"
+    for s in (cpu_status, ram_status, disk_status, net_status):
+        if s == "critical":
+            worst = "critical"
+        elif s == "warning" and worst != "critical":
+            worst = "warning"
+    if worst == "critical":
+        summary = "System under pressure"
+    elif worst == "warning":
+        summary = "Some metrics are elevated"
+    else:
+        summary = "All systems nominal — everything is running smoothly"
+
+    return {
+        "status": worst,
+        "summary": summary,
+        "took_ms": round((time.monotonic() - t0) * 1000, 1),
+        "ts": int(time.time()),
+        "hostname": os.uname().nodename,
+        "uptime": _uptime_sec(),
+        "cores": cores,
+        "cpu_model": _cpu_model(),
+        "load": [round(l1, 2), round(l5, 2), round(l15, 2)],
+        "cpu_pct": round(cpu_pct, 1),
+        "cpu_status": cpu_status,
+        "ram": {
+            "total": mem_total, "used": mem_used, "free": mem_avail,
+            "pct": round(mem_pct, 1), "status": ram_status,
+            "total_h": _fmt_bytes(mem_total), "used_h": _fmt_bytes(mem_used),
+        },
+        "disk": {
+            "total": disk_total, "used": disk_used, "free": disk_free,
+            "pct": round(disk_pct, 1), "status": disk_status,
+            "total_h": _fmt_bytes(disk_total), "used_h": _fmt_bytes(disk_used),
+            "free_h": _fmt_bytes(disk_free),
+        },
+        "net": {
+            "in_bps": round(net_in_bps), "out_bps": round(net_out_bps),
+            "in_h": _fmt_bytes(net_in_bps) + "/s",
+            "out_h": _fmt_bytes(net_out_bps) + "/s",
+            "rx_total_h": _fmt_bytes(rx), "tx_total_h": _fmt_bytes(tx),
+            "status": net_status,
+        },
+    }
+
+
+@app.route("/api/health")
+@auth
+def api_health():
+    now = time.monotonic()
+    with _health_lock:
+        if _health_cache["data"] is not None and (now - _health_cache["t"]) < 0.9:
+            return jsonify(_health_cache["data"])
+        data = _health_collect()
+        _health_cache["t"] = time.monotonic()
+        _health_cache["data"] = data
+        return jsonify(data)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 #  WEBSOCKET — TERMINAL
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -1586,6 +1864,33 @@ def ws_connect():
         return False
     if egm.output_buffer:
         emit("term_out", {"d": "".join(egm.output_buffer[-200:])})
+
+@socketio.on("disconnect")
+def ws_disconnect():
+    try:
+        jnl.stop(sid=request.sid)
+    except Exception:
+        pass
+
+@socketio.on("journal_start")
+def ws_journal_start(data):
+    if not session.get("ok"):
+        return
+    name = ((data or {}).get("unit") or "").replace(".service", "")
+    if not _svc_name_ok(name):
+        emit("journal_out", {"d": "[invalid unit name]\r\n"})
+        return
+    _, unit = _svc_unit(name)
+    jnl.start(unit, request.sid)
+
+@socketio.on("journal_stop")
+def ws_journal_stop():
+    if not session.get("ok"):
+        return
+    try:
+        jnl.stop(sid=request.sid)
+    except Exception:
+        pass
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  MAIN

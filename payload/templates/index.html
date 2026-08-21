@@ -258,6 +258,41 @@ tr:hover td{background:var(--accent-dim)}
 .svc-dot.on{background:var(--accent);box-shadow:0 0 8px var(--accent)}
 .svc-dot.off{background:var(--red)}
 .log-view{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:var(--mono);font-size:12px;color:#fff;white-space:pre-wrap;word-break:break-all;max-height:420px;overflow:auto;line-height:1.55}
+.log-view.live{max-height:62vh;min-height:280px}
+.journal-live{display:inline-flex;align-items:center;gap:8px;margin-right:auto;color:var(--accent);font-size:12px;font-weight:700;letter-spacing:1.5px}
+.journal-live .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulseGlow 2s infinite}
+.h-banner{display:flex;align-items:center;justify-content:space-between;gap:20px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px 24px;margin-bottom:18px}
+.h-banner.ok{border-color:rgba(0,255,136,.4);box-shadow:0 0 24px rgba(0,255,136,.06)}
+.h-banner.warn{border-color:rgba(245,158,11,.5)}
+.h-banner.crit{border-color:rgba(239,68,68,.5)}
+.h-banner-left{display:flex;align-items:center;gap:16px;min-width:0}
+.h-banner-ico{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(0,255,136,.12);color:var(--accent);font-size:24px;flex-shrink:0}
+.h-banner.warn .h-banner-ico{background:rgba(245,158,11,.12);color:var(--orange)}
+.h-banner.crit .h-banner-ico{background:rgba(239,68,68,.12);color:var(--red)}
+.h-banner h2{color:#fff;font-size:18px;margin:0 0 6px;font-weight:700}
+.h-banner p{color:var(--text3);font-size:12px;margin:0}
+.h-pulse{width:180px;height:54px;flex-shrink:0}
+.h-gauges{display:grid;grid-template-columns:repeat(auto-fit,minmax(156px,1fr));gap:14px;margin-bottom:18px}
+.h-gcard{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:18px 12px 16px;text-align:center}
+.h-ring{--p:0;--c:var(--accent);width:108px;height:108px;margin:0 auto 12px;border-radius:50%;background:conic-gradient(var(--c) calc(var(--p)*1%), rgba(255,255,255,.07) 0);display:flex;align-items:center;justify-content:center;position:relative}
+.h-ring::before{content:'';position:absolute;inset:11px;border-radius:50%;background:var(--bg2)}
+.h-ring span{position:relative;z-index:1;font-size:20px;font-weight:700;color:#fff;font-family:var(--mono)}
+.h-glabel{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--accent);font-weight:700}
+.h-gsub{font-size:12px;color:var(--text3);margin-top:5px;font-family:var(--mono)}
+.h-chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:16px}
+.h-chart-card h3{font-size:13px;letter-spacing:1px;text-transform:uppercase;color:var(--text);margin:0 0 12px}
+.h-chart-wrap{height:240px}
+.h-sums{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px}
+.h-sum{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.h-sum .k{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px}
+.h-sum .v{font-size:18px;color:#fff;font-weight:700;margin-top:4px;font-family:var(--mono)}
+.h-pills{display:flex;flex-wrap:wrap;gap:8px}
+.h-pill{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 14px;border:1px solid var(--border);border-radius:999px;font-size:12px;color:var(--text2);background:var(--bg2)}
+.h-pill b{font-size:11px;letter-spacing:1px}
+.h-pill b.ok{color:var(--accent)}
+.h-pill b.warn{color:var(--orange)}
+.h-pill b.crit{color:var(--red)}
+@media(max-width:768px){.h-banner{flex-direction:column;align-items:flex-start}.h-pulse{width:100%;height:40px}}
 </style>
 </head>
 <body>
@@ -276,6 +311,7 @@ tr:hover td{background:var(--accent-dim)}
     <a href="#" data-page="sessions"><i class="fa-solid fa-shield-halved"></i>Sessions</a>
     <a href="#" data-page="terminal"><i class="fa-solid fa-terminal"></i>E-Terminal</a>
     <a href="#" data-page="shell"><i class="fa-brands fa-linux"></i>Terminal</a>
+    <a href="#" data-page="health"><i class="fa-solid fa-heart-pulse"></i>Health</a>
   </nav>
   <div class="bottom">
     <div class="status" id="evStatus"><div class="dot off" id="evDot"></div><span id="evLabel">CHECKING...</span></div>
@@ -419,6 +455,45 @@ tr:hover td{background:var(--accent-dim)}
   <div class="toolbar"><div class="sec-title" style="margin:0;border:0;padding:0"><i class="fa-brands fa-linux"></i> Linux Terminal</div><div class="btn-group"><button class="btn fill" onclick="restartShell()"><i class="fa-solid fa-arrows-rotate"></i> Restart</button></div></div>
   <div id="shell-container"></div>
 </section>
+<section id="page-health" class="page">
+  <div class="h-banner ok" id="hBanner">
+    <div class="h-banner-left">
+      <div class="h-banner-ico" id="hBannerIco"><i class="fa-solid fa-check"></i></div>
+      <div>
+        <h2 id="hSummary">Checking…</h2>
+        <p id="hMeta">—</p>
+      </div>
+    </div>
+    <svg class="h-pulse" viewBox="0 0 180 54" fill="none" aria-hidden="true">
+      <polyline points="0,27 22,27 28,27 34,8 42,46 50,18 58,36 66,27 180,27" stroke="#00ff88" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+        <animate attributeName="stroke-opacity" values="0.35;1;0.35" dur="1.8s" repeatCount="indefinite"/>
+      </polyline>
+    </svg>
+  </div>
+  <div class="h-gauges">
+    <div class="h-gcard"><div class="h-ring" id="hCpuRing" style="--p:0"><span id="hCpuVal">—</span></div><div class="h-glabel">CPU</div><div class="h-gsub" id="hCpuSub">load</div></div>
+    <div class="h-gcard"><div class="h-ring" id="hRamRing" style="--p:0"><span id="hRamVal">—</span></div><div class="h-glabel">RAM</div><div class="h-gsub" id="hRamSub">memory</div></div>
+    <div class="h-gcard"><div class="h-ring" id="hDiskRing" style="--p:0"><span id="hDiskVal">—</span></div><div class="h-glabel">Disk</div><div class="h-gsub" id="hDiskSub">storage</div></div>
+    <div class="h-gcard"><div class="h-ring" id="hInRing" style="--p:0;--c:var(--cyan)"><span id="hInVal">—</span></div><div class="h-glabel">Inbound</div><div class="h-gsub" id="hInSub">0 B/s</div></div>
+    <div class="h-gcard"><div class="h-ring" id="hOutRing" style="--p:0;--c:var(--purple)"><span id="hOutVal">—</span></div><div class="h-glabel">Outbound</div><div class="h-gsub" id="hOutSub">0 B/s</div></div>
+  </div>
+  <div class="h-chart-card">
+    <h3>System metrics</h3>
+    <div class="h-chart-wrap"><canvas id="chartHealth"></canvas></div>
+    <div class="h-sums">
+      <div class="h-sum"><div class="k">CPU now</div><div class="v" id="hSumCpu">—</div></div>
+      <div class="h-sum"><div class="k">Load 1 / 5 / 15</div><div class="v" id="hSumLoad">—</div></div>
+      <div class="h-sum"><div class="k">RAM used</div><div class="v" id="hSumRam">—</div></div>
+      <div class="h-sum"><div class="k">Disk free</div><div class="v" id="hSumDisk">—</div></div>
+    </div>
+  </div>
+  <div class="h-pills">
+    <div class="h-pill">CPU <b class="ok" id="hPillCpu">—</b></div>
+    <div class="h-pill">RAM <b class="ok" id="hPillRam">—</b></div>
+    <div class="h-pill">Disk <b class="ok" id="hPillDisk">—</b></div>
+    <div class="h-pill">Network <b class="ok" id="hPillNet">—</b></div>
+  </div>
+</section>
   </div>
 </div>
 </div>
@@ -437,9 +512,9 @@ function toast(msg,type='ok'){const d=document.createElement('div');d.className=
 function ts(epoch){if(!epoch)return'\u2014';const d=new Date(epoch*1000);return d.toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'})}
 function uptime(sec){const d=Math.floor(sec/86400),h=Math.floor(sec%86400/3600),m=Math.floor(sec%3600/60);return d>0?`${d}d ${h}h`:`${h}h ${m}m`}
 function esc(s){const el=document.createElement('span');el.textContent=s;return el.innerHTML}
-const pageNames={dashboard:'DASHBOARD',phishlets:'PHISHLETS',config:'CONFIGURATION',lures:'LURES',files:'FILE EXPLORER',services:'SERVICES',sessions:'SESSIONS',terminal:'E-TERMINAL',shell:'TERMINAL',notifications:'NOTIFICATIONS'};
+const pageNames={dashboard:'DASHBOARD',phishlets:'PHISHLETS',config:'CONFIGURATION',lures:'LURES',files:'FILE EXPLORER',services:'SERVICES',sessions:'SESSIONS',terminal:'E-TERMINAL',shell:'TERMINAL',health:'HEALTH',notifications:'NOTIFICATIONS'};
 function resizeCharts(){
-  try{if(chartTL)chartTL.resize();if(chartBD)chartBD.resize()}catch(e){}
+  try{if(chartTL)chartTL.resize();if(chartBD)chartBD.resize();if(healthChart)healthChart.resize()}catch(e){}
 }
 function toggleSidebar(){
   if(window.innerWidth<=768){
@@ -467,7 +542,7 @@ function labelTable(tbody){
   });
 }
 function bindCardTables(){document.querySelectorAll('.tbl-wrap tbody').forEach(labelTable)}
-$$('.sidebar nav a[data-page]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();const pg=a.dataset.page;$$('.sidebar nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active');$$('.page').forEach(p=>p.classList.remove('active'));$(`#page-${pg}`).classList.add('active');$('#pageTitle').textContent=pageNames[pg]||pg.toUpperCase();closeSidebar();if(pg==='dashboard')loadDashboard();if(pg==='phishlets')loadPhishlets();if(pg==='config')loadConfig();if(pg==='lures')loadLures();if(pg==='files')loadFiles();if(pg==='services')loadServices();if(pg==='sessions')loadSessions();if(pg==='notifications')loadNotifications();if(pg==='terminal')initTerminal();if(pg==='shell')initShell()})});
+$$('.sidebar nav a[data-page]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();const pg=a.dataset.page;$$('.sidebar nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active');$$('.page').forEach(p=>p.classList.remove('active'));$(`#page-${pg}`).classList.add('active');$('#pageTitle').textContent=pageNames[pg]||pg.toUpperCase();closeSidebar();stopHealth();if(pg==='dashboard')loadDashboard();if(pg==='phishlets')loadPhishlets();if(pg==='config')loadConfig();if(pg==='lures')loadLures();if(pg==='files')loadFiles();if(pg==='services')loadServices();if(pg==='sessions')loadSessions();if(pg==='notifications')loadNotifications();if(pg==='terminal')initTerminal();if(pg==='shell')initShell();if(pg==='health')startHealth()})});
 let chartTL=null,chartBD=null;
 function renderCharts(d){
   const tl=d.chart_timeline||{labels:[],total:[],jwt:[],cookies:[],empty:[]};
@@ -485,6 +560,77 @@ function renderCharts(d){
   if(leg){const items=[{label:'JWT Captured',val:bd.jwt,color:'#a78bfa'},{label:'With Cookies',val:bd.with_cookies,color:'#22d3ee'},{label:'Empty',val:bd.empty,color:'#475569'}];leg.innerHTML=items.map(i=>{const pct=bdTotal?((i.val/bdTotal)*100).toFixed(1):'0';return `<div style="display:flex;align-items:center;gap:10px"><div style="width:10px;height:10px;border-radius:50%;background:${i.color};flex-shrink:0"></div><span style="flex:1;font-size:13px;color:var(--text2)">${i.label}</span><span style="font-family:var(--mono);font-size:13px;color:var(--text);font-weight:600">${i.val}</span><span style="font-size:12px;color:var(--text3)">${pct}%</span></div>`}).join('')}
 }
 async function loadDashboard(){const d=await api('/api/dashboard');$('#dPhishlets').textContent=d.active_phishlets;$('#dSessions').textContent=d.total_sessions;$('#dJwt').textContent=d.jwt_sessions;$('#dUptime').textContent=uptime(d.uptime);$('#topDomain').textContent=d.domain||'\u2014';$('#topIp').textContent=d.ipv4||'\u2014';updateEvStatus(d.ev_running);renderCharts(d);let jhtml='';(d.recent_jwt||[]).forEach(s=>{jhtml+=`<tr><td>${s.id}</td><td>${esc(s.phishlet)}</td><td>${esc(s.remote_addr)}</td><td>${esc(s.username||'—')}</td><td>${esc(s.password||'—')}</td><td>${ts(s.create_time)}</td><td><div class="btn-group"><button class="btn sm" onclick="viewSession(${s.id})"><i class="fa-solid fa-eye"></i> View</button><button class="btn sm danger" onclick="deleteSession(${s.id})"><i class="fa-solid fa-trash-can"></i></button></div></td></tr>`});if(!jhtml)jhtml='<tr><td colspan="6" style="text-align:center;color:var(--text3)">No JWT sessions yet</td></tr>';$('#recentJwtBody').innerHTML=jhtml}
+let healthTimer=null,healthChart=null,healthHist={labels:[],cpu:[],ram:[],netin:[],netout:[]};
+function stopHealth(){if(healthTimer){clearInterval(healthTimer);healthTimer=null}}
+function startHealth(){stopHealth();loadHealth();healthTimer=setInterval(loadHealth,2000)}
+function hColor(st){return st==='critical'?'var(--red)':(st==='warning'?'var(--orange)':'var(--accent)')}
+function hTone(st){return st==='critical'?'crit':(st==='warning'?'warn':'ok')}
+function hLabel(st){return st==='critical'?'CRITICAL':(st==='warning'?'WARNING':'HEALTHY')}
+function setRing(id,pct,status){var el=document.getElementById(id);if(!el)return;el.style.setProperty('--p',Math.max(0,Math.min(100,pct||0)));el.style.setProperty('--c',hColor(status))}
+function netRingPct(bps){return Math.max(0,Math.min(100,(bps||0)/(20*1024*1024)*100))}
+function ensureHealthChart(){
+  var ctx=document.getElementById('chartHealth');
+  if(!ctx||healthChart)return;
+  healthChart=new Chart(ctx,{type:'line',data:{labels:healthHist.labels,datasets:[
+    {label:'CPU %',data:healthHist.cpu,borderColor:'#00ff88',backgroundColor:'rgba(0,255,136,0.10)',fill:true,tension:0.35,borderWidth:2,pointRadius:0,yAxisID:'y'},
+    {label:'RAM %',data:healthHist.ram,borderColor:'#22d3ee',backgroundColor:'rgba(34,211,238,0.06)',fill:true,tension:0.35,borderWidth:2,pointRadius:0,yAxisID:'y'},
+    {label:'In KB/s',data:healthHist.netin,borderColor:'#a78bfa',backgroundColor:'transparent',fill:false,tension:0.35,borderWidth:2,pointRadius:0,yAxisID:'y1'}
+  ]},options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:true,position:'top',labels:{color:'#94a3b8',font:{family:'Inter',size:12},usePointStyle:true,pointStyle:'circle',padding:14}},tooltip:{backgroundColor:'rgba(10,14,23,0.95)',borderColor:'rgba(0,255,136,0.2)',borderWidth:1,titleColor:'#f1f5f9',bodyColor:'#94a3b8'}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#475569',font:{size:10,family:'JetBrains Mono'},maxTicksLimit:8}},y:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#475569',font:{size:11,family:'JetBrains Mono'}}},y1:{beginAtZero:true,position:'right',grid:{display:false},ticks:{color:'#475569',font:{size:10,family:'JetBrains Mono'}}}}}});
+}
+async function loadHealth(){
+  const d=await api('/api/health');
+  if(!d||d.error)return;
+  var banner=document.getElementById('hBanner');
+  banner.className='h-banner '+hTone(d.status);
+  document.getElementById('hBannerIco').innerHTML=d.status==='healthy'?'<i class="fa-solid fa-check"></i>':'<i class="fa-solid fa-triangle-exclamation"></i>';
+  document.getElementById('hSummary').textContent=d.summary||'';
+  document.getElementById('hMeta').textContent=(d.hostname||'')+'  ·  '+uptime(d.uptime)+' up  ·  '+d.cores+' cores  ·  '+d.took_ms+' ms';
+  setRing('hCpuRing',d.cpu_pct,d.cpu_status);
+  document.getElementById('hCpuVal').textContent=Math.round(d.cpu_pct)+'%';
+  document.getElementById('hCpuSub').textContent='load '+(d.load||[]).join(' / ');
+  var ram=d.ram||{};
+  setRing('hRamRing',ram.pct,ram.status);
+  document.getElementById('hRamVal').textContent=Math.round(ram.pct||0)+'%';
+  document.getElementById('hRamSub').textContent=(ram.used_h||'')+' / '+(ram.total_h||'');
+  var disk=d.disk||{};
+  setRing('hDiskRing',disk.pct,disk.status);
+  document.getElementById('hDiskVal').textContent=Math.round(disk.pct||0)+'%';
+  document.getElementById('hDiskSub').textContent=(disk.used_h||'')+' / '+(disk.total_h||'');
+  var net=d.net||{};
+  setRing('hInRing',netRingPct(net.in_bps),net.status);
+  setRing('hOutRing',netRingPct(net.out_bps),net.status);
+  document.getElementById('hInVal').textContent=(net.in_h||'0 B/s').replace('/s','');
+  document.getElementById('hOutVal').textContent=(net.out_h||'0 B/s').replace('/s','');
+  document.getElementById('hInSub').textContent=net.in_h||'0 B/s';
+  document.getElementById('hOutSub').textContent=net.out_h||'0 B/s';
+  document.getElementById('hSumCpu').textContent=Math.round(d.cpu_pct)+'%';
+  document.getElementById('hSumLoad').textContent=(d.load||[]).join('  /  ');
+  document.getElementById('hSumRam').textContent=(ram.used_h||'—')+' / '+(ram.total_h||'');
+  document.getElementById('hSumDisk').textContent=(disk.free_h||'—')+' free';
+  function pill(id,st){var el=document.getElementById(id);el.className=hTone(st);el.textContent=hLabel(st)}
+  pill('hPillCpu',d.cpu_status);pill('hPillRam',ram.status);pill('hPillDisk',disk.status);pill('hPillNet',net.status);
+  var t=new Date();var lab=('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2)+':'+('0'+t.getSeconds()).slice(-2);
+  healthHist.labels.push(lab);
+  healthHist.cpu.push(d.cpu_pct);
+  healthHist.ram.push(ram.pct||0);
+  healthHist.netin.push(Math.round((net.in_bps||0)/1024));
+  healthHist.netout.push(Math.round((net.out_bps||0)/1024));
+  if(healthHist.labels.length>45){
+    healthHist.labels.shift();healthHist.cpu.shift();healthHist.ram.shift();healthHist.netin.shift();healthHist.netout.shift();
+  }
+  ensureHealthChart();
+  if(healthChart){
+    healthChart.data.labels=healthHist.labels;
+    healthChart.data.datasets[0].data=healthHist.cpu;
+    healthChart.data.datasets[1].data=healthHist.ram;
+    healthChart.data.datasets[2].data=healthHist.netin;
+    healthChart.update('none');
+  }
+}
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden) stopHealth();
+  else if(document.getElementById('page-health')&&document.getElementById('page-health').classList.contains('active')) startHealth();
+});
 function updateEvStatus(running){const dot=$('#evDot'),lbl=$('#evLabel');if(running){dot.className='dot on';lbl.textContent='EVILGINX ONLINE';lbl.style.color='var(--accent)'}else{dot.className='dot off';lbl.textContent='EVILGINX OFFLINE';lbl.style.color='var(--red)'}}
 async function toggleNotifications(){var en=document.getElementById('ntfEnabled').checked;var r=await api('/api/notifications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:!en})});if(r.ok){document.getElementById('ntfEnabled').checked=!en;toast(!en?'Notifications started':'Notifications stopped');updateNtfToggle(!en);loadNotifications()}else toast(r.error||'Error','err')}
 function updateNtfToggle(on){var btn=document.getElementById('ntfToggleBtn');var txt=document.getElementById('ntfToggleText');if(on){btn.className='btn danger';txt.textContent='Stop'}else{btn.className='btn fill';txt.textContent='Start'}}
@@ -776,9 +922,32 @@ function feNewDir(){openModal('NEW FOLDER','<div class="field"><label>Folder nam
 async function feCreateDir(){var n=($('#feDirName').value||'').trim();if(!n||n.indexOf('/')>=0)return toast('Invalid name','err');var path=fePath.replace(/\/+$/,'')+'/'+n;const r=await api('/api/fs/mkdir',{method:'POST',body:JSON.stringify({path:path})});if(r.ok){closeModal();toast('Folder created');loadFiles()}else toast(r.error||'Error','err')}
 function feMakeService(){if(!feSel||feSel.isDir){toast('Select a file first','err');return}openNewService(feSel.path)}
 function filterServices(f,btn){document.querySelectorAll('[data-svc]').forEach(function(b){b.classList.remove('active')});if(btn)btn.classList.add('active');svcFilter=f;loadServices()}
-async function loadServices(){const ss=await api('/api/services?filter='+(svcFilter||'running'));var h='';(ss||[]).forEach(function(s){var on=s.active==='active';var en=s.enabled==='enabled';h+='<tr><td style="text-align:left"><strong style="color:var(--cyan)">'+esc(s.name)+'</strong>'+(s.custom?' <span class="badge on">CUSTOM</span>':'')+'</td><td><span class="svc-dot '+(on?'on':'off')+'"></span>'+(on?'<span class="badge on">RUNNING</span>':'<span class="badge off">'+esc(s.active||'inactive')+'</span>')+'</td><td>'+(en?'<span class="badge on">ENABLED</span>':'<span class="badge off">'+esc(s.enabled||'disabled')+'</span>')+'</td><td>'+esc(s.pid&&s.pid!=='0'?s.pid:'\u2014')+'</td><td>'+esc(s.description||'\u2014')+'</td><td><div class="btn-group">'+(on?'<button class="btn sm danger" onclick="svcAct(\''+s.name+'\',\'stop\')">Stop</button>':'<button class="btn sm fill" onclick="svcAct(\''+s.name+'\',\'start\')">Start</button>')+'<button class="btn sm" onclick="svcAct(\''+s.name+'\',\'restart\')"><i class="fa-solid fa-arrows-rotate"></i></button>'+(en?'<button class="btn sm" onclick="svcAct(\''+s.name+'\',\'disable\')">Disable</button>':'<button class="btn sm" onclick="svcAct(\''+s.name+'\',\'enable\')">Enable</button>')+'<button class="btn sm" onclick="svcLogs(\''+s.name+'\')"><i class="fa-solid fa-scroll"></i></button>'+(s.custom?'<button class="btn sm danger" onclick="svcDelete(\''+s.name+'\')"><i class="fa-solid fa-trash-can"></i></button>':'')+'</div></td></tr>'});if(!h)h='<tr><td colspan="6" style="text-align:center;color:var(--text3)">No services</td></tr>';$('#svcBody').innerHTML=h;$('#svcCount').textContent='Showing '+(ss||[]).length+' services ('+svcFilter+')'}
+async function loadServices(){const ss=await api('/api/services?filter='+(svcFilter||'running'));var h='';(ss||[]).forEach(function(s){var on=s.active==='active';var en=s.enabled==='enabled';h+='<tr><td style="text-align:left"><strong style="color:var(--cyan)">'+esc(s.name)+'</strong>'+(s.custom?' <span class="badge on">CUSTOM</span>':'')+'</td><td><span class="svc-dot '+(on?'on':'off')+'"></span>'+(on?'<span class="badge on">RUNNING</span>':'<span class="badge off">'+esc(s.active||'inactive')+'</span>')+'</td><td>'+(en?'<span class="badge on">ENABLED</span>':'<span class="badge off">'+esc(s.enabled||'disabled')+'</span>')+'</td><td>'+esc(s.pid&&s.pid!=='0'?s.pid:'\u2014')+'</td><td>'+esc(s.description||'\u2014')+'</td><td><div class="btn-group">'+(on?'<button class="btn sm danger" onclick="svcAct(\''+s.name+'\',\'stop\')">Stop</button>':'<button class="btn sm fill" onclick="svcAct(\''+s.name+'\',\'start\')">Start</button>')+'<button class="btn sm" onclick="svcAct(\''+s.name+'\',\'restart\')"><i class="fa-solid fa-arrows-rotate"></i></button>'+(en?'<button class="btn sm" onclick="svcAct(\''+s.name+'\',\'disable\')">Disable</button>':'<button class="btn sm" onclick="svcAct(\''+s.name+'\',\'enable\')">Enable</button>')+'<button class="btn sm" title="Last logs" onclick="svcLogs(\''+s.name+'\')"><i class="fa-solid fa-scroll"></i></button><button class="btn sm cyan" title="Live journalctl -f" onclick="svcLiveLogs(\''+s.name+'\')"><i class="fa-solid fa-tower-broadcast"></i></button>'+(s.custom?'<button class="btn sm danger" onclick="svcDelete(\''+s.name+'\')"><i class="fa-solid fa-trash-can"></i></button>':'')+'</div></td></tr>'});if(!h)h='<tr><td colspan="6" style="text-align:center;color:var(--text3)">No services</td></tr>';$('#svcBody').innerHTML=h;$('#svcCount').textContent='Showing '+(ss||[]).length+' services ('+svcFilter+')'}
 async function svcAct(name,act){const r=await api('/api/services/'+encodeURIComponent(name)+'/'+act,{method:'POST',body:'{}'});if(r.error)toast(r.error,'err');else{toast(name+' '+act);loadServices()}}
-async function svcLogs(name){const r=await api('/api/services/'+encodeURIComponent(name)+'/logs');openModal('LOGS \u2014 '+name,'<div class="log-view">'+esc(r.logs||'(no logs)')+'</div>','<button class="btn cyan" onclick="svcLogs(\''+name+'\')"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button><button class="btn" onclick="closeModal()">CLOSE</button>')}
+async function svcLogs(name){const r=await api('/api/services/'+encodeURIComponent(name)+'/logs');openModal('LOGS \u2014 '+name,'<div class="log-view">'+esc(r.logs||'(no logs)')+'</div>','<button class="btn cyan" onclick="svcLogs(\''+name+'\')"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button><button class="btn cyan" onclick="svcLiveLogs(\''+name+'\')"><i class="fa-solid fa-tower-broadcast"></i> LIVE</button><button class="btn" onclick="closeModal()">CLOSE</button>')}
+var _journalBound=false,_journalBuf='';
+function stopJournalFollow(){try{socket.emit('journal_stop')}catch(e){}}
+function svcLiveLogs(name){
+  openModal('JOURNAL \u2014 '+name,
+    '<div class="template-hint"><strong style="color:var(--accent)">LIVE</strong> <code>journalctl -u '+esc(name)+' -f</code> \u2014 last lines plus new events. Stops when you close this window.</div><pre class="log-view live" id="journalView">(connecting\u2026)</pre>',
+    '<span class="journal-live"><span class="dot"></span>LIVE</span><button class="btn" onclick="closeModal()">CLOSE</button>',
+    {wide:true});
+  _journalBuf='';
+  if(!_journalBound){
+    socket.on('journal_out',function(msg){
+      var box=document.getElementById('journalView');
+      if(!box)return;
+      if(box.textContent==='(connecting\u2026)') box.textContent='';
+      _journalBuf+=msg.d||'';
+      var lines=_journalBuf.split('\n');
+      if(lines.length>4000){_journalBuf=lines.slice(-3000).join('\n')}
+      box.textContent=_journalBuf;
+      box.scrollTop=box.scrollHeight;
+    });
+    _journalBound=true;
+  }
+  socket.emit('journal_start',{unit:name});
+}
 function svcDelete(name){openModal('DELETE SERVICE','<p style="color:#fff;margin-bottom:12px">Stop, disable and remove <strong style="color:var(--cyan)">'+esc(name)+'</strong>?</p><p style="color:var(--text3);font-size:13px">Only custom units in /etc/systemd/system/ can be deleted. The script file is kept.</p>','<button class="btn danger" onclick="doSvcDelete(\''+name+'\')">DELETE</button><button class="btn" onclick="closeModal()">CANCEL</button>')}
 async function doSvcDelete(name){const r=await api('/api/services/'+encodeURIComponent(name),{method:'DELETE'});closeModal();if(r.ok){toast('Deleted');loadServices()}else toast(r.error||'Error','err')}
 function openNewService(preFile){openModal('NEW SERVICE','<div class="template-hint"><strong style="color:var(--accent)">i</strong> Creates a systemd unit: optional copy to <code>/usr/local/bin</code>, write service file, daemon-reload, enable, start.</div><div class="form-grid"><div class="field"><label>Service Name</label><input id="svName" placeholder="evilginx-cookie-bot"></div><div class="field"><label>Description</label><input id="svDesc" placeholder="Evilginx Cookie Bot Service"></div><div class="field" style="grid-column:1/-1"><label>Script File</label><input id="svFile" placeholder="/root/evilginx_cookie_bot.py" value="'+esc(preFile||'')+'"></div><div class="field"><label>Interpreter</label><select id="svInterp"><option value="auto">auto (.py / .sh / binary)</option><option value="python3">python3</option><option value="bash">bash</option><option value="exec">run file as-is</option></select></div><div class="field"><label>User</label><input id="svUser" value="root"></div><div class="field"><label>Working Directory</label><input id="svWork" placeholder="/root"></div><div class="field"></div></div><div style="display:flex;flex-direction:column;gap:12px;margin-top:8px"><label class="toggle-row"><input type="checkbox" id="svCopy" class="toggle-input" checked><span class="toggle-switch"></span><span class="toggle-label">Copy script to /usr/local/bin</span></label><label class="toggle-row"><input type="checkbox" id="svEnable" class="toggle-input" checked><span class="toggle-switch"></span><span class="toggle-label">Enable autostart</span></label><label class="toggle-row"><input type="checkbox" id="svStart" class="toggle-input" checked><span class="toggle-switch"></span><span class="toggle-label">Start now</span></label></div>','<button class="btn fill" onclick="createService()"><i class="fa-solid fa-gears"></i> CREATE & START</button><button class="btn" onclick="closeModal()">CANCEL</button>')}
@@ -788,8 +957,8 @@ function deleteSession(id){openModal('DELETE SESSION','<p style="color:#fff;marg
 async function doDeleteSession(id){const r=await api('/api/sessions/'+id,{method:'DELETE'});closeModal();if(r.error)toast(r.error,'err');else{toast('Session #'+id+' deleted');loadSessions();if(document.getElementById('page-dashboard')&&document.getElementById('page-dashboard').classList.contains('active'))loadDashboard()}}
 function openClearSessions(){openModal('CLEAR DATABASE','<p style="color:#fff;margin-bottom:14px">This will delete <strong style="color:var(--red)">ALL sessions</strong> from data.db.</p><p style="color:var(--text3);font-size:13px;margin-bottom:16px">The evilginx database structure is kept (id counter). Enter the panel admin password to confirm.</p><div class="field"><label>Admin password</label><input id="clrDbPass" type="password" placeholder="••••••••"></div>','<button class="btn danger" onclick="doClearSessions()"><i class="fa-solid fa-database"></i> DELETE ALL</button><button class="btn" onclick="closeModal()">CANCEL</button>')}
 async function doClearSessions(){var pw=($('#clrDbPass').value||'');if(!pw){toast('Password required','err');return}const r=await api('/api/sessions/clear',{method:'POST',body:JSON.stringify({password:pw})});if(r.error){toast(r.error,'err');return}closeModal();toast('Database cleared');loadSessions();loadDashboard()}
-function openModal(title,body,foot='',opts){opts=opts||{};var box=$('#modalOverlay').querySelector('.modal');if(box)box.classList.toggle('wide',!!opts.wide);$('#modalTitle').textContent=title;$('#modalBody').innerHTML=body;$('#modalFoot').innerHTML=foot;$('#modalOverlay').classList.add('show');attachFindReplace($('#modalBody'));bindCardTables()}
-function closeModal(){var ov=$('#modalOverlay');ov.classList.remove('show');var box=ov.querySelector('.modal');if(box)box.classList.remove('wide')}
+function openModal(title,body,foot='',opts){stopJournalFollow();opts=opts||{};var box=$('#modalOverlay').querySelector('.modal');if(box)box.classList.toggle('wide',!!opts.wide);$('#modalTitle').textContent=title;$('#modalBody').innerHTML=body;$('#modalFoot').innerHTML=foot;$('#modalOverlay').classList.add('show');attachFindReplace($('#modalBody'));bindCardTables()}
+function closeModal(){stopJournalFollow();var ov=$('#modalOverlay');ov.classList.remove('show');var box=ov.querySelector('.modal');if(box)box.classList.remove('wide')}
 $('#modalOverlay').addEventListener('click',e=>{if(e.target===$('#modalOverlay'))closeModal()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='h'){var ov=$('#modalOverlay');if(ov&&ov.classList.contains('show')){e.preventDefault();var fi=ov.querySelector('.fr-find');if(fi)fi.focus();}}});
 loadDashboard();loadPhishlets();

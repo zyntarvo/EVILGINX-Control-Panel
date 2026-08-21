@@ -491,11 +491,11 @@ class Installer:
                 if os.path.isfile(loc):
                     mapping.append((loc, f"{REMOTE_PANEL}/static/{name}"))
         required_marks = {
-            os.path.join(PAYLOAD, "app.py"): ["def api_sessions_clear", "def api_fs_list", "def api_service_create", "def favicon", "def _cookie_looks_like_jwt", "class ShellManager"],
+            os.path.join(PAYLOAD, "app.py"): ["def api_sessions_clear", "def api_fs_list", "def api_service_create", "def favicon", "def _cookie_looks_like_jwt", "class ShellManager", "class JournalFollower", "def api_health"],
             os.path.join(PAYLOAD, "templates", "index.html"): [
                 "File Explorer", "page-services", "CLEAR DATABASE", "openNewService",
                 "/static/logo.png", "favicon-32.png", "logo-mark", "dash-charts", "menu-toggle",
-                "E-Terminal", "page-shell", "initShell",
+                "E-Terminal", "page-shell", "initShell", "svcLiveLogs", "page-health", "startHealth",
             ],
             os.path.join(PAYLOAD, "templates", "login.html"): [
                 "/static/logo.png", "favicon-32.png", "logo-mark", "ZynTarvo",

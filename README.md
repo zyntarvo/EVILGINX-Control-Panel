@@ -28,6 +28,7 @@ Built for red teamers, pentesters, and anyone who wants Evilginx running in minu
 - Web C2 panel with login
 - Manage phishlets, lures and captured sessions from the browser
 - E-Terminal (Evilginx CLI) and a full Linux shell in the browser
+- Live host Health (CPU, RAM, disk, traffic) and per-service journalctl follow
 
 ## Demo
 
@@ -166,8 +167,19 @@ systemd manager so you are not SSH-ing just to restart a daemon.
 
 - Filters: **RUNNING** / **CUSTOM** / **ALL**
 - **+ New Service** — register your own unit
-- Per service: **Stop**, **Restart**, **Enable / Disable** on boot, **Logs**, **Delete** (custom units)
+- Per service: **Stop**, **Restart**, **Enable / Disable** on boot, **Logs**, **Live journal**, **Delete** (custom units)
 - `evilginx-panel` is tagged **CUSTOM** — that is this web panel
+
+### Live journal
+
+<p align="center"><img src="docs/screenshots/20-journal-live.png" alt="Live journalctl" width="900"></p>
+
+Same lightbox as the other panel forms. The cyan broadcast button on a service row (or **LIVE** inside snapshot logs) runs `journalctl -u SERVICENAME -f`.
+
+- Last lines plus new events in real time
+- Follow starts only when you open the window — zero extra load while it is closed
+- Stops on **CLOSE**, Escape, or opening another modal
+- One live follow at a time
 
 ### Notifications
 
@@ -231,6 +243,19 @@ A real Linux shell on the server — login bash, same as if you opened a normal 
 - Runs as the panel user (root on a default install), home directory, `.bashrc` loaded
 - **Restart** if you typed `exit` or the shell died
 - Independent from E-Terminal: Evilginx CLI and Linux do not share a session
+
+### Health
+
+<p align="center"><img src="docs/screenshots/19-health.png" alt="Health" width="900"></p>
+
+Live host metrics under **Terminal** in the sidebar. Cheap `/proc` reads only while this page is open.
+
+- Banner: **All systems nominal** (or warning / critical)
+- Gauges: **CPU**, **RAM**, **Disk**, **Inbound**, **Outbound**
+- Chart: CPU %, RAM %, inbound KB/s
+- Load 1 / 5 / 15, RAM used, disk free
+- Status pills: HEALTHY / WARNING / CRITICAL
+- Timer stops when you leave the page or hide the tab — the server is not polled in the background
 
 ## Layout
 
