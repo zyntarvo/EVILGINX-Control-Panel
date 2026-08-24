@@ -495,7 +495,7 @@ class Installer:
             os.path.join(PAYLOAD, "app.py"): ["def api_sessions_clear", "def api_fs_list", "def api_service_create", "def favicon", "def _cookie_looks_like_jwt", "class ShellManager", "class JournalFollower", "def api_health", "def api_proxy_key", "import proxy_engine"],
             os.path.join(PAYLOAD, "proxy_engine.py"): [
                 "def deploy_async", "class _Sidecar", "def record_auth_429", "def repair_instance",
-                "def _install_squid", "def detach", "def _wait_guest_ready", "def _repair_install",
+                "def _install_squid", "def detach", "def drop_proxy_tunnels", "def _wait_guest_ready", "def _repair_install",
                 "APT_IDLE", "settle 5s",
             ],
             os.path.join(PAYLOAD, "templates", "index.html"): [

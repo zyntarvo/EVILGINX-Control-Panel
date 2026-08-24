@@ -2154,7 +2154,7 @@ def api_proxy_detach():
     if not ids:
         return jsonify(error="select proxy to detach")
     st = pxe.detach(ph, ids)
-    nc_push("Proxy detached", f"{ph}: removed {len(ids)} proxy(ies) from the pool.", "info")
+    nc_push("Proxy detached", f"{ph}: removed {len(ids)} proxy(ies). Live tunnels closed — next request uses the server IP or remaining pool.", "info")
     return jsonify(ok=True, **st)
 
 
