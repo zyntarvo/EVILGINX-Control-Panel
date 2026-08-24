@@ -1,5 +1,7 @@
-3.3.0
+3.4.0
 C2 Panel payload
 Includes: Linode proxy fleet, notification centre, 429 rotation, neon lynx icon + favicon, File Explorer, Services, session delete, CLEAR DATABASE, Telegram, charts, JWT-in-cookies, mobile card tables, sidebar toggle
+Installer patches evilginx2 http_proxy.go so origin HTTP 429 is reported to the panel for proxy auto-rotate
 Proxy deploy waits for full guest boot (cloud-init + apt idle + 5s settle) before squid install; progress bar covers create/boot/install; panel-wide white hint text
 Outbound-per-proxy chart labels use public IP, not Linode instance name
+Detach closes live Squid CONNECT tunnels so traffic returns to the Evilginx IP immediately

