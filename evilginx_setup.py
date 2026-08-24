@@ -40,7 +40,7 @@ if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
     HERE = sys._MEIPASS
 PAYLOAD = os.path.join(HERE, "payload")
 PANEL_PORT = 8443
-PANEL_BUILD = "3.5.0"  # keep in sync with payload/app.py PANEL_VERSION
+PANEL_BUILD = "3.5.1"  # keep in sync with payload/app.py PANEL_VERSION
 GO_VER = "1.20"
 REMOTE_HOME_DEFAULT = "/root"
 REMOTE_EGX = "/root/evilginx2"

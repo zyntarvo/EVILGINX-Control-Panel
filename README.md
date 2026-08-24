@@ -13,7 +13,7 @@
   &nbsp;
   <img src="https://img.shields.io/badge/Python-3-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
   &nbsp;
-  <img src="https://img.shields.io/badge/version-3.5.0-0ea5e9?style=for-the-badge" alt="3.5.0">
+  <img src="https://img.shields.io/badge/version-3.5.1-0ea5e9?style=for-the-badge" alt="3.5.1">
 </p>
 
 <p align="center"><b>Created by ZynTarvo</b> · <i>Nothing Is Impossible</i></p>

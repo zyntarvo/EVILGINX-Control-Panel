@@ -42,7 +42,7 @@ PANEL_HOST = os.environ.get("PANEL_HOST", "0.0.0.0")
 PANEL_PORT = int(os.environ.get("PANEL_PORT", "8443"))
 PANEL_USER = os.environ.get("PANEL_USER", "root")
 PANEL_PASS = os.environ.get("PANEL_PASS", "")
-PANEL_VERSION = "3.5.0"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
+PANEL_VERSION = "3.5.1"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  FLASK SETUP
@@ -2065,7 +2065,11 @@ def api_proxy_key():
     data = request.get_json(force=True) or {}
     key = (data.get("api_key") or "").strip()
     if not key:
-        return jsonify(ok=False, error="API key is incorrect")
+        s = pxe.load()
+        s["api_key"] = ""
+        pxe.save(s)
+        nc_push("Linode disconnected", "API key removed. Existing proxies were not deleted.", "info")
+        return jsonify(ok=True, configured=False)
     ok, err = pxe.validate_key(key)
     if not ok:
         return jsonify(ok=False, error="API key is incorrect")
