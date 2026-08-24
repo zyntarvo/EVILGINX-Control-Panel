@@ -42,7 +42,7 @@ Built for red teamers, pentesters, and anyone who wants Evilginx running in minu
 </p>
 
 <p align="center">
-  <a href="https://zyntarvo.github.io/EVILGINX-Control-Panel/#v35">
+  <a href="https://youtu.be/k0fQF4_5x6c">
     <img src="docs/video-preview-v35.png" alt="v3.5 — Auto Proxy Manager + Carousel" width="720">
   </a>
   <br>
