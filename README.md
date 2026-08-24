@@ -27,6 +27,7 @@ Built for red teamers, pentesters, and anyone who wants Evilginx running in minu
 - Auto-install on Ubuntu
 - Web C2 panel with login
 - Manage phishlets, lures and captured sessions from the browser
+- **Proxy Manager** — deploy Linode proxies in a couple of clicks, assign them to phishlets, watch live traffic
 - E-Terminal (Evilginx CLI) and a full Linux shell in the browser
 - Live host Health (CPU, RAM, disk, traffic) and per-service journalctl follow
 
@@ -146,6 +147,60 @@ The links you actually send. Each lure is tied to a phishlet.
 
 <p align="center"><img src="docs/screenshots/12-editor-lure.png" alt="Edit lure" width="640"></p>
 
+### Proxy
+
+<p align="center"><img src="docs/screenshots/21-proxy-manager.png" alt="Proxy Manager" width="900"></p>
+
+Outbound proxy fleet on Linode, run from the panel — no SSH, no cloud console. Typical path is **four clicks**: paste API key → pick a region → **Deploy** → pick a phishlet and **Assign**.
+
+**Connect**
+
+- Paste a Linode Personal Access Token (the panel stores it on the C2 box)
+- Status line shows **Linode connected** and the Evilginx public IP (UFW on each proxy allows only that IP)
+
+**Deploy (a couple of clicks)**
+
+| Step | What you do |
+|---|---|
+| 1 | Set how many servers (Nanode 1GB) |
+| 2 | Search a region by city / country / code, pick up to N regions |
+| 3 | Click **Deploy Proxies** |
+
+The progress bar covers the whole job, not just VM create: Linode boot → SSH → cloud-init finished → apt idle → **5 second settle** → Squid on port **50100** with auth. `100%` means the proxy actually answers. Failed installs are **kept** (Repair / Destroy) — the panel never auto-deletes a Linode.
+
+**Assign to a phishlet**
+
+<p align="center"><img src="docs/screenshots/23-proxy-assign.png" alt="Assign proxies to phishlet" width="720"></p>
+
+- Choose the phishlet, tick proxy **IP addresses**, click **Assign**
+- **Detach** unbinds a proxy from that phishlet (the VM stays; traffic history stays on the charts)
+- **Current assignments** shows every phishlet → IP chip (active hop marked)
+
+Evilginx is restarted once so outbound traffic for that phishlet goes through the pool. On auth **429**, the panel rotates to the next live proxy for that phishlet — it does **not** detach a node that is still booting.
+
+**Traffic**
+
+<p align="center"><img src="docs/screenshots/22-proxy-traffic.png" alt="Proxy traffic and instances" width="900"></p>
+
+- **Outbound per proxy** — bars labelled by **public IP** (not Linode label), split by phishlet
+- **Share by phishlet** — donut of total outbound bytes / requests
+- Table: phishlet, instance name, IP, bytes out / in, request count
+- History is kept after detach, so you still see what that IP already carried
+
+**Instance cards**
+
+<p align="center"><img src="docs/screenshots/24-proxy-card.png" alt="Proxy instance card" width="560"></p>
+
+Each Nanode is a card: IP, region + flag, endpoint `:50100`, Linode power state, CPU, live in/out.
+
+- **Assigned Phishlets** — current bind only
+- **Traffic Out** — cumulative bytes per phishlet (kept after detach)
+- **Destroy** — delete the Linode
+- **Start / Stop / Restart** — Linode power (assignments are kept)
+- **Repair** — wait for full boot + 5s, then install/verify Squid (instance is never deleted)
+
+The bell (notification centre) logs deploy, repair, 429 rotate, and power events.
+
 ### File Explorer
 
 <p align="center"><img src="docs/screenshots/06-file-explorer.png" alt="File Explorer" width="900"></p>
@@ -264,6 +319,7 @@ START.bat                 → launch the GUI installer
 evilginx_setup.py         → SSH installer (Ubuntu 20.04–26.04)
 payload/                  → panel that gets uploaded to the server
   app.py
+  proxy_engine.py         → Linode fleet, Squid, 429 rotate, traffic
   templates/              → login + dashboard
   static/                 → lynx logo + favicons
 docs/screenshots/         → UI shots from the demo video

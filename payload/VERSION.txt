@@ -1,3 +1,5 @@
-3.2
+3.3.0
 C2 Panel payload
-Includes: neon lynx icon + favicon, File Explorer, Services, session delete, CLEAR DATABASE, Telegram, charts, JWT-in-cookies, mobile card tables, sidebar toggle
+Includes: Linode proxy fleet, notification centre, 429 rotation, neon lynx icon + favicon, File Explorer, Services, session delete, CLEAR DATABASE, Telegram, charts, JWT-in-cookies, mobile card tables, sidebar toggle
+Proxy deploy waits for full guest boot (cloud-init + apt idle + 5s settle) before squid install; progress bar covers create/boot/install; panel-wide white hint text
+Outbound-per-proxy chart labels use public IP, not Linode instance name
