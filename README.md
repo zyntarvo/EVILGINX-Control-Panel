@@ -36,17 +36,15 @@ Built for red teamers, pentesters, and anyone who wants Evilginx running in minu
 ## Demo
 
 <p align="center">
-  <a href="https://zyntarvo.github.io/EVILGINX-Control-Panel/#installer">
+  <a href="https://zyntarvo.github.io/EVILGINX-Control-Panel/">
     <img src="docs/video-preview.png" alt="Play demo video" width="720">
   </a>
 </p>
 
 <p align="center">
-  <a href="https://youtu.be/k0fQF4_5x6c">
+  <a href="https://zyntarvo.github.io/EVILGINX-Control-Panel/v35.html">
     <img src="docs/video-preview-v35.png" alt="v3.5 — Auto Proxy Manager + Carousel" width="720">
   </a>
-  <br>
-  <a href="https://youtu.be/k0fQF4_5x6c">YouTube — Evilginx Control Panel v3.5: Auto Proxy Manager + Carousel</a>
 </p>
 
 ## A note on authorship
