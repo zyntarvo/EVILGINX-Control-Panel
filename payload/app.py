@@ -42,7 +42,7 @@ PANEL_HOST = os.environ.get("PANEL_HOST", "0.0.0.0")
 PANEL_PORT = int(os.environ.get("PANEL_PORT", "8443"))
 PANEL_USER = os.environ.get("PANEL_USER", "root")
 PANEL_PASS = os.environ.get("PANEL_PASS", "")
-PANEL_VERSION = "3.5.1"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
+PANEL_VERSION = "3.5.2"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  FLASK SETUP
@@ -1371,18 +1371,44 @@ def _svc_unit(name):
     name = (name or "").replace(".service", "")
     return name, name + ".service"
 
+def _parse_exec_start(raw):
+    """Pull the script/binary path from systemctl ExecStart={ path=... ; argv[]=... }."""
+    raw = (raw or "").strip()
+    cmd = ""
+    m = re.search(r"argv\[\]=([^;]+)", raw)
+    if m:
+        cmd = m.group(1).strip()
+    parts = cmd.split() if cmd else []
+    file_path = ""
+    for p in reversed(parts):
+        if p.startswith("/") and not p.startswith("/usr/bin/python") and not p.startswith("/bin/"):
+            file_path = p
+            break
+    if not file_path:
+        for p in reversed(parts):
+            if p.startswith("/"):
+                file_path = p
+                break
+    if not file_path:
+        m2 = re.search(r"path=([^ ;\n]+)", raw)
+        if m2:
+            file_path = m2.group(1).strip()
+    return file_path, cmd
+
+
 def _svc_info(name):
     name, unit = _svc_unit(name)
     _, active, _ = _systemctl("is-active", unit)
     _, enabled, _ = _systemctl("is-enabled", unit)
     code, show, _ = _systemctl("show", unit,
-        "--property=Description,FragmentPath,User,ExecMainPID,ActiveState,SubState,UnitFileState,WorkingDirectory")
+        "--property=Description,FragmentPath,User,ExecMainPID,ActiveState,SubState,UnitFileState,WorkingDirectory,ExecStart")
     props = {}
     for line in show.splitlines():
         if "=" in line:
             k, v = line.split("=", 1)
             props[k] = v
     custom = props.get("FragmentPath", "").startswith("/etc/systemd/system/")
+    exec_file, exec_cmd = _parse_exec_start(props.get("ExecStart", ""))
     return {
         "name": name,
         "unit": unit,
@@ -1393,6 +1419,8 @@ def _svc_info(name):
         "pid": props.get("ExecMainPID", "0"),
         "user": props.get("User", ""),
         "path": props.get("FragmentPath", ""),
+        "exec_file": exec_file,
+        "exec_cmd": exec_cmd,
         "workdir": props.get("WorkingDirectory", ""),
         "custom": custom,
     }
@@ -1519,13 +1547,13 @@ def api_service_create():
         pass
     if interp == "auto":
         if dest.endswith(".py"):
-            exec_start = f"{py} {dest}"
+            exec_start = f"{py} -u {dest}"
         elif dest.endswith(".sh"):
             exec_start = f"/bin/bash {dest}"
         else:
             exec_start = dest
     elif interp == "python3":
-        exec_start = f"{py} {dest}"
+        exec_start = f"{py} -u {dest}"
     elif interp == "bash":
         exec_start = f"/bin/bash {dest}"
     else:
@@ -1543,6 +1571,13 @@ def api_service_create():
         f"WorkingDirectory={workdir}\n"
         "Restart=always\n"
         "RestartSec=5\n"
+        "StandardOutput=journal\n"
+        "StandardError=journal\n"
+    )
+    if dest.endswith(".py") or interp == "python3":
+        body += "Environment=PYTHONUNBUFFERED=1\n"
+    body += (
+        "\n"
         "\n"
         "[Install]\n"
         "WantedBy=multi-user.target\n"

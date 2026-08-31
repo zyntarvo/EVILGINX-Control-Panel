@@ -1,4 +1,4 @@
-3.5.1
+3.5.2
 C2 Panel payload
 Includes: Linode proxy fleet, notification centre, 429 rotation, neon lynx icon + favicon, File Explorer, Services, session delete, CLEAR DATABASE, Telegram, charts, JWT-in-cookies, mobile card tables, sidebar toggle
 Installer patches evilginx2 http_proxy.go so origin HTTP 429 is reported to the panel for proxy auto-rotate

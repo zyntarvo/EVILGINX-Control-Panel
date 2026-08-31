@@ -13,7 +13,7 @@
   &nbsp;
   <img src="https://img.shields.io/badge/Python-3-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
   &nbsp;
-  <img src="https://img.shields.io/badge/version-3.5.1-0ea5e9?style=for-the-badge" alt="3.5.1">
+  <img src="https://img.shields.io/badge/version-3.5.2-0ea5e9?style=for-the-badge" alt="3.5.2">
 </p>
 
 <p align="center"><b>Created by ZynTarvo</b> · <i>Nothing Is Impossible</i></p>
@@ -241,7 +241,7 @@ systemd manager so you are not SSH-ing just to restart a daemon.
 
 - Filters: **RUNNING** / **CUSTOM** / **ALL**
 - **+ New Service** — register your own unit
-- Per service: **Stop**, **Restart**, **Enable / Disable** on boot, **Logs**, **Live journal**, **Delete** (custom units)
+- Per service: **Stop**, **Restart**, autostart toggle icons, **Logs**, **Live journal**, **Show** (script path + **Modify**), **Delete** (custom units)
 - `evilginx-panel` is tagged **CUSTOM** — that is this web panel
 
 ### Live journal

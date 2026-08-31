@@ -232,6 +232,19 @@ tr:hover td{background:var(--accent-dim)}
   .card-label{font-size:10px}
   .card{padding:16px}
 }
+@media(min-width:769px){
+  #page-services .tbl-wrap{overflow-x:hidden;max-width:100%}
+  #page-services table{table-layout:auto;width:100%}
+  #page-services th,#page-services td{overflow:visible;text-overflow:clip;white-space:nowrap}
+  #page-services th:nth-child(1),#page-services td:nth-child(1){width:1%;text-align:left;overflow:visible}
+  #page-services th:nth-child(2),#page-services td:nth-child(2),
+  #page-services th:nth-child(3),#page-services td:nth-child(3),
+  #page-services th:nth-child(4),#page-services td:nth-child(4){width:1%}
+  #page-services th:nth-child(5),#page-services td:nth-child(5){width:auto;max-width:0;overflow:hidden;text-overflow:ellipsis}
+  #page-services th:nth-child(6),#page-services td:nth-child(6){width:1%;overflow:visible}
+  #page-services #svcBody .btn-group{flex-wrap:nowrap;gap:8px;justify-content:flex-end}
+  #page-services #svcBody .btn.sm{padding:7px 12px;flex:0 0 auto}
+}
 .tbl-loader-wrap{position:relative;min-height:220px}
 .sess-loader{position:absolute;inset:0;z-index:5;display:none;align-items:center;justify-content:center;flex-direction:column;gap:18px;background:rgba(10,14,23,0.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:10px}
 .sess-loader.show{display:flex;animation:pageIn 0.25s ease}
@@ -266,6 +279,11 @@ tr:hover td{background:var(--accent-dim)}
 .svc-dot.off{background:var(--red)}
 .log-view{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:var(--mono);font-size:12px;color:#fff;white-space:pre-wrap;word-break:break-all;max-height:420px;overflow:auto;line-height:1.55}
 .log-view.live{max-height:62vh;min-height:280px}
+.svc-path-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin:0 0 12px}
+.svc-path-box label{display:block;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:8px}
+.svc-path-box code{display:block;font-family:var(--mono);font-size:13px;color:#fff;word-break:break-all;line-height:1.5}
+.btn.sm .fa-toggle-on{color:var(--accent)}
+.btn.sm .fa-toggle-off{color:var(--text3)}
 .journal-live{display:inline-flex;align-items:center;gap:8px;margin-right:auto;color:var(--accent);font-size:12px;font-weight:700;letter-spacing:1.5px}
 .journal-live .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulseGlow 2s infinite}
 .h-banner{display:flex;align-items:center;justify-content:space-between;gap:20px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px 24px;margin-bottom:18px}
@@ -1259,7 +1277,7 @@ function feNewDir(){openModal('NEW FOLDER','<div class="field"><label>Folder nam
 async function feCreateDir(){var n=($('#feDirName').value||'').trim();if(!n||n.indexOf('/')>=0)return toast('Invalid name','err');var path=fePath.replace(/\/+$/,'')+'/'+n;const r=await api('/api/fs/mkdir',{method:'POST',body:JSON.stringify({path:path})});if(r.ok){closeModal();toast('Folder created');loadFiles()}else toast(r.error||'Error','err')}
 function feMakeService(){if(!feSel||feSel.isDir){toast('Select a file first','err');return}openNewService(feSel.path)}
 function filterServices(f,btn){document.querySelectorAll('[data-svc]').forEach(function(b){b.classList.remove('active')});if(btn)btn.classList.add('active');svcFilter=f;loadServices()}
-async function loadServices(){const ss=await api('/api/services?filter='+(svcFilter||'running'));var h='';(ss||[]).forEach(function(s){var on=s.active==='active';var en=s.enabled==='enabled';h+='<tr><td style="text-align:left"><strong style="color:var(--cyan)">'+esc(s.name)+'</strong>'+(s.custom?' <span class="badge on">CUSTOM</span>':'')+'</td><td><span class="svc-dot '+(on?'on':'off')+'"></span>'+(on?'<span class="badge on">RUNNING</span>':'<span class="badge off">'+esc(s.active||'inactive')+'</span>')+'</td><td>'+(en?'<span class="badge on">ENABLED</span>':'<span class="badge off">'+esc(s.enabled||'disabled')+'</span>')+'</td><td>'+esc(s.pid&&s.pid!=='0'?s.pid:'\u2014')+'</td><td>'+esc(s.description||'\u2014')+'</td><td><div class="btn-group">'+(on?'<button class="btn sm danger" onclick="svcAct(\''+s.name+'\',\'stop\')">Stop</button>':'<button class="btn sm fill" onclick="svcAct(\''+s.name+'\',\'start\')">Start</button>')+'<button class="btn sm" onclick="svcAct(\''+s.name+'\',\'restart\')"><i class="fa-solid fa-arrows-rotate"></i></button>'+(en?'<button class="btn sm" onclick="svcAct(\''+s.name+'\',\'disable\')">Disable</button>':'<button class="btn sm" onclick="svcAct(\''+s.name+'\',\'enable\')">Enable</button>')+'<button class="btn sm" title="Last logs" onclick="svcLogs(\''+s.name+'\')"><i class="fa-solid fa-scroll"></i></button><button class="btn sm cyan" title="Live journalctl -f" onclick="svcLiveLogs(\''+s.name+'\')"><i class="fa-solid fa-tower-broadcast"></i></button>'+(s.custom?'<button class="btn sm danger" onclick="svcDelete(\''+s.name+'\')"><i class="fa-solid fa-trash-can"></i></button>':'')+'</div></td></tr>'});if(!h)h='<tr><td colspan="6" style="text-align:center;color:var(--text3)">No services</td></tr>';$('#svcBody').innerHTML=h;$('#svcCount').textContent='Showing '+(ss||[]).length+' services ('+svcFilter+')'}
+async function loadServices(){const ss=await api('/api/services?filter='+(svcFilter||'running'));var h='';(ss||[]).forEach(function(s){var on=s.active==='active';var en=s.enabled==='enabled';h+='<tr><td style="text-align:left"><strong style="color:var(--cyan)">'+esc(s.name)+'</strong>'+(s.custom?' <span class="badge on">CUSTOM</span>':'')+'</td><td><span class="svc-dot '+(on?'on':'off')+'"></span>'+(on?'<span class="badge on">RUNNING</span>':'<span class="badge off">'+esc(s.active||'inactive')+'</span>')+'</td><td>'+(en?'<span class="badge on">ENABLED</span>':'<span class="badge off">'+esc(s.enabled||'disabled')+'</span>')+'</td><td>'+esc(s.pid&&s.pid!=='0'?s.pid:'\u2014')+'</td><td>'+esc(s.description||'\u2014')+'</td><td><div class="btn-group">'+(on?'<button class="btn sm danger" onclick="svcAct(\''+s.name+'\',\'stop\')">Stop</button>':'<button class="btn sm fill" onclick="svcAct(\''+s.name+'\',\'start\')">Start</button>')+'<button class="btn sm" onclick="svcAct(\''+s.name+'\',\'restart\')"><i class="fa-solid fa-arrows-rotate"></i></button>'+(en?'<button class="btn sm" title="Disable autostart" onclick="svcAct(\''+s.name+'\',\'disable\')"><i class="fa-solid fa-toggle-on"></i></button>':'<button class="btn sm" title="Enable autostart" onclick="svcAct(\''+s.name+'\',\'enable\')"><i class="fa-solid fa-toggle-off"></i></button>')+'<button class="btn sm" title="Last logs" onclick="svcLogs(\''+s.name+'\')"><i class="fa-solid fa-scroll"></i></button><button class="btn sm cyan" title="Live journalctl -f" onclick="svcLiveLogs(\''+s.name+'\')"><i class="fa-solid fa-tower-broadcast"></i></button><button class="btn sm" title="Show service file" onclick="svcShow(\''+s.name+'\')"><i class="fa-solid fa-eye"></i></button>'+(s.custom?'<button class="btn sm danger" onclick="svcDelete(\''+s.name+'\')"><i class="fa-solid fa-trash-can"></i></button>':'')+'</div></td></tr>'});if(!h)h='<tr><td colspan="6" style="text-align:center;color:var(--text3)">No services</td></tr>';$('#svcBody').innerHTML=h;$('#svcCount').textContent='Showing '+(ss||[]).length+' services ('+svcFilter+')'}
 async function svcAct(name,act){const r=await api('/api/services/'+encodeURIComponent(name)+'/'+act,{method:'POST',body:'{}'});if(r.error)toast(r.error,'err');else{toast(name+' '+act);loadServices()}}
 async function svcLogs(name){const r=await api('/api/services/'+encodeURIComponent(name)+'/logs');openModal('LOGS \u2014 '+name,'<div class="log-view">'+esc(r.logs||'(no logs)')+'</div>','<button class="btn cyan" onclick="svcLogs(\''+name+'\')"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button><button class="btn cyan" onclick="svcLiveLogs(\''+name+'\')"><i class="fa-solid fa-tower-broadcast"></i> LIVE</button><button class="btn" onclick="closeModal()">CLOSE</button>')}
 var _journalBound=false,_journalBuf='';
@@ -1285,6 +1303,22 @@ function svcLiveLogs(name){
   }
   socket.emit('journal_start',{unit:name});
 }
+async function svcShow(name){
+  const r=await api('/api/services/'+encodeURIComponent(name));
+  if(r.error)return toast(r.error,'err');
+  var file=r.exec_file||'';
+  var unit=r.path||'';
+  var cmd=r.exec_cmd||'';
+  var body='<div class="svc-path-box"><label>Service file</label><code>'+esc(file||'\u2014')+'</code></div>';
+  if(unit) body+='<div class="svc-path-box"><label>Unit file</label><code>'+esc(unit)+'</code></div>';
+  if(cmd) body+='<div class="svc-path-box"><label>ExecStart</label><code>'+esc(cmd)+'</code></div>';
+  var edit=file||unit;
+  var foot='';
+  if(edit) foot+='<button class="btn fill" onclick="svcModify(\''+encodeURIComponent(edit)+'\')"><i class="fa-solid fa-pen-to-square"></i> Modify</button>';
+  foot+='<button class="btn" onclick="closeModal()">CLOSE</button>';
+  openModal('SERVICE \u2014 '+name, body, foot);
+}
+function svcModify(encPath){feEdit(decodeURIComponent(encPath))}
 function svcDelete(name){openModal('DELETE SERVICE','<p style="color:#fff;margin-bottom:12px">Stop, disable and remove <strong style="color:var(--cyan)">'+esc(name)+'</strong>?</p><p style="color:var(--text3);font-size:13px">Only custom units in /etc/systemd/system/ can be deleted. The script file is kept.</p>','<button class="btn danger" onclick="doSvcDelete(\''+name+'\')">DELETE</button><button class="btn" onclick="closeModal()">CANCEL</button>')}
 async function doSvcDelete(name){await withBusy(typeof event!=='undefined'?event:null,'Deleting…',async()=>{const r=await api('/api/services/'+encodeURIComponent(name),{method:'DELETE'});closeModal();if(r.ok){toast('Deleted');loadServices()}else toast(r.error||'Error','err')})}
 function openNewService(preFile){openModal('NEW SERVICE','<div class="template-hint"><strong style="color:var(--accent)">i</strong> Creates a systemd unit: optional copy to <code>/usr/local/bin</code>, write service file, daemon-reload, enable, start.</div><div class="form-grid"><div class="field"><label>Service Name</label><input id="svName" placeholder="evilginx-cookie-bot"></div><div class="field"><label>Description</label><input id="svDesc" placeholder="Evilginx Cookie Bot Service"></div><div class="field" style="grid-column:1/-1"><label>Script File</label><input id="svFile" placeholder="/root/evilginx_cookie_bot.py" value="'+esc(preFile||'')+'"></div><div class="field"><label>Interpreter</label><select id="svInterp"><option value="auto">auto (.py / .sh / binary)</option><option value="python3">python3</option><option value="bash">bash</option><option value="exec">run file as-is</option></select></div><div class="field"><label>User</label><input id="svUser" value="root"></div><div class="field"><label>Working Directory</label><input id="svWork" placeholder="/root"></div><div class="field"></div></div><div style="display:flex;flex-direction:column;gap:12px;margin-top:8px"><label class="toggle-row"><input type="checkbox" id="svCopy" class="toggle-input" checked><span class="toggle-switch"></span><span class="toggle-label">Copy script to /usr/local/bin</span></label><label class="toggle-row"><input type="checkbox" id="svEnable" class="toggle-input" checked><span class="toggle-switch"></span><span class="toggle-label">Enable autostart</span></label><label class="toggle-row"><input type="checkbox" id="svStart" class="toggle-input" checked><span class="toggle-switch"></span><span class="toggle-label">Start now</span></label></div>','<button class="btn fill" onclick="createService()"><i class="fa-solid fa-gears"></i> CREATE & START</button><button class="btn" onclick="closeModal()">CANCEL</button>')}
