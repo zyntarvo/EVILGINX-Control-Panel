@@ -41,7 +41,7 @@ if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
     HERE = sys._MEIPASS
 PAYLOAD = os.path.join(HERE, "payload")
 PANEL_PORT = 8443
-PANEL_BUILD = "3.5.3"  # keep in sync with payload/app.py PANEL_VERSION
+PANEL_BUILD = "3.5.4"  # keep in sync with payload/app.py PANEL_VERSION
 GO_VER = "1.20"
 REMOTE_HOME_DEFAULT = "/root"
 REMOTE_EGX = "/root/evilginx2"
@@ -570,6 +570,7 @@ class Installer:
                 "pxRegionSearch", "pxDeployProgress", "--text3:#e2e8f0", "_pxIpLab",
                 "pxCarouselBtn", "proxy_live", "svcShow", "svcModify", "fa-toggle-on", "Show service file",
                 "Session Map", "dashClickPoint", "dash-z-reset",
+                "dashMapSearch", "dashMapCountry", "dashGoHit",
             ],
             os.path.join(PAYLOAD, "templates", "login.html"): [
                 "/static/logo.png", "favicon-32.png", "logo-mark", "ZynTarvo",

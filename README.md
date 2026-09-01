@@ -13,7 +13,7 @@
   &nbsp;
   <img src="https://img.shields.io/badge/Python-3-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
   &nbsp;
-  <img src="https://img.shields.io/badge/version-3.5.3-0ea5e9?style=for-the-badge" alt="3.5.3">
+  <img src="https://img.shields.io/badge/version-3.5.4-0ea5e9?style=for-the-badge" alt="3.5.4">
 </p>
 
 <p align="center"><b>Created by ZynTarvo</b> · <i>Nothing Is Impossible</i></p>
@@ -29,7 +29,7 @@ Built for red teamers, pentesters, and anyone who wants Evilginx running in minu
 - Auto-install on Ubuntu
 - Web C2 panel with login
 - Manage phishlets, lures and captured sessions from the browser
-- **Session Map** on Dashboard — unique session IPs on a dark world map; click a marker to zoom country → district → street
+- **Session Map** on Dashboard — unique session IPs on a dark world map; search by ID/IP, pick a country, click a marker to zoom country → district → street → max
 - **Proxy Manager** — deploy Linode proxies in a couple of clicks, assign them to phishlets, watch live traffic
 - E-Terminal (Evilginx CLI) and a full Linux shell in the browser
 - Live host Health (CPU, RAM, disk, traffic) and per-service journalctl follow
@@ -107,14 +107,23 @@ Home screen. At a glance:
 | **Session Breakdown** | Donut chart of JWT vs cookies vs empty |
 | **Recent JWT Sessions** | Latest successful JWT rows with View / Delete |
 
-<p align="center"><img src="docs/screenshots/26-session-map.png" alt="Session Map" width="900"></p>
+<p align="center"><img src="docs/screenshots/26-session-map-world.png" alt="Session Map — world view" width="900"></p>
 
-**Session Map** (v3.5.3) — every captured session IP as a marker, same data as the Sessions table.
+<p align="center"><img src="docs/screenshots/27-session-map-popup.png" alt="Session Map — marker popup" width="900"></p>
 
-- **Filters:** ALL / WITH JWT / WITH TOKENS / EMPTY
-- **Markers:** mint = cookies/tokens, purple = JWT, red = empty. A number on the dot means several sessions from that IP
-- **Click a marker** to fly in three steps: country → district → street
-- **+ / −** step those same zoom levels; the **globe** button restores the default world view (same as a page reload)
+<p align="center"><img src="docs/screenshots/28-session-map-search.png" alt="Session Map — live search" width="900"></p>
+
+<p align="center"><img src="docs/screenshots/29-session-map-country.png" alt="Session Map — country dropdown" width="900"></p>
+
+**Session Map** (v3.5.4) — every captured session IP as a marker, same data as the Sessions table.
+
+- **Filters:** ALL / WITH JWT / WITH TOKENS / EMPTY. Search and the country list follow the active filter
+- **Markers:** mint = cookies/tokens, purple = JWT, red = empty. A **solid** dot is one session from that IP; a **ring** (larger marker) means several sessions share the IP
+- **Live search (ID or IP):** type as you go, pick a hit from the list (or Enter). The map flies to **max zoom** and opens the popup
+- **Country dropdown:** lists countries with session counts; picking one fits that country on the map. Empty value restores the world view
+- **Click a marker** to fly in four steps: country → district → street → **max zoom** (building / max tile level)
+- **Popup:** IP, country, region, city, street (from the map tiles after street zoom), session IDs, JWT / tokens / empty
+- **+ / −** step those same zoom levels; the **globe** button and the search **X** restore the default world view (same as a page reload)
 - Geo is a **local DB-IP City Lite** database on the C2 box plus an IP cache. No Mapbox key, no live geo HTTP API
 
 ### Phishlets

