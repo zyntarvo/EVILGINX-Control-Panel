@@ -945,12 +945,20 @@ function dashCcName(cc){
   }
   try{return (dashCcNames&&dashCcNames.of(cc))||cc}catch(e){return cc}
 }
+function dashFiltN(p){
+  if(dashMapFilter==='jwt') return p.jwt||0;
+  if(dashMapFilter==='tokens') return p.tokens||0;
+  if(dashMapFilter==='empty') return p.empty||0;
+  return p.n||1;
+}
 function dashCountryRows(){
   const counts={};
   dashMapPts.filter(dashMapPass).forEach(p=>{
     const cc=(p.cc||'').toUpperCase();
     if(cc.length!==2)return;
-    counts[cc]=(counts[cc]||0)+(p.n||1);
+    const n=dashFiltN(p);
+    if(n<1)return;
+    counts[cc]=(counts[cc]||0)+n;
   });
   return Object.keys(counts).sort((a,b)=>dashCcName(a).localeCompare(dashCcName(b),'en'))
     .map(cc=>({cc,n:counts[cc],name:dashCcName(cc)}));
@@ -1006,7 +1014,8 @@ function dashSearchRows(q){
     });
     if(ip.toLowerCase().indexOf(q)>=0 && !seenIp.has(ip)){
       seenIp.add(ip);
-      out.push({label:ip,sub:(where||'IP')+(p.n>1?' · '+p.n+' sessions':''),id:null,ip:ip,lat:p.lat,lon:p.lon});
+      const nn=dashFiltN(p);
+      out.push({label:ip,sub:(where||'IP')+(nn>1?' · '+nn+' sessions':''),id:null,ip:ip,lat:p.lat,lon:p.lon});
     }
   });
   out.sort((a,b)=>{
