@@ -13,7 +13,7 @@
   &nbsp;
   <img src="https://img.shields.io/badge/Python-3-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
   &nbsp;
-  <img src="https://img.shields.io/badge/version-3.5.4-0ea5e9?style=for-the-badge" alt="3.5.4">
+  <img src="https://img.shields.io/badge/version-3.5.5-0ea5e9?style=for-the-badge" alt="3.5.5">
 </p>
 
 <p align="center"><b>Created by ZynTarvo</b> · <i>Nothing Is Impossible</i></p>
@@ -30,7 +30,7 @@ Built for red teamers, pentesters, and anyone who wants Evilginx running in minu
 - Web C2 panel with login
 - Manage phishlets, lures and captured sessions from the browser
 - **Session Map** on Dashboard — unique session IPs on a dark world map; search by ID/IP, pick a country, click a marker to zoom country → district → street → max
-- **Proxy Manager** — deploy Linode proxies in a couple of clicks, assign them to phishlets, watch live traffic
+- **Proxy Manager** — deploy Linode proxies or paste your own (`ip:port@login:pass`), assign them to phishlets, watch live traffic
 - E-Terminal (Evilginx CLI) and a full Linux shell in the browser
 - Live host Health (CPU, RAM, disk, traffic) and per-service journalctl follow
 
@@ -197,11 +197,27 @@ Outbound proxy fleet on Linode, run from the panel — no SSH, no cloud console.
 
 The progress bar covers the whole job, not just VM create: Linode boot → SSH → cloud-init finished → apt idle → **5 second settle** → Squid on port **50100** with auth. `100%` means the proxy actually answers. Failed installs are **kept** (Repair / Destroy) — the panel never auto-deletes a Linode.
 
+**Custom proxies**
+
+<p align="center"><img src="docs/screenshots/30-proxy-custom.png" alt="Add Custom Proxies" width="900"></p>
+
+<p align="center"><img src="docs/screenshots/31-proxy-custom-protocol.png" alt="Custom proxy protocol HTTP HTTPS SOCKS5 SOCKS5H" width="900"></p>
+
+Paste your own hops — no Linode required. Same assign list, cards, charts, and carousel as the Nanode fleet.
+
+- One proxy per line: **`ip:port@login:pass`** (password may contain `@`)
+- Also accepted: `user:pass@ip:port`, `ip:port:user:pass`, `ip:port` (no auth)
+- **PROTOCOL** applies to the whole paste. Evilginx types: **HTTP**, **HTTPS**, **SOCKS5**, **SOCKS5H**
+- **Add Proxies** — bulk add. Duplicates are skipped
+- Custom rows show a purple **custom** badge (Linode stays a cloud icon) so you can tell them apart
+- Tick them on a phishlet and **Assign** — they join the pool. If **Carousel** is on for that phishlet, custom hops rotate with Linode hops
+- Instance card: IP, geo region, endpoint, protocol, assigned phishlets, sidecar traffic. **Remove** deletes the panel record only (the remote proxy is not touched). Start / Stop / Restart stay Linode-only
+
 **Assign to a phishlet**
 
 <p align="center"><img src="docs/screenshots/25-proxy-carousel.png" alt="Assign proxies, Carousel toggle" width="720"></p>
 
-- Choose the phishlet, tick proxy **IP addresses**, click **Assign**
+- Choose the phishlet, tick proxy **IP addresses** (Linode and custom), click **Assign**
 - **Detach** unbinds a proxy from that phishlet (the VM stays; traffic history stays on the charts)
 - **Current assignments** shows every phishlet → IP chip (active hop marked with ●)
 

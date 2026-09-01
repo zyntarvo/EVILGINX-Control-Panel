@@ -8,7 +8,9 @@ import random
 import re
 import secrets
 import socket
+import ssl
 import string
+import struct
 import threading
 import time
 import urllib.error
@@ -17,6 +19,7 @@ import urllib.request
 LINODE_API = "https://api.linode.com/v4"
 SIDECAR_PORT = 18765
 SQUID_PORT = 50100
+CUSTOM_TYPES = ("http", "https", "socks5", "socks5h")
 HIT_WINDOW = 15 * 60
 HIT_LIMIT = 3
 TAG = "egx-panel-proxy"
@@ -398,6 +401,174 @@ def _as_id(x):
         return x
 
 
+def _is_custom(p):
+    if not p:
+        return False
+    if (p.get("kind") or "") == "custom":
+        return True
+    try:
+        return int(p.get("id")) < 0
+    except Exception:
+        return False
+
+
+def _is_custom_id(px_id):
+    try:
+        return int(px_id) < 0
+    except Exception:
+        return False
+
+
+def _next_custom_id(s):
+    ids = []
+    for p in s.get("proxies") or []:
+        try:
+            i = int(p.get("id"))
+        except Exception:
+            continue
+        if i < 0:
+            ids.append(i)
+    return (min(ids) - 1) if ids else -1
+
+
+def _parse_one_proxy_line(line):
+    """Accept ip:port@login:pass, user:pass@ip:port, ip:port:login:pass, ip:port."""
+    s = (line or "").strip()
+    if not s:
+        raise ValueError("empty")
+    s = re.sub(r"^(https?|socks5h?)://", "", s, flags=re.I)
+    user, password = "", ""
+    m = re.match(
+        r"^(\d{1,3}(?:\.\d{1,3}){3}):(\d{1,5})@([^:@\s]+):(.*)$",
+        s,
+    )
+    if m:
+        host, port_s, user, password = m.group(1), m.group(2), m.group(3), m.group(4)
+        port = int(port_s)
+        if not (1 <= port <= 65535):
+            raise ValueError("bad port")
+        return {"ipv4": host, "port": port, "user": user, "password": password}
+    if "@" in s:
+        left, right = s.split("@", 1)
+        if re.match(r"^\d{1,3}(?:\.\d{1,3}){3}:\d{1,5}$", left):
+            host, port_s = left.rsplit(":", 1)
+            port = int(port_s)
+            if ":" in right:
+                user, password = right.split(":", 1)
+            else:
+                user, password = right, ""
+            if not (1 <= port <= 65535):
+                raise ValueError("bad port")
+            return {"ipv4": host, "port": port, "user": user, "password": password}
+        hostport = right
+        if ":" in left:
+            user, password = left.split(":", 1)
+        else:
+            user, password = left, ""
+        host, port_s = hostport.rsplit(":", 1)
+        port = int(port_s)
+        if not (1 <= port <= 65535):
+            raise ValueError("bad port")
+        return {"ipv4": host, "port": port, "user": user, "password": password}
+    parts = s.split(":")
+    if len(parts) == 2:
+        host, port = parts[0], int(parts[1])
+        if not (1 <= port <= 65535):
+            raise ValueError("bad port")
+        return {"ipv4": host, "port": port, "user": "", "password": ""}
+    if len(parts) >= 4:
+        host, port_s, user = parts[0], parts[1], parts[2]
+        password = ":".join(parts[3:])
+        port = int(port_s)
+        if not (1 <= port <= 65535):
+            raise ValueError("bad port")
+        return {"ipv4": host, "port": port, "user": user, "password": password}
+    raise ValueError("use ip:port@login:pass")
+
+
+def parse_custom_lines(text, ptype="http"):
+    ptype = (ptype or "http").strip().lower()
+    if ptype not in CUSTOM_TYPES:
+        raise RuntimeError("proxy type must be http, https, socks5 or socks5h")
+    recs, errors = [], []
+    for n, raw in enumerate((text or "").splitlines(), 1):
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        try:
+            one = _parse_one_proxy_line(line)
+        except (ValueError, TypeError) as e:
+            errors.append("line %s: %s" % (n, e))
+            continue
+        recs.append({
+            "kind": "custom",
+            "proxy_type": ptype,
+            "ipv4": one["ipv4"],
+            "port": int(one["port"]),
+            "squid_user": one.get("user") or "",
+            "squid_pass": one.get("password") or "",
+            "status": "active",
+        })
+    return recs, errors
+
+
+def add_custom_proxies(recs):
+    """Insert custom hops into the same proxies[] list Linode uses. Negative ids."""
+    added, skipped = 0, 0
+    with _lock:
+        s = load()
+        existing = set()
+        for p in s.get("proxies") or []:
+            existing.add((
+                p.get("ipv4") or "",
+                int(p.get("port") or 0),
+                p.get("squid_user") or "",
+                (p.get("proxy_type") or "http").lower(),
+            ))
+        nid = _next_custom_id(s)
+        proxies = list(s.get("proxies") or [])
+        for rec in recs or []:
+            key = (
+                rec.get("ipv4") or "",
+                int(rec.get("port") or 0),
+                rec.get("squid_user") or "",
+                (rec.get("proxy_type") or "http").lower(),
+            )
+            if not key[0] or key[1] < 1:
+                skipped += 1
+                continue
+            if key in existing:
+                skipped += 1
+                continue
+            ip = rec.get("ipv4") or ""
+            port = int(rec.get("port"))
+            label = "custom-%s-%s" % (ip.replace(".", "-"), port)
+            proxies.append({
+                "id": nid,
+                "kind": "custom",
+                "label": label,
+                "region": rec.get("geo_cc") or "",
+                "ipv4": ip,
+                "port": port,
+                "proxy_type": rec.get("proxy_type") or "http",
+                "squid_user": rec.get("squid_user") or "",
+                "squid_pass": rec.get("squid_pass") or "",
+                "status": "active",
+                "created": int(time.time()),
+                "geo_city": rec.get("geo_city") or "",
+                "geo_cc": rec.get("geo_cc") or "",
+                "geo_region": rec.get("geo_region") or "",
+            })
+            existing.add(key)
+            nid -= 1
+            added += 1
+        s["proxies"] = proxies
+        save(s)
+    if added:
+        ensure_evilginx_sidecar_proxy()
+    return added, skipped, public_state()
+
+
 def _track_tunnel(px_id, *socks):
     rec = {"px_id": _as_id(px_id) if px_id is not None else None, "socks": socks}
     with _tunnels_lock:
@@ -661,7 +832,14 @@ def public_state():
         q.pop("squid_pass", None)
         q.pop("root_pass", None)
         q["squid_user"] = p.get("squid_user") or ""
-        q["endpoint"] = f"{p.get('ipv4')}:{SQUID_PORT}" if p.get("ipv4") else ""
+        q["kind"] = p.get("kind") or "linode"
+        q["proxy_type"] = p.get("proxy_type") or "http"
+        q["geo_city"] = p.get("geo_city") or ""
+        q["geo_cc"] = p.get("geo_cc") or ""
+        q["geo_region"] = p.get("geo_region") or ""
+        port = int(p.get("port") or SQUID_PORT)
+        q["port"] = port
+        q["endpoint"] = f"{p.get('ipv4')}:{port}" if p.get("ipv4") else ""
         q["ready"] = p.get("status") == "active"
         pid = _as_id(p.get("id"))
         q["id"] = pid
@@ -701,6 +879,8 @@ def live_snapshot():
             "ipv4": p.get("ipv4") or "",
             "label": p.get("label") or "",
             "status": p.get("status") or "",
+            "kind": p.get("kind") or "linode",
+            "proxy_type": p.get("proxy_type") or "http",
         })
     return {
         "used_by": used,
@@ -778,30 +958,31 @@ def detach(phishlet, linode_ids):
 def destroy_instance(linode_id):
     """User-clicked destroy only. Never called from deploy/health checks."""
     s = load()
-    linode_id = int(linode_id)
-    tagged = False
-    for p in s.get("proxies") or []:
-        if p.get("id") == linode_id:
-            tagged = True
-            break
-    if not tagged:
+    lid = _as_id(linode_id)
+    rec = next((p for p in s.get("proxies") or [] if _as_id(p.get("id")) == lid), None)
+    if not rec:
         raise RuntimeError("refusing to delete: instance is not a panel proxy")
-    linode("DELETE", f"/linode/instances/{linode_id}")
-    s["proxies"] = [p for p in s.get("proxies") or [] if p.get("id") != linode_id]
+    custom = _is_custom(rec)
+    if not custom:
+        linode("DELETE", f"/linode/instances/{lid}")
+    s["proxies"] = [p for p in s.get("proxies") or [] if _as_id(p.get("id")) != lid]
     for pl, ids in list((s.get("assignments") or {}).items()):
-        s["assignments"][pl] = [i for i in ids if i != linode_id]
-        if (s.get("current") or {}).get(pl) == linode_id:
+        s["assignments"][pl] = [i for i in ids if _as_id(i) != lid]
+        if _as_id((s.get("current") or {}).get(pl)) == lid:
             s["current"][pl] = (s["assignments"][pl][0] if s["assignments"][pl] else None)
     save(s)
-    drop_proxy_tunnels([linode_id])
+    drop_proxy_tunnels([lid])
     if _notify:
-        _notify("Proxy destroyed", f"Linode {linode_id} deleted by user.", "info")
+        if custom:
+            _notify("Custom proxy removed", f"{rec.get('ipv4') or lid} deleted by user.", "info")
+        else:
+            _notify("Proxy destroyed", f"Linode {lid} deleted by user.", "info")
     return public_state()
 
 
 def _known_proxy(linode_id):
-    lid = int(linode_id)
-    rec = next((p for p in (load().get("proxies") or []) if p.get("id") == lid), None)
+    lid = _as_id(linode_id)
+    rec = next((p for p in (load().get("proxies") or []) if _as_id(p.get("id")) == lid), None)
     if not rec:
         raise RuntimeError("instance is not a panel proxy")
     return rec
@@ -810,6 +991,8 @@ def _known_proxy(linode_id):
 def power_instance(linode_id, action):
     """Start / stop / restart a panel proxy Linode. Never deletes it."""
     rec = _known_proxy(linode_id)
+    if _is_custom(rec):
+        raise RuntimeError("custom proxy has no start/stop/restart")
     lid = rec["id"]
     action = (action or "").strip().lower()
     if action not in ("start", "stop", "restart"):
@@ -883,6 +1066,8 @@ def _power_followup(lid, action, label):
 
 
 def instance_metrics(linode_id, with_stats=True):
+    if _is_custom_id(linode_id):
+        return {"id": _as_id(linode_id)}
     try:
         st = linode("GET", f"/linode/instances/{linode_id}")
         stats = {}
@@ -1148,6 +1333,8 @@ def repair_instance(linode_id):
     rec = next((p for p in s.get("proxies") or [] if _as_id(p.get("id")) == _as_id(linode_id)), None)
     if not rec:
         raise RuntimeError("instance is not a panel proxy")
+    if _is_custom(rec):
+        raise RuntimeError("custom proxy cannot be repaired")
     allow_ip = public_ipv4()
     lid = rec["id"]
     ip = rec.get("ipv4") or ""
@@ -1188,6 +1375,111 @@ def repair_instance(linode_id):
 def repair_async(linode_id):
     t = threading.Thread(target=repair_instance, args=(int(linode_id),), daemon=True)
     t.start()
+
+
+def _recv_exact(sock, n):
+    buf = b""
+    while len(buf) < n:
+        ch = sock.recv(n - len(buf))
+        if not ch:
+            raise RuntimeError("proxy closed")
+        buf += ch
+    return buf
+
+
+def _http_connect_via(sock, host, port, user, password):
+    hdr = f"CONNECT {host}:{port} HTTP/1.1\r\nHost: {host}:{port}\r\n"
+    if user or password:
+        token = base64.b64encode(f"{user}:{password}".encode()).decode()
+        hdr += f"Proxy-Authorization: Basic {token}\r\n"
+    sock.sendall((hdr + "\r\n").encode())
+    rbuf = b""
+    sock.settimeout(15)
+    while b"\r\n\r\n" not in rbuf:
+        ch = sock.recv(4096)
+        if not ch:
+            break
+        rbuf += ch
+    if b" 200" not in rbuf.split(b"\r\n", 1)[0]:
+        raise RuntimeError("proxy CONNECT failed")
+
+
+def _socks5_connect(sock, host, port, user, password, remote_dns):
+    if user or password:
+        sock.sendall(b"\x05\x02\x00\x02")
+    else:
+        sock.sendall(b"\x05\x01\x00")
+    greet = _recv_exact(sock, 2)
+    if greet[0] != 5:
+        raise RuntimeError("not SOCKS5")
+    method = greet[1]
+    if method == 2:
+        u = (user or "").encode("utf-8")[:255]
+        p = (password or "").encode("utf-8")[:255]
+        sock.sendall(b"\x01" + bytes([len(u)]) + u + bytes([len(p)]) + p)
+        auth = _recv_exact(sock, 2)
+        if auth[1] != 0:
+            raise RuntimeError("SOCKS5 auth failed")
+    elif method != 0:
+        raise RuntimeError("SOCKS5 method rejected")
+    dst_port = struct.pack("!H", int(port))
+    if remote_dns:
+        hb = host.encode("idna")[:255]
+        req = b"\x05\x01\x00\x03" + bytes([len(hb)]) + hb + dst_port
+    else:
+        try:
+            packed = socket.inet_aton(host)
+            req = b"\x05\x01\x00\x01" + packed + dst_port
+        except OSError:
+            info = socket.getaddrinfo(host, port, socket.AF_UNSPEC, socket.SOCK_STREAM)
+            fam, _, _, _, sa = info[0]
+            if fam == socket.AF_INET6:
+                req = b"\x05\x01\x00\x04" + socket.inet_pton(socket.AF_INET6, sa[0]) + dst_port
+            else:
+                req = b"\x05\x01\x00\x01" + socket.inet_aton(sa[0]) + dst_port
+    sock.sendall(req)
+    head = _recv_exact(sock, 4)
+    if head[0] != 5 or head[1] != 0:
+        raise RuntimeError("SOCKS5 connect failed")
+    atyp = head[3]
+    if atyp == 1:
+        _recv_exact(sock, 4 + 2)
+    elif atyp == 4:
+        _recv_exact(sock, 16 + 2)
+    elif atyp == 3:
+        ln = _recv_exact(sock, 1)[0]
+        _recv_exact(sock, ln + 2)
+    else:
+        raise RuntimeError("SOCKS5 bad address")
+
+
+def _upstream_connect(px, host, port):
+    """Open a tunnel through a Linode Squid hop or a custom http/https/socks proxy."""
+    ip = px.get("ipv4") or ""
+    pport = int(px.get("port") or SQUID_PORT)
+    user = px.get("squid_user") or ""
+    password = px.get("squid_pass") or ""
+    ptype = (px.get("proxy_type") or "http").strip().lower()
+    if not _is_custom(px):
+        ptype = "http"
+    remote = socket.create_connection((ip, pport), 12)
+    remote.settimeout(15)
+    try:
+        if ptype == "https":
+            ctx = ssl._create_unverified_context()
+            remote = ctx.wrap_socket(remote, server_hostname=ip)
+            _http_connect_via(remote, host, port, user, password)
+        elif ptype in ("socks5", "socks5h"):
+            _socks5_connect(remote, host, port, user, password, remote_dns=(ptype == "socks5h"))
+        else:
+            _http_connect_via(remote, host, port, user, password)
+    except Exception:
+        try:
+            remote.close()
+        except Exception:
+            pass
+        raise
+    return remote
 
 
 class _Sidecar(threading.Thread):
@@ -1237,19 +1529,9 @@ class _Sidecar(threading.Thread):
             px_id = (px or {}).get("id")
             track = None
             if px and px.get("ipv4"):
-                remote = socket.create_connection((px["ipv4"], int(px.get("port") or SQUID_PORT)), 12)
-                token = base64.b64encode(f"{px.get('squid_user','')}:{px.get('squid_pass','')}".encode()).decode()
-                remote.sendall(
-                    f"CONNECT {host}:{port} HTTP/1.1\r\nHost: {host}:{port}\r\nProxy-Authorization: Basic {token}\r\n\r\n".encode()
-                )
-                rbuf = b""
-                remote.settimeout(15)
-                while b"\r\n\r\n" not in rbuf:
-                    ch = remote.recv(4096)
-                    if not ch:
-                        break
-                    rbuf += ch
-                if b" 200" not in rbuf.split(b"\r\n", 1)[0]:
+                try:
+                    remote = _upstream_connect(px, host, port)
+                except Exception:
                     client.sendall(b"HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\n\r\n")
                     return
                 client.sendall(b"HTTP/1.1 200 Connection Established\r\n\r\n")

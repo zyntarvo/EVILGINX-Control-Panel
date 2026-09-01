@@ -367,6 +367,7 @@ tr:hover td{background:var(--accent-dim)}
 .px-connected{display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.18);border-radius:10px;margin-bottom:20px;font-size:13px;color:var(--accent);font-weight:600}
 .px-connected i{font-size:16px}
 .px-top-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px;align-items:stretch}
+.px-left-stack{display:flex;flex-direction:column;gap:16px;min-width:0}
 @media(max-width:1100px){.px-top-grid{grid-template-columns:1fr}}
 .px-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;min-width:0;display:flex;flex-direction:column}
 .px-card .sec-title{margin-bottom:14px;padding-bottom:10px}
@@ -419,7 +420,8 @@ tr:hover td{background:var(--accent-dim)}
 .px-skel .sh.sm{width:40%;height:10px}
 @keyframes pxShimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
 .px-tile-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.px-tile-label{font-size:14px;font-weight:600;color:var(--text);font-family:var(--mono)}
+.px-tile-label{font-size:14px;font-weight:600;color:var(--text);font-family:var(--mono);display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
+.px-tile-actions.custom-only{grid-template-columns:1fr}
 .px-badge{padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase}
 .px-badge.active{background:rgba(0,255,136,0.12);color:var(--accent)}
 .px-badge.provisioning,.px-badge.installing,.px-badge.booting,.px-badge.rebooting{background:rgba(245,158,11,0.12);color:var(--orange)}
@@ -458,6 +460,16 @@ tr:hover td{background:var(--accent-dim)}
 .px-assign-checks{display:flex;flex-direction:column;gap:8px;margin:12px 0;max-height:140px;overflow-y:auto}
 .px-assign-check{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text2)}
 .px-assign-check input{accent-color:var(--accent)}
+.px-kind-ico{width:16px;text-align:center;color:var(--text3);font-size:12px;flex-shrink:0}
+.px-kind-ico.custom{color:#a78bfa}
+.px-kind-tag{display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;background:rgba(167,139,250,.14);color:#c4b5fd;border:1px solid rgba(167,139,250,.28);vertical-align:middle}
+.px-tile.custom{border-color:rgba(167,139,250,0.32)}
+.px-tile.custom:hover{border-color:rgba(167,139,250,0.55)}
+.px-custom-ta{width:100%;min-height:84px;resize:vertical;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:#fff;font-family:var(--mono);font-size:12px;padding:10px 12px;line-height:1.45;box-sizing:border-box}
+.px-custom-ta:focus{outline:none;border-color:var(--accent)}
+.px-custom-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:12px}
+.px-custom-row .field{margin:0;flex:0 0 160px}
+.px-custom-hint{font-size:12px;color:var(--text3);margin:0 0 10px;line-height:1.45}
 .px-cur-assign{margin-top:14px;padding:14px;background:var(--bg);border-radius:10px;border:1px solid var(--border)}
 .px-cur-assign h4{font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
 .px-cur-assign .row{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;padding:6px 0;color:var(--text2);flex-wrap:wrap}
@@ -792,9 +804,9 @@ tr:hover td{background:var(--accent-dim)}
     </div>
   </div>
   <div id="pxMainPanel" style="display:none">
-    <div class="px-connected"><i class="fa-solid fa-circle-check"></i> Linode connected — Evilginx IP: <span id="pxAllowIp" style="font-family:var(--mono);margin-left:4px"></span><button class="btn sm" style="margin-left:auto" onclick="pxDisconnect()"><i class="fa-solid fa-right-from-bracket"></i> Disconnect</button></div>
+    <div class="px-connected" id="pxConnectedBar"><i class="fa-solid fa-circle-check"></i> Linode connected — Evilginx IP: <span id="pxAllowIp" style="font-family:var(--mono);margin-left:4px"></span><button class="btn sm" style="margin-left:auto" onclick="pxDisconnect()"><i class="fa-solid fa-right-from-bracket"></i> Disconnect</button></div>
     <div class="px-top-grid">
-      <div class="px-card">
+      <div class="px-card" id="pxLinodeCard">
         <div class="sec-title"><i class="fa-solid fa-rocket"></i> Deploy Proxy Servers</div>
         <div class="px-deploy-row">
           <div class="field"><label>SERVERS</label><input id="pxCount" type="number" min="1" value="1"></div>
@@ -827,6 +839,22 @@ tr:hover td{background:var(--accent-dim)}
         </div>
         <div class="px-assign-checks" id="pxAssignChecks"></div>
         <div class="px-cur-assign" id="pxCurAssign"></div>
+      </div>
+    </div>
+    <div class="px-card" id="pxCustomCard" style="margin-bottom:22px">
+      <div class="sec-title"><i class="fa-solid fa-user-gear"></i> Add Custom Proxies</div>
+      <p class="px-custom-hint">One per line: <span style="font-family:var(--mono);color:var(--text)">ip:port@login:pass</span>. Protocol applies to the whole paste. Evilginx types: HTTP, HTTPS, SOCKS5, SOCKS5H.</p>
+      <textarea id="pxCustomText" class="px-custom-ta" placeholder="38.87.65.114:50100@user:password&#10;1.2.3.4:1080@user:password"></textarea>
+      <div class="px-custom-row">
+        <div class="field"><label>PROTOCOL</label>
+          <select id="pxCustomType">
+            <option value="http">HTTP</option>
+            <option value="https">HTTPS</option>
+            <option value="socks5">SOCKS5</option>
+            <option value="socks5h">SOCKS5H</option>
+          </select>
+        </div>
+        <button class="btn fill" id="pxCustomAddBtn" onclick="pxCustomAdd()"><i class="fa-solid fa-plus"></i> Add Proxies</button>
       </div>
     </div>
     <div class="px-chart-card" id="pxTrafficCard">
@@ -1729,9 +1757,12 @@ async function loadProxy(){
   clearInterval(_pxPollId);clearInterval(_pxRefreshId);
   try{
     const k=await api('/api/proxy/key?_='+Date.now());
-    if(!k.configured){$('#pxKeyPanel').style.display='';$('#pxMainPanel').style.display='none';return}
-    $('#pxKeyPanel').style.display='none';$('#pxMainPanel').style.display='';
-    $('#pxAllowIp').textContent=k.allow_ip||'—';
+    const on=!!k.configured;
+    $('#pxKeyPanel').style.display=on?'none':'';
+    $('#pxMainPanel').style.display='';
+    const bar=$('#pxConnectedBar');if(bar)bar.style.display=on?'':'none';
+    const lin=$('#pxLinodeCard');if(lin)lin.style.display=on?'':'none';
+    if(on) $('#pxAllowIp').textContent=k.allow_ip||'—';
     _pxSeen=new Set();
     _pxChartCharge=true;
     _pxShowSkel(3);
@@ -1739,6 +1770,7 @@ async function loadProxy(){
     await Promise.all([
       _pxRefreshState(),
       (async()=>{
+        if(!on)return;
         try{
           const rr=await api('/api/proxy/regions?_='+Date.now());
           if(rr && !rr.error) _pxRegions=Array.isArray(rr)?rr:[];
@@ -1766,9 +1798,8 @@ async function doPxDisconnect(){await withBusy(typeof event!=='undefined'?event:
   clearInterval(_pxPollId);_pxPollId=null;
   _pxLastSt=null;
   const inp=$('#pxApiKey');if(inp)inp.value='';
-  $('#pxMainPanel').style.display='none';
-  $('#pxKeyPanel').style.display='';
   toast('Disconnected');
+  loadProxy();
 })}
 function pxRegionLine(r){
   const cc=(r.country||'').toUpperCase();
@@ -2112,6 +2143,25 @@ function _pxTrafficMatrix(st){
   return {proxies, phishlets, rows, totalBytes, totalHits, useBytes:totalBytes>0};
 }
 function _pxIpLab(p){return (p.ipv4||p.label||('px-'+p.id))}
+function _pxIsCustom(p){return !!(p&&(p.kind==='custom'||Number(p.id)<0))}
+function _pxKindIco(p){
+  if(_pxIsCustom(p)) return '<i class="fa-solid fa-user-gear px-kind-ico custom" title="Custom proxy"></i>';
+  return '<i class="fa-solid fa-cloud px-kind-ico" title="Linode proxy"></i>';
+}
+async function pxCustomAdd(){
+  const text=($('#pxCustomText').value||'').trim();
+  const type=$('#pxCustomType').value||'http';
+  if(!text)return toast('Paste ip:port@login:pass','err');
+  await withBusy(typeof event!=='undefined'?event:null,'Adding…',async()=>{
+    const r=await api('/api/proxy/custom',{method:'POST',body:JSON.stringify({text,type})});
+    if(r.error){toast(r.error,'err');return}
+    const n=r.added||0, sk=r.skipped||0;
+    const err=(r.errors||[]).slice(0,3).join('; ');
+    if(n) toast('Added '+n+' custom prox'+(n===1?'y':'ies')+(sk?' · skipped '+sk:''));
+    else toast(err||('Nothing added'+(sk?' · '+sk+' duplicate(s)':'')), n?'ok':'err');
+    if(n){$('#pxCustomText').value='';_pxRefreshState()}
+  });
+}
 function _renderPxTraffic(st){
   const card=$('#pxTrafficCard');
   if(!card)return;
@@ -2196,20 +2246,32 @@ function _renderProxyGrid(st){
   const liveIds=new Set(proxies.map(p=>p.id));
   [..._pxSeen].forEach(id=>{if(!liveIds.has(id))_pxSeen.delete(id)});
   let h='';proxies.forEach((p,idx)=>{
+    const custom=_pxIsCustom(p);
     const badge=p.status||'unknown';
     const cpu=typeof p.cpu==='number'?p.cpu.toFixed(1)+'%':'—';
     const fresh=!_pxSeen.has(p.id);
     _pxSeen.add(p.id);
-    const reg=pxRegionMeta(p.region);
-    h+='<div class="px-tile'+(fresh?' px-in':'')+'" data-px-id="'+p.id+'" style="animation-delay:'+(fresh?Math.min(idx,6)*0.06:0)+'s">';
-    h+='<div class="px-tile-head"><span class="px-tile-label">'+esc(p.label||'proxy-'+p.id)+'</span><span class="px-badge '+esc(badge)+'">'+esc(badge)+'</span></div>';
+    const reg=custom?{country:p.geo_cc||'',city:p.geo_city||p.geo_region||p.region||''}:pxRegionMeta(p.region);
+    h+='<div class="px-tile'+(custom?' custom':'')+(fresh?' px-in':'')+'" data-px-id="'+p.id+'" style="animation-delay:'+(fresh?Math.min(idx,6)*0.06:0)+'s">';
+    h+='<div class="px-tile-head"><span class="px-tile-label">'+_pxKindIco(p)+' '+esc(p.label||'proxy-'+p.id)+(custom?'<span class="px-kind-tag">custom</span>':'')+'</span><span class="px-badge '+esc(badge)+'">'+esc(badge)+'</span></div>';
     h+='<div class="px-tile-row"><span>IP</span><span class="v">'+esc(p.ipv4||'pending')+'</span></div>';
     h+='<div class="px-tile-row"><span>Region</span><span class="v" style="display:flex;align-items:center;gap:6px">'+pxFlag(reg.country||'')+esc(reg.city||p.region||'—')+'</span></div>';
     h+='<div class="px-tile-row"><span>Endpoint</span><span class="v">'+esc(p.endpoint||'—')+'</span></div>';
-    h+='<div class="px-tile-row"><span>Linode</span><span class="v">'+esc(p.linode_status||'—')+'</span></div>';
-    h+='<div class="px-tile-row"><span>CPU</span><span class="v">'+cpu+'</span></div>';
-    h+='<div class="px-tile-row"><span>Traffic In</span><span class="v">'+_fmtBits(p.net_in)+'</span></div>';
-    h+='<div class="px-tile-row"><span>Traffic Out</span><span class="v">'+_fmtBits(p.net_out)+'</span></div>';
+    if(custom){
+      h+='<div class="px-tile-row"><span>Protocol</span><span class="v">'+(esc((p.proxy_type||'http').toUpperCase()))+'</span></div>';
+      h+='<div class="px-tile-row"><span>Provider</span><span class="v">custom</span></div>';
+    }else{
+      h+='<div class="px-tile-row"><span>Linode</span><span class="v">'+esc(p.linode_status||'—')+'</span></div>';
+    }
+    h+='<div class="px-tile-row"><span>CPU</span><span class="v">'+(custom?'—':cpu)+'</span></div>';
+    if(custom){
+      const ub=p.used_by||{};let bin=0,bout=0;Object.keys(ub).forEach(k=>{bin+=Number((ub[k]||{}).bytes_in||0);bout+=Number((ub[k]||{}).bytes_out||0)});
+      h+='<div class="px-tile-row"><span>Traffic In</span><span class="v">'+_fmtBytes(bin)+'</span></div>';
+      h+='<div class="px-tile-row"><span>Traffic Out</span><span class="v">'+_fmtBytes(bout)+'</span></div>';
+    }else{
+      h+='<div class="px-tile-row"><span>Traffic In</span><span class="v">'+_fmtBits(p.net_in)+'</span></div>';
+      h+='<div class="px-tile-row"><span>Traffic Out</span><span class="v">'+_fmtBits(p.net_out)+'</span></div>';
+    }
     if(p.metrics_error)h+='<div class="px-tile-row"><span>Metrics</span><span class="v" style="color:var(--orange)">'+esc(p.metrics_error)+'</span></div>';
     h+='<div class="px-live-ph">'+_pxPhishletsHtml(p)+'</div>';
     h+='<div class="px-live-tr">'+_pxTrafficOutHtml(p)+'</div>';
@@ -2225,17 +2287,23 @@ function _renderProxyGrid(st){
       const pct=Math.max(8, Math.min(100, job.pct||8));
       h+='<div class="px-pwr"><div class="px-pwr-lab"><i class="fa-solid fa-spinner fa-spin"></i> '+esc(_pxPowerLabel(job,ls))+'<span>'+pct+'%</span></div><div class="px-pwr-track"><i class="px-pwr-fill" data-pwr="'+p.id+'" style="width:'+pct+'%"></i></div></div>';
     }
-    h+='<div class="px-tile-actions">';
-    if(badge==='failed')h+='<button class="btn sm cyan" onclick="pxRepair('+p.id+',\''+esc(p.label||'')+'\')"><i class="fa-solid fa-wrench"></i> Repair</button>';
-    h+='<button class="btn sm danger" onclick="pxDestroy('+p.id+',\''+esc(p.label||'')+'\')"><i class="fa-solid fa-trash-can"></i> Destroy</button>';
+    h+='<div class="px-tile-actions'+(custom?' custom-only':'')+'">';
+    if(!custom && badge==='failed')h+='<button class="btn sm cyan" onclick="pxRepair('+p.id+',\''+esc(p.label||'')+'\')"><i class="fa-solid fa-wrench"></i> Repair</button>';
+    h+='<button class="btn sm danger" onclick="pxDestroy('+p.id+',\''+esc(p.label||'')+'\','+(custom?'true':'false')+')"><i class="fa-solid fa-trash-can"></i> '+(custom?'Remove':'Destroy')+'</button>';
+    if(!custom){
     h+='<button class="btn sm px-pwr-btn'+(startOff?' dim':'')+'" '+(startOff?'disabled':'')+' onclick="pxPower('+p.id+',\'start\',\''+esc(p.label||'')+'\')"><i class="fa-solid fa-play"></i> Start</button>';
     h+='<button class="btn sm px-pwr-btn'+(stopOff?' dim':'')+'" '+(stopOff?'disabled':'')+' onclick="pxPower('+p.id+',\'stop\',\''+esc(p.label||'')+'\')"><i class="fa-solid fa-stop"></i> Stop</button>';
     h+='<button class="btn sm px-pwr-btn'+(restartOff?' dim':'')+'" '+(restartOff?'disabled':'')+' onclick="pxPower('+p.id+',\'restart\',\''+esc(p.label||'')+'\')"><i class="fa-solid fa-rotate"></i> Restart</button>';
+    }
     h+='</div></div>';
   });
   $('#pxGrid').innerHTML=h;
 }
-function pxDestroy(id,label){openModal('DESTROY PROXY','<p style="color:#fff;margin-bottom:12px">Permanently delete <strong style="color:var(--red)">'+esc(label||'proxy-'+id)+'</strong>?</p><p style="color:var(--text3);font-size:13px">This will terminate the Linode instance. The action cannot be undone.</p>','<button class="btn danger" onclick="doPxDestroy('+id+')"><i class="fa-solid fa-trash-can"></i> DESTROY</button><button class="btn" onclick="closeModal()">CANCEL</button>')}
+function pxDestroy(id,label,custom){
+  const note=custom?'This removes the custom proxy from the panel. The remote server is not touched.':'This will terminate the Linode instance. The action cannot be undone.';
+  const btn=custom?'REMOVE':'DESTROY';
+  openModal(custom?'REMOVE CUSTOM PROXY':'DESTROY PROXY','<p style="color:#fff;margin-bottom:12px">Permanently delete <strong style="color:var(--red)">'+esc(label||'proxy-'+id)+'</strong>?</p><p style="color:var(--text3);font-size:13px">'+note+'</p>','<button class="btn danger" onclick="doPxDestroy('+id+')"><i class="fa-solid fa-trash-can"></i> '+btn+'</button><button class="btn" onclick="closeModal()">CANCEL</button>')
+}
 async function doPxDestroy(id){await withBusy(typeof event!=='undefined'?event:null,'Destroying…',async()=>{const r=await api('/api/proxy/destroy',{method:'POST',body:JSON.stringify({id})});closeModal();if(r.error)toast(r.error,'err');else{toast('Proxy destroyed');_pxRefreshState()}})}
 function pxPower(id,action,label){
   const titles={start:'START PROXY',stop:'STOP PROXY',restart:'RESTART PROXY'};
@@ -2260,10 +2328,10 @@ function _renderAssign(st){
   ph.innerHTML=opts;
   if(prev)ph.value=prev;
   const selPh=ph.value;
-  const assigned=selPh?(assign[selPh]||[]):[];
+  const assigned=selPh?(assign[selPh]||[]).map(Number):[];
   let ch='';proxies.forEach(p=>{
-    const checked=assigned.includes(p.id)?'checked':'';
-    ch+='<label class="px-assign-check"><input type="checkbox" value="'+p.id+'" '+checked+'> '+esc(p.ipv4||p.label||'proxy-'+p.id)+'</label>';
+    const checked=assigned.includes(Number(p.id))?'checked':'';
+    ch+='<label class="px-assign-check">'+_pxKindIco(p)+'<input type="checkbox" value="'+p.id+'" '+checked+'> '+esc(p.ipv4||p.label||'proxy-'+p.id)+(_pxIsCustom(p)?'<span class="px-kind-tag">custom</span>':'')+'</label>';
   });
   $('#pxAssignChecks').innerHTML=ch||'<span style="color:var(--text3);font-size:13px">No active proxies</span>';
   let ca='<h4>Current Assignments</h4>';
@@ -2273,9 +2341,10 @@ function _renderAssign(st){
     const ids=assign[k];
     const cur=current[k];
     const chips=ids.map(i=>{
-      const p=(st.proxies||[]).find(x=>x.id===i);
+      const p=(st.proxies||[]).find(x=>Number(x.id)===Number(i));
       const ip=(p?p.ipv4:i)||i;
-      return '<span class="px-ip-chip'+(i===cur?' on':'')+'">'+esc(String(ip))+(i===cur?' ●':'')+'<button title="Detach" onclick="pxDetachOne(\''+esc(k)+'\','+i+')">&times;</button></span>';
+      const mark=_pxIsCustom(p)?'<span class="px-kind-tag">custom</span>':'';
+      return '<span class="px-ip-chip'+(Number(i)===Number(cur)?' on':'')+'">'+_pxKindIco(p||{})+esc(String(ip))+mark+(Number(i)===Number(cur)?' ●':'')+'<button title="Detach" onclick="pxDetachOne(\''+esc(k)+'\','+i+')">&times;</button></span>';
     }).join('');
     ca+='<div class="row"><b>'+esc(k)+(carousel[k]?' <span class="px-car-badge">carousel</span>':'')+'</b><span>'+chips+'</span></div>';
   });
@@ -2300,7 +2369,8 @@ function _pxPatchAssignLive(st){
     const chips=ids.map(i=>{
       const p=(st.proxies||[]).find(x=>x.id===i||String(x.id)===String(i));
       const ip=(p?p.ipv4:i)||i;
-      return '<span class="px-ip-chip'+(String(i)===String(cur)?' on':'')+'">'+esc(String(ip))+(String(i)===String(cur)?' ●':'')+'<button title="Detach" onclick="pxDetachOne(\''+esc(k)+'\','+i+')">&times;</button></span>';
+      const mark=_pxIsCustom(p)?'<span class="px-kind-tag">custom</span>':'';
+      return '<span class="px-ip-chip'+(String(i)===String(cur)?' on':'')+'">'+_pxKindIco(p||{})+esc(String(ip))+mark+(String(i)===String(cur)?' ●':'')+'<button title="Detach" onclick="pxDetachOne(\''+esc(k)+'\','+i+')">&times;</button></span>';
     }).join('');
     ca+='<div class="row"><b>'+esc(k)+(carousel[k]?' <span class="px-car-badge">carousel</span>':'')+'</b><span>'+chips+'</span></div>';
   });
@@ -2329,7 +2399,7 @@ function _pxPageOpen(){return $('#page-proxy')&&$('#page-proxy').classList.conta
 function stopProxyIdleRefresh(){clearInterval(_pxRefreshId);_pxRefreshId=null}
 function _pxApplyLive(msg){
   if(!_pxPageOpen()||document.hidden||!_pxLastSt)return;
-  if($('#pxKeyPanel')&&$('#pxKeyPanel').style.display!=='none')return;
+  if($('#pxMainPanel')&&$('#pxMainPanel').style.display==='none')return;
   const st=_pxLastSt;
   st.assignments=msg.assignments||st.assignments||{};
   st.current=msg.current||st.current||{};

