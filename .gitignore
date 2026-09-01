@@ -8,3 +8,6 @@ Thumbs.db
 build/
 dist/
 *.spec
+payload/geo/*.mmdb
+payload/geo/*.gz
+payload/geo/ip_cache.json

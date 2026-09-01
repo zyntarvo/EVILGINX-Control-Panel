@@ -13,7 +13,7 @@
   &nbsp;
   <img src="https://img.shields.io/badge/Python-3-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
   &nbsp;
-  <img src="https://img.shields.io/badge/version-3.5.2-0ea5e9?style=for-the-badge" alt="3.5.2">
+  <img src="https://img.shields.io/badge/version-3.5.3-0ea5e9?style=for-the-badge" alt="3.5.3">
 </p>
 
 <p align="center"><b>Created by ZynTarvo</b> · <i>Nothing Is Impossible</i></p>
@@ -29,6 +29,7 @@ Built for red teamers, pentesters, and anyone who wants Evilginx running in minu
 - Auto-install on Ubuntu
 - Web C2 panel with login
 - Manage phishlets, lures and captured sessions from the browser
+- **Session Map** on Dashboard — unique session IPs on a dark world map; click a marker to zoom country → district → street
 - **Proxy Manager** — deploy Linode proxies in a couple of clicks, assign them to phishlets, watch live traffic
 - E-Terminal (Evilginx CLI) and a full Linux shell in the browser
 - Live host Health (CPU, RAM, disk, traffic) and per-service journalctl follow
@@ -101,9 +102,20 @@ Home screen. At a glance:
 | **Total Sessions** | All captured visitor sessions |
 | **JWT Captured** | Sessions where a JWT was taken (cookie value looks like `eyJ…`) |
 | **Server Uptime** | How long the panel host has been up |
+| **Session Map** | Unique session IPs on a dark world map (see below) |
 | **Sessions Timeline** | Last 7 days: total / JWT / cookies / empty |
 | **Session Breakdown** | Donut chart of JWT vs cookies vs empty |
 | **Recent JWT Sessions** | Latest successful JWT rows with View / Delete |
+
+<p align="center"><img src="docs/screenshots/26-session-map.png" alt="Session Map" width="900"></p>
+
+**Session Map** (v3.5.3) — every captured session IP as a marker, same data as the Sessions table.
+
+- **Filters:** ALL / WITH JWT / WITH TOKENS / EMPTY
+- **Markers:** mint = cookies/tokens, purple = JWT, red = empty. A number on the dot means several sessions from that IP
+- **Click a marker** to fly in three steps: country → district → street
+- **+ / −** step those same zoom levels; the **globe** button restores the default world view (same as a page reload)
+- Geo is a **local DB-IP City Lite** database on the C2 box plus an IP cache. No Mapbox key, no live geo HTTP API
 
 ### Phishlets
 
@@ -342,6 +354,7 @@ payload/                  → panel that gets uploaded to the server
   patches/                → apply_egx_429_hook.py (after clone, before go build)
   templates/              → login + dashboard
   static/                 → lynx logo + favicons
+  geo/                    → DB-IP City Lite MMDB (downloaded at install, not in git)
 docs/screenshots/         → UI shots from the demo video
 ```
 

