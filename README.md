@@ -7,6 +7,8 @@
 </p>
 
 <p align="center">
+  <a href="https://t.me/zyntarvo"><img src="https://img.shields.io/badge/Telegram-@zyntarvo-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram @zyntarvo"></a>
+  &nbsp;
   <a href="https://www.youtube.com/watch?v=KupIZHFTL90"><img src="https://img.shields.io/badge/YouTube-Watch%20Demo-ff0000?style=for-the-badge&logo=youtube&logoColor=white" alt="YouTube"></a>
   &nbsp;
   <img src="https://img.shields.io/badge/Ubuntu-20.04%20%7C%2022.04%20%7C%2024.04%20%7C%2026.04-E95420?style=for-the-badge&logo=ubuntu&logoColor=white" alt="Ubuntu">
@@ -16,7 +18,7 @@
   <img src="https://img.shields.io/badge/version-3.5.5-0ea5e9?style=for-the-badge" alt="3.5.5">
 </p>
 
-<p align="center"><b>Created by ZynTarvo</b> · <i>Nothing Is Impossible</i></p>
+<p align="center"><b>Created by ZynTarvo</b> · Telegram: <a href="https://t.me/zyntarvo">@zyntarvo</a> · <i>Nothing Is Impossible</i></p>
 
 ---
 
@@ -393,9 +395,13 @@ If this panel saved you time and you want to say thank you, USDT on **Ethereum (
 
 No pressure. Use the tool, learn, and pass it on.
 
+## Contact
+
+Telegram: [@zyntarvo](https://t.me/zyntarvo)
+
 ## Credits
 
 - **Evilginx2** — [Kuba Gretzky](https://github.com/kgretzky/evilginx2)
-- **Control Panel + Auto Installer** — [ZynTarvo](https://github.com/zyntarvo)
+- **Control Panel + Auto Installer** — [ZynTarvo](https://github.com/zyntarvo) · Telegram [@zyntarvo](https://t.me/zyntarvo)
 
 <p align="center"><i>ZynTarvo — Nothing Is Impossible</i></p>
