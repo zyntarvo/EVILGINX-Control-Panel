@@ -15,7 +15,7 @@
   &nbsp;
   <img src="https://img.shields.io/badge/Python-3-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
   &nbsp;
-  <img src="https://img.shields.io/badge/version-3.5.5-0ea5e9?style=for-the-badge" alt="3.5.5">
+  <img src="https://img.shields.io/badge/version-3.5.6-0ea5e9?style=for-the-badge" alt="3.5.6">
 </p>
 
 <p align="center"><b>Created by ZynTarvo</b> · Telegram: <a href="https://t.me/zyntarvo">@zyntarvo</a> · <i>Nothing Is Impossible</i></p>
@@ -117,9 +117,10 @@ Home screen. At a glance:
 
 <p align="center"><img src="docs/screenshots/29-session-map-country.png" alt="Session Map — country dropdown" width="900"></p>
 
-**Session Map** (v3.5.4) — every captured session IP as a marker, same data as the Sessions table.
+**Session Map** (v3.5.6) — every captured session IP as a marker, same data as the Sessions table.
 
 - **Filters:** ALL / WITH JWT / WITH TOKENS / EMPTY. Search and the country list follow the active filter
+- **Phishlet dropdown:** default All; pick one phishlet and the map, counts, search, and country list follow it
 - **Markers:** mint = cookies/tokens, purple = JWT, red = empty. A **solid** dot is one session from that IP; a **ring** (larger marker) means several sessions share the IP
 - **Live search (ID or IP):** type as you go, pick a hit from the list (or Enter). The map flies to **max zoom** and opens the popup
 - **Country dropdown:** lists countries with session counts; picking one fits that country on the map. Empty value restores the world view

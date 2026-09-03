@@ -1,11 +1,11 @@
-3.5.5
+3.5.6
 C2 Panel payload
 Dashboard Session Map: unique session IPs on a dark world map (OpenFreeMap)
 IP markers: mint = tokens, purple = JWT, red = empty; solid = one session, ring = several from the same IP
-Filters ALL / WITH JWT / WITH TOKENS / EMPTY
+Filters ALL / WITH JWT / WITH TOKENS / EMPTY plus phishlet dropdown (default All)
 Live search by session ID or IP; country dropdown fits the full country
 Click a marker to fly country → district → street → max zoom; live search flies to max zoom
-Popup: IP, country, region, city, street, session IDs, JWT/tokens/empty
+Popup: IP, country, region, city, street, phishlet, session IDs, JWT/tokens/empty
 + / − step those zoom levels; globe and search X restore the default world view
 Geo is local DB-IP City Lite MMDB + ip_cache.json — no live geo HTTP API
 Custom proxies: bulk paste ip:port@login:pass, protocol HTTP / HTTPS / SOCKS5 / SOCKS5H; same assign / carousel / cards as Linode
