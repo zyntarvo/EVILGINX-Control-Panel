@@ -374,6 +374,10 @@ Live host metrics under **Terminal** in the sidebar. Cheap `/proc` reads only wh
 
 ### AI-Assistant
 
+<p align="center"><img src="docs/screenshots/32-ai-assistant.png" alt="AI-Assistant" width="900"></p>
+
+<p align="center"><img src="docs/screenshots/33-ai-models.png" alt="AI-Assistant model search" width="900"></p>
+
 Sidebar item under **Health**. On-server operator that talks to [OpenRouter](https://openrouter.ai/keys) — you paste **your own** API key in the panel. The key is stored only on the C2 box (`/root/evilginx-panel/ai_openrouter.json`, mode 600). It is **not** shipped in this repository and the installer never uploads one.
 
 **First run**
