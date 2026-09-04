@@ -15,7 +15,7 @@
   &nbsp;
   <img src="https://img.shields.io/badge/Python-3-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
   &nbsp;
-  <img src="https://img.shields.io/badge/version-3.5.6-0ea5e9?style=for-the-badge" alt="3.5.6">
+  <img src="https://img.shields.io/badge/version-3.5.7-0ea5e9?style=for-the-badge" alt="3.5.7">
 </p>
 
 <p align="center"><b>Created by ZynTarvo</b> · Telegram: <a href="https://t.me/zyntarvo">@zyntarvo</a> · <i>Nothing Is Impossible</i></p>

@@ -1,4 +1,4 @@
-3.5.6
+3.5.7
 C2 Panel payload
 Dashboard Session Map: unique session IPs on a dark world map (OpenFreeMap)
 IP markers: mint = tokens, purple = JWT, red = empty; solid = one session, ring = several from the same IP
