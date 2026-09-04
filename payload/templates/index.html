@@ -568,6 +568,114 @@ tr:hover td{background:var(--accent-dim)}
   .px-grid{grid-template-columns:1fr}
   .px-tile-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+.ai-page{display:flex;flex-direction:column;gap:16px;flex:1;min-height:0;overflow:hidden}
+.content:has(#page-ai.page.active){overflow:hidden;display:flex;flex-direction:column}
+#page-ai.page.active{display:flex;flex-direction:column;flex:1;min-height:0;max-width:100%}
+#aiWork{flex:1;min-height:0;display:flex;flex-direction:column;gap:16px;overflow:hidden}
+.ai-actions{flex-shrink:0}
+.ai-lock,.ai-bar{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;flex-shrink:0}
+.ai-lock p,.ai-bar p{color:var(--text3);font-size:13px;line-height:1.5;margin:0 0 14px}
+.ai-lock .field,.ai-bar .ai-key-row{margin-bottom:0}
+.ai-key-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.ai-key-row .field{flex:1;min-width:220px}
+.ai-bar{padding:12px 16px}
+.ai-bar-top{display:flex;gap:12px;align-items:flex-end;flex-wrap:nowrap}
+.ai-bar-top .field{margin-bottom:0}
+.ai-model-field{flex:1 1 auto;min-width:260px;position:relative}
+.ai-key-field{flex:0 0 auto;min-width:0}
+.ai-bar-top > .btn{flex:0 0 auto;height:42px;white-space:nowrap}
+@media(min-width:769px) and (max-width:1100px){
+  .ai-model-field{min-width:0}
+  .ai-bar-top > .btn{padding:0 12px;width:42px}
+  .ai-bar-lab{display:none}
+}
+.ai-dd{position:relative}
+.ai-dd-btn{width:100%;height:42px;padding:0 12px;display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--accent);font-family:var(--mono);font-size:13px;cursor:pointer;text-align:left}
+.ai-dd-btn span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ai-dd-btn i{color:var(--text3);font-size:12px;transition:transform .15s}
+.ai-dd.open .ai-dd-btn{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,255,136,0.08)}
+.ai-dd.open .ai-dd-btn i{transform:rotate(180deg);color:var(--accent)}
+.ai-dd-pop{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:40;background:var(--bg2);border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.45);padding:8px;display:none}
+.ai-dd.open .ai-dd-pop{display:block}
+.ai-dd-pop input{width:100%;height:38px;padding:0 12px;margin:0 0 6px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:#fff;font-family:var(--font);font-size:13px;outline:none}
+.ai-dd-pop input:focus{border-color:var(--accent)}
+.ai-dd-list{max-height:280px;overflow:auto;display:flex;flex-direction:column;gap:2px}
+.ai-dd-grp{padding:8px 10px 4px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)}
+.ai-dd-item{display:block;width:100%;text-align:left;padding:8px 10px;border:0;border-radius:6px;background:transparent;color:#fff;font-family:var(--mono);font-size:12px;cursor:pointer}
+.ai-dd-item:hover,.ai-dd-item.on{background:var(--accent-dim);color:var(--accent)}
+.ai-dd-item em{font-style:normal;color:var(--cyan);margin-left:6px;font-size:11px}
+.ai-dd-empty{padding:12px 10px;color:var(--text3);font-size:12px}
+.ai-hint{font-family:var(--mono);color:var(--cyan);font-size:13px;line-height:42px;white-space:nowrap}
+.ai-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ai-act{min-height:92px;flex-direction:column;gap:6px;width:100%}
+.ai-act small{display:block;font-weight:500;letter-spacing:0;text-transform:none;opacity:.8;font-size:12px;color:inherit}
+.ai-chat{flex:1;display:flex;flex-direction:column;background:var(--bg2);border:1px solid var(--border);border-radius:14px;min-height:0;overflow:hidden}
+.ai-log{flex:1;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:12px;min-height:0}
+.ai-msg{max-width:min(780px,94%);padding:12px 14px;border-radius:12px;line-height:1.55;font-size:14px;color:#fff;word-break:break-word}
+.ai-msg.user{margin-left:auto;background:rgba(0,255,136,.12);border:1px solid rgba(0,255,136,.25)}
+.ai-msg.bot{background:var(--bg);border:1px solid var(--border)}
+.ai-msg.sys{align-self:center;max-width:100%;background:transparent;border:0;color:var(--text3);font-size:12px;text-align:center}
+.ai-msg b{color:var(--accent)}
+.ai-msg code{font-family:var(--mono);font-size:12px;background:rgba(255,255,255,.06);padding:1px 5px;border-radius:4px}
+.ai-atts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ai-att{font-size:11px;padding:3px 8px;border-radius:999px;border:1px solid var(--border);color:var(--cyan)}
+.ai-compose{border-top:1px solid var(--border);padding:12px;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+.ai-chips{display:flex;flex-wrap:wrap;gap:6px}
+.ai-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-size:12px;color:#fff}
+.ai-chip button{background:none;border:0;color:var(--red);cursor:pointer;font-size:14px;line-height:1}
+.ai-row{display:flex;gap:8px;align-items:flex-end}
+.ai-row textarea{flex:1;min-height:52px;max-height:160px;resize:vertical;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:#fff;font-family:var(--font);font-size:14px;outline:none}
+.ai-row textarea:focus{border-color:var(--accent)}
+.ai-iconbtn{width:46px;height:46px;flex-shrink:0;padding:0}
+.ai-disabled .ai-actions,.ai-disabled .ai-chat{opacity:.38;pointer-events:none}
+.ai-live{border-bottom:1px solid var(--border);padding:12px 16px;background:rgba(0,255,136,.05)}
+.ai-live[hidden]{display:none!important}
+.ai-live-head{display:flex;align-items:center;gap:10px;color:var(--accent);font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase}
+.ai-live-head i{color:var(--cyan)}
+.ai-steps{margin:10px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;max-height:160px;overflow:auto}
+.ai-steps li{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:#fff;font-family:var(--mono);line-height:1.4}
+.ai-steps li .st{width:16px;flex-shrink:0;color:var(--text3)}
+.ai-steps li.ok .st{color:var(--accent)}
+.ai-steps li.run .st{color:var(--cyan)}
+.ai-steps li.err .st{color:var(--red)}
+.ai-msg.tool{align-self:flex-start;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.25);font-family:var(--mono);font-size:12px;color:var(--cyan)}
+.ai-msg.status{align-self:center;max-width:100%;background:transparent;border:0;color:var(--text3);font-size:12px;text-align:center;padding:4px 8px}
+.ai-key-field{flex:0 1 220px}
+.ai-mbar{display:none}
+@media(max-width:768px){
+  .content:has(#page-ai.page.active){padding:8px;overflow:hidden}
+  #page-ai.page.active,.ai-page{height:100%;min-height:0}
+  .ai-page{gap:8px}
+  #aiWork{gap:8px;flex:1}
+  .ai-mbar{display:flex;width:100%;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:#fff;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;text-align:left}
+  .ai-mbar i:first-child{color:var(--accent)}
+  .ai-mbar span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--cyan);font-family:var(--mono);font-size:12px}
+  .ai-mbar #aiMbarChev{margin-left:auto;color:var(--text3);transition:transform .2s}
+  .ai-bar.open .ai-mbar #aiMbarChev{transform:rotate(180deg)}
+  .ai-bar{padding:10px;border-radius:12px}
+  .ai-bar-top{display:none;flex-direction:column;align-items:stretch;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .ai-bar.open .ai-bar-top{display:flex}
+  .ai-key-field,.ai-bar-top .field,.ai-model-field{flex:none;min-width:0;width:100%}
+  .ai-bar-top > .btn{width:100%;height:40px}
+  .ai-hint{line-height:1.4}
+  .ai-lock{padding:12px}
+  .ai-lock p{margin-bottom:10px;font-size:12px}
+  .ai-actions{grid-template-columns:1fr;gap:8px}
+  .ai-act{min-height:0;height:40px;padding:0 12px;flex-direction:row;gap:8px;width:100%}
+  .ai-act small{display:none}
+  .ai-act-chat{display:none}
+  .ai-chat{border-radius:12px}
+  .ai-log{padding:12px 10px;gap:8px}
+  .ai-msg{max-width:100%;padding:10px 12px;font-size:13px;line-height:1.5}
+  .ai-compose{padding:8px}
+  .ai-row{flex-direction:row;align-items:flex-end;gap:6px}
+  .ai-iconbtn{width:40px;height:40px;flex-shrink:0}
+  .ai-row textarea{min-height:40px;max-height:88px;padding:8px 10px;font-size:13px}
+  .ai-send{width:auto;height:40px;padding:0 12px;flex-shrink:0}
+  .ai-send-lab{display:none}
+  .ai-live{padding:8px 10px}
+  .ai-steps{max-height:90px}
+}
 </style>
 </head>
 <body>
@@ -588,6 +696,7 @@ tr:hover td{background:var(--accent-dim)}
     <a href="#" data-page="terminal"><i class="fa-solid fa-terminal"></i>E-Terminal</a>
     <a href="#" data-page="shell"><i class="fa-brands fa-linux"></i>Terminal</a>
     <a href="#" data-page="health"><i class="fa-solid fa-heart-pulse"></i>Health</a>
+    <a href="#" data-page="ai"><i class="fa-solid fa-robot"></i>AI-Assistant</a>
   </nav>
   <div class="bottom">
     <div class="status" id="evStatus"><div class="dot off" id="evDot"></div><span id="evLabel">CHECKING...</span></div>
@@ -794,6 +903,66 @@ tr:hover td{background:var(--accent-dim)}
     <div class="h-pill">Network <b class="ok" id="hPillNet">—</b></div>
   </div>
 </section>
+<section id="page-ai" class="page">
+  <div class="ai-page" id="aiPage">
+    <div class="ai-lock" id="aiLock">
+      <div class="sec-title"><i class="fa-solid fa-key"></i> OpenRouter</div>
+      <p>Paste an OpenRouter API key to activate the assistant. After it verifies, pick a model — then Autofix and chat become available. Get a key at <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a>.</p>
+      <div class="ai-key-row">
+        <div class="field"><label>OpenRouter API key</label><input id="aiKey" type="password" placeholder="sk-or-v1-…" autocomplete="off"></div>
+        <button class="btn fill" id="aiKeyBtn" onclick="saveAiKey()"><i class="fa-solid fa-plug"></i> Connect</button>
+      </div>
+    </div>
+    <div class="ai-bar" id="aiBar" style="display:none">
+      <button type="button" class="ai-mbar" id="aiMbar" onclick="toggleAiSettings()" aria-expanded="false">
+        <i class="fa-solid fa-sliders"></i>
+        <span id="aiMbarModel">Select model</span>
+        <i class="fa-solid fa-chevron-down" id="aiMbarChev"></i>
+      </button>
+      <div class="ai-bar-top" id="aiBarBody">
+        <div class="field ai-model-field">
+          <label>Model</label>
+          <div class="ai-dd" id="aiModelDd">
+            <button type="button" class="ai-dd-btn" id="aiModelBtn" onclick="toggleAiModelDd()">
+              <span id="aiModelLabel">Select model</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <div class="ai-dd-pop" id="aiModelPop">
+              <input id="aiModelSearch" placeholder="Search models" oninput="filterAiModels()" autocomplete="off">
+              <div class="ai-dd-list" id="aiModelList"></div>
+            </div>
+          </div>
+          <input type="hidden" id="aiModel">
+        </div>
+        <div class="field ai-key-field"><label>Key</label><div class="ai-hint" id="aiKeyHint">—</div></div>
+        <button class="btn" onclick="saveAiKey(true)" title="Disconnect"><i class="fa-solid fa-right-from-bracket"></i> <span class="ai-bar-lab">Disconnect</span></button>
+        <button class="btn" onclick="clearAiChat()" title="Clear chat"><i class="fa-solid fa-broom"></i> <span class="ai-bar-lab">Clear chat</span></button>
+      </div>
+    </div>
+    <div id="aiWork" class="ai-disabled">
+      <div class="ai-actions">
+        <button class="btn fill ai-act" id="aiAutofixBtn" onclick="runAiAutofix()"><i class="fa-solid fa-wrench"></i> AUTOFIX<small>Scan Evilginx problems on this server and fix them</small></button>
+        <button class="btn cyan ai-act ai-act-chat" onclick="focusAiChat()"><i class="fa-solid fa-comments"></i> CHAT<small>Talk, drop a screenshot or file, Send analyzes and can fix</small></button>
+      </div>
+      <div class="ai-chat">
+        <div class="ai-live" id="aiLive" hidden>
+          <div class="ai-live-head"><i class="fa-solid fa-spinner fa-spin"></i> <span id="aiLiveText">Working…</span></div>
+          <ol class="ai-steps" id="aiSteps"></ol>
+        </div>
+        <div class="ai-log" id="aiLog"></div>
+        <div class="ai-compose">
+          <div class="ai-chips" id="aiChips"></div>
+          <div class="ai-row">
+            <button class="btn ai-iconbtn" type="button" title="Attach photo or file" onclick="$('#aiFiles').click()"><i class="fa-solid fa-paperclip"></i></button>
+            <input id="aiFiles" type="file" multiple accept="image/*,.txt,.log,.json,.yaml,.yml,.conf,.pem,.crt" hidden onchange="addAiFiles(this)">
+            <textarea id="aiInput" rows="1" placeholder="Message or paste a screenshot…" onkeydown="aiInputKey(event)"></textarea>
+            <button class="btn fill ai-send" id="aiSendBtn" onclick="sendAiChat()"><i class="fa-solid fa-paper-plane"></i> <span class="ai-send-lab">SEND</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 <section id="page-proxy" class="page">
   <div id="pxMainPanel" style="display:none">
     <div class="px-connected" id="pxConnectedBar"><i class="fa-solid fa-circle-check"></i> Linode connected — Evilginx IP: <span id="pxAllowIp" style="font-family:var(--mono);margin-left:4px"></span><button class="btn sm" style="margin-left:auto" onclick="pxDisconnect()"><i class="fa-solid fa-right-from-bracket"></i> Disconnect</button></div>
@@ -929,7 +1098,7 @@ function toast(msg,type='ok'){const d=document.createElement('div');d.className=
 function ts(epoch){if(!epoch)return'\u2014';const d=new Date(epoch*1000);return d.toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'})}
 function uptime(sec){const d=Math.floor(sec/86400),h=Math.floor(sec%86400/3600),m=Math.floor(sec%3600/60);return d>0?`${d}d ${h}h`:`${h}h ${m}m`}
 function esc(s){const el=document.createElement('span');el.textContent=s;return el.innerHTML}
-const pageNames={dashboard:'DASHBOARD',phishlets:'PHISHLETS',config:'CONFIGURATION',lures:'LURES',proxy:'PROXY MANAGER',files:'FILE EXPLORER',services:'SERVICES',sessions:'SESSIONS',terminal:'E-TERMINAL',shell:'TERMINAL',health:'HEALTH',notifications:'NOTIFICATIONS'};
+const pageNames={dashboard:'DASHBOARD',phishlets:'PHISHLETS',config:'CONFIGURATION',lures:'LURES',proxy:'PROXY MANAGER',files:'FILE EXPLORER',services:'SERVICES',sessions:'SESSIONS',terminal:'E-TERMINAL',shell:'TERMINAL',health:'HEALTH',ai:'AI-ASSISTANT',notifications:'NOTIFICATIONS'};
 function resizeCharts(){
   try{if(chartTL)chartTL.resize();if(chartBD)chartBD.resize();if(healthChart)healthChart.resize();if(_pxChartDonut)_pxChartDonut.resize()}catch(e){}
 }
@@ -959,7 +1128,7 @@ function labelTable(tbody){
   });
 }
 function bindCardTables(){document.querySelectorAll('.tbl-wrap tbody').forEach(labelTable)}
-$$('.sidebar nav a[data-page]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();const pg=a.dataset.page;$$('.sidebar nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active');$$('.page').forEach(p=>p.classList.remove('active'));$(`#page-${pg}`).classList.add('active');$('#pageTitle').textContent=pageNames[pg]||pg.toUpperCase();closeSidebar();stopHealth();if(pg!=='proxy')stopProxyIdleRefresh();if(pg==='dashboard')loadDashboard();if(pg==='phishlets')loadPhishlets();if(pg==='config')loadConfig();if(pg==='lures')loadLures();if(pg==='proxy')loadProxy();if(pg==='files')loadFiles();if(pg==='services')loadServices();if(pg==='sessions'){resetSessSearch();loadSessions();}if(pg==='notifications')loadNotifications();if(pg==='terminal')initTerminal();if(pg==='shell')initShell();if(pg==='health')startHealth()})});
+$$('.sidebar nav a[data-page]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();const pg=a.dataset.page;$$('.sidebar nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active');$$('.page').forEach(p=>p.classList.remove('active'));$(`#page-${pg}`).classList.add('active');$('#pageTitle').textContent=pageNames[pg]||pg.toUpperCase();closeSidebar();stopHealth();if(pg!=='proxy')stopProxyIdleRefresh();if(pg==='dashboard')loadDashboard();if(pg==='phishlets')loadPhishlets();if(pg==='config')loadConfig();if(pg==='lures')loadLures();if(pg==='proxy')loadProxy();if(pg==='files')loadFiles();if(pg==='services')loadServices();if(pg==='sessions'){resetSessSearch();loadSessions();}if(pg==='notifications')loadNotifications();if(pg==='terminal')initTerminal();if(pg==='shell')initShell();if(pg==='health')startHealth();if(pg==='ai')loadAi()})});
 let chartTL=null,chartBD=null,_pxChartBar=null,_pxChartDonut=null;
 let dashMap=null,dashMapMarkers=[],dashMapPts=[],dashMapFilter='all',dashMapPhishlet='',dashMapPhishlets=[],dashMapCounts={all:0,jwt:0,tokens:0,empty:0},dashZoomKey=null,dashPinnedMk=null,dashPopSilent=false,dashHoverTimer=null;
 const DASH_Z={world:1.7,country:4.3,district:8.6,street:15,max:18};
@@ -2696,6 +2865,315 @@ new MutationObserver(bindCardTables).observe(document.querySelector('.content'),
 bindCardTables();
 window.addEventListener('resize', resizeCharts);
 setInterval(async()=>{const r=await api('/api/ev/status');updateEvStatus(r.running)},15000);
+
+let aiModels=[], aiFiles=[], aiBusy=false, aiPoll=null, aiSince=0;
+function aiMd(s){
+  return esc(String(s||'')).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\n/g,'<br>');
+}
+function scrollAiBottom(){
+  const go=()=>{
+    const log=$('#aiLog');
+    if(log){
+      log.scrollTop=log.scrollHeight+800;
+      const last=log.lastElementChild;
+      if(last&&last.scrollIntoView) last.scrollIntoView({block:'end',inline:'nearest',behavior:'auto'});
+    }
+    const box=$('.content');
+    if(box) box.scrollTop=box.scrollHeight+800;
+  };
+  go();
+  requestAnimationFrame(go);
+  setTimeout(go,40);
+  setTimeout(go,180);
+}
+function renderAiLog(msgs){
+  const log=$('#aiLog'); if(!log)return;
+  if(!msgs||!msgs.length){
+    log.innerHTML='<div class="ai-msg sys">Connect OpenRouter, pick a model, then Autofix or Send.</div>';
+    scrollAiBottom();
+    return;
+  }
+  log.innerHTML=msgs.map(m=>{
+    if(m.role==='tool'){
+      const st=m.state==='err'?'err':(m.state==='run'?'run':'ok');
+      const ico=st==='err'?'fa-xmark':(st==='run'?'fa-spinner fa-spin':'fa-wrench');
+      return `<div class="ai-msg tool"><i class="fa-solid ${ico}"></i> <b>${esc(m.name||'tool')}</b> — ${aiMd(m.text||'')}</div>`;
+    }
+    if(m.role==='status'){
+      return `<div class="ai-msg status">${aiMd(m.text||'')}</div>`;
+    }
+    const who=m.role==='user'?'user':(m.role==='assistant'?'bot':'sys');
+    const atts=(m.attachments||[]).map(a=>`<span class="ai-att">${esc(String(a))}</span>`).join('');
+    return `<div class="ai-msg ${who}">${aiMd(m.text||'')}${atts?'<div class="ai-atts">'+atts+'</div>':''}</div>`;
+  }).join('');
+  scrollAiBottom();
+}
+function setAiUnlocked(on){
+  const work=$('#aiWork');
+  if(work) work.classList.toggle('ai-disabled', !on);
+}
+function aiModelCaption(id){
+  if(!id) return 'Select model';
+  const m=aiModels.find(x=>x.id===id);
+  if(!m) return id;
+  return m.id+(m.vision?' · vision':'')+(m.free?' · free':'');
+}
+function fillAiModels(selected){
+  if(selected){const hid=$('#aiModel'); if(hid) hid.value=selected}
+  const cur=($('#aiModel')&&$('#aiModel').value)||'';
+  const q=($('#aiModelSearch')&&$('#aiModelSearch').value||'').trim().toLowerCase();
+  const list=aiModels.filter(m=>{
+    if(!q)return true;
+    return (m.id||'').toLowerCase().includes(q)||(m.name||'').toLowerCase().includes(q);
+  });
+  const free=list.filter(m=>m.free), paid=list.filter(m=>!m.free);
+  function rows(arr){
+    return arr.map(m=>`<button type="button" class="ai-dd-item${m.id===cur?' on':''}" data-id="${esc(m.id)}">${esc(m.id)}${m.vision?' <em>vision</em>':''}${m.free?' <em>free</em>':''}</button>`).join('');
+  }
+  const box=$('#aiModelList');
+  if(box){
+    let html='';
+    if(free.length) html+='<div class="ai-dd-grp">Free</div>'+rows(free);
+    if(paid.length) html+='<div class="ai-dd-grp">Paid</div>'+rows(paid);
+    if(!html) html='<div class="ai-dd-empty">No models</div>';
+    box.innerHTML=html;
+  }
+  const lab=$('#aiModelLabel'); if(lab) lab.textContent=aiModelCaption(cur);
+  const mini=$('#aiMbarModel'); if(mini) mini.textContent=cur||'Select model';
+}
+function filterAiModels(){fillAiModels()}
+function closeAiModelDd(){
+  const dd=$('#aiModelDd'); if(dd) dd.classList.remove('open');
+}
+function toggleAiModelDd(){
+  const dd=$('#aiModelDd'); if(!dd)return;
+  const open=!dd.classList.contains('open');
+  dd.classList.toggle('open', open);
+  if(open){
+    const inp=$('#aiModelSearch');
+    if(inp){inp.value=''; fillAiModels(); setTimeout(()=>inp.focus(),0)}
+  }
+}
+function pickAiModel(id){
+  if(!id)return;
+  const hid=$('#aiModel'); if(hid) hid.value=id;
+  closeAiModelDd();
+  fillAiModels(id);
+  saveAiModel();
+}
+function toggleAiSettings(){
+  const bar=$('#aiBar'); if(!bar)return;
+  const on=bar.classList.toggle('open');
+  const btn=$('#aiMbar'); if(btn) btn.setAttribute('aria-expanded', on?'true':'false');
+}
+function aiSetLive(on, text){
+  const box=$('#aiLive'); if(!box)return;
+  box.hidden=!on;
+  if(text && $('#aiLiveText')) $('#aiLiveText').textContent=text;
+}
+function aiAddStep(ev){
+  if(ev.type==='status' && ev.text) aiSetLive(true, ev.text);
+  if(ev.type!=='tool') return;
+  const ol=$('#aiSteps'); if(!ol)return;
+  const cls=ev.state==='run'?'run':(ev.state==='err'?'err':'ok');
+  const ico=cls==='run'?'fa-spinner fa-spin':(cls==='err'?'fa-xmark':'fa-check');
+  ol.insertAdjacentHTML('beforeend', `<li class="${cls}"><span class="st"><i class="fa-solid ${ico}"></i></span><span><b>${esc(ev.name||'tool')}</b> — ${esc(ev.detail||ev.text||'')}</span></li>`);
+  ol.scrollTop=ol.scrollHeight;
+}
+function stopAiPoll(){
+  if(aiPoll){clearInterval(aiPoll); aiPoll=null}
+}
+async function pollAiJob(){
+  const r=await api('/api/ai/job?since='+aiSince);
+  if(typeof r.total==='number') aiSince=r.total;
+  (r.events||[]).forEach(aiAddStep);
+  if(r.messages) renderAiLog(r.messages);
+  else scrollAiBottom();
+  if(r.running){
+    aiBusy=true;
+    aiSetLive(true, ($('#aiLiveText')&&$('#aiLiveText').textContent)||'Working…');
+    return;
+  }
+  aiSetLive(false);
+  if(aiBusy){
+    aiBusy=false;
+    btnBusy($('#aiAutofixBtn'), false);
+    btnBusy($('#aiSendBtn'), false);
+    stopAiPoll();
+    if(r.error) toast(r.error,'err');
+    else toast('Done');
+  }else stopAiPoll();
+}
+function startAiPoll(){
+  stopAiPoll();
+  pollAiJob();
+  aiPoll=setInterval(pollAiJob, 400);
+}
+async function loadAi(){
+  const s=await api('/api/ai/status');
+  const ok=!!s.configured;
+  $('#aiLock').style.display=ok?'none':'block';
+  $('#aiBar').style.display=ok?'block':'none';
+  setAiUnlocked(ok && !!s.model);
+  if(ok){
+    $('#aiKeyHint').textContent=s.key_hint||'saved';
+    aiModels=s.models||[];
+    fillAiModels(s.model||'');
+  }
+  const h=await api('/api/ai/history');
+  if(!aiBusy) renderAiLog(h.messages||[]);
+  scrollAiBottom();
+  if(h.running){
+    aiBusy=true;
+    aiSince=0;
+    if($('#aiSteps')) $('#aiSteps').innerHTML='';
+    aiSetLive(true,'Resuming…');
+    startAiPoll();
+  }
+}
+async function saveAiKey(clear){
+  const btn=$('#aiKeyBtn');
+  await withBusy(btn||null, clear?'Removing…':'Connecting…', async()=>{
+    const body=clear?{clear:true}:{api_key:($('#aiKey').value||'').trim()};
+    if(!clear && !body.api_key){toast('Paste an OpenRouter key','err');return}
+    const r=await api('/api/ai/key',{method:'POST',body:JSON.stringify(body)});
+    if(r.error){toast(r.error,'err');return}
+    if($('#aiKey')) $('#aiKey').value='';
+    toast(clear?'Key removed':'OpenRouter connected');
+    await loadAi();
+  });
+}
+async function saveAiModel(){
+  const model=$('#aiModel').value;
+  if(!model)return;
+  const r=await api('/api/ai/model',{method:'POST',body:JSON.stringify({model})});
+  if(r.error){toast(r.error,'err');return}
+  setAiUnlocked(true);
+  toast('Model: '+model);
+  const mini=$('#aiMbarModel'); if(mini) mini.textContent=model;
+  if(window.innerWidth<=768){
+    const bar=$('#aiBar'); if(bar) bar.classList.remove('open');
+    const btn=$('#aiMbar'); if(btn) btn.setAttribute('aria-expanded','false');
+  }
+}
+function focusAiChat(){
+  const t=$('#aiInput');
+  if(t){t.focus(); t.scrollIntoView({behavior:'smooth',block:'end'})}
+}
+function addAiFiles(input){
+  const files=[...input.files||[]];
+  input.value='';
+  files.forEach(aiPushFile);
+}
+function aiPageActive(){
+  const p=$('#page-ai');
+  return !!(p&&p.classList.contains('active'));
+}
+function aiPushFile(file){
+  if(!file)return;
+  const type=file.type||'';
+  const named=file.name&&file.name!=='blob'?file:new File([file],'screenshot-'+Date.now()+'.png',{type:type||'image/png'});
+  if(named.size>8*1024*1024){toast(named.name+' is larger than 8 MB','err');return}
+  aiFiles.push(named);
+  renderAiChips();
+  toast('Attached '+named.name);
+}
+function aiOnPaste(e){
+  if(!aiPageActive())return;
+  const cd=e.clipboardData; if(!cd)return;
+  let got=false;
+  const items=[...cd.items||[]];
+  items.forEach(it=>{
+    if(!it.type||it.type.indexOf('image/')!==0)return;
+    const f=it.getAsFile();
+    if(f){aiPushFile(f);got=true}
+  });
+  if(!got){
+    [...cd.files||[]].forEach(f=>{
+      if(f&&f.type&&f.type.indexOf('image/')===0){aiPushFile(f);got=true}
+    });
+  }
+  if(got) e.preventDefault();
+}
+function renderAiChips(){
+  $('#aiChips').innerHTML=aiFiles.map((f,i)=>`<span class="ai-chip"><i class="fa-solid ${f.type.startsWith('image/')?'fa-image':'fa-file'}"></i> ${esc(f.name)}<button type="button" onclick="aiFiles.splice(${i},1);renderAiChips()">&times;</button></span>`).join('');
+}
+function fileToAtt(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>res({name:file.name,mime:file.type||'application/octet-stream',data:r.result});
+    r.onerror=rej;
+    r.readAsDataURL(file);
+  });
+}
+function aiInputKey(e){
+  if(e.key==='Enter' && !e.shiftKey){e.preventDefault();sendAiChat()}
+}
+async function sendAiChat(){
+  if(aiBusy)return;
+  const text=($('#aiInput').value||'').trim();
+  if(!text && !aiFiles.length){toast('Type a message or attach a file','err');return}
+  const atts=await Promise.all(aiFiles.map(fileToAtt));
+  $('#aiInput').value='';
+  aiFiles=[];
+  renderAiChips();
+  await runAiRequest('/api/ai/chat', {message:text, attachments:atts}, $('#aiSendBtn'), 'Sending…');
+}
+async function runAiAutofix(){
+  if(aiBusy)return;
+  await runAiRequest('/api/ai/autofix', {}, $('#aiAutofixBtn'), 'Fixing…');
+}
+async function runAiRequest(url, body, btn, wait){
+  if(aiBusy)return;
+  aiBusy=true;
+  aiSince=0;
+  if($('#aiSteps')) $('#aiSteps').innerHTML='';
+  aiSetLive(true, wait||'Working…');
+  btnBusy(btn, true, wait);
+  try{
+    const r=await api(url,{method:'POST',body:JSON.stringify(body)});
+    if(r.error){
+      toast(r.error,'err');
+      aiBusy=false;
+      btnBusy(btn, false);
+      aiSetLive(false);
+      return;
+    }
+    startAiPoll();
+  }catch(e){
+    toast(String(e),'err');
+    aiBusy=false;
+    btnBusy(btn, false);
+    aiSetLive(false);
+  }
+}
+async function clearAiChat(){
+  if(aiBusy){toast('Wait until the current job finishes','err');return}
+  await api('/api/ai/history',{method:'DELETE'});
+  renderAiLog([]);
+  if($('#aiSteps')) $('#aiSteps').innerHTML='';
+  toast('Chat cleared');
+}
+(function(){
+  const page=$('#page-ai');
+  if(!page)return;
+  page.addEventListener('dragover',e=>{e.preventDefault()});
+  page.addEventListener('drop',e=>{
+    e.preventDefault();
+    const files=[...e.dataTransfer.files||[]];
+    files.forEach(f=>{if(f.size<=8*1024*1024) aiPushFile(f); else toast(f.name+' is larger than 8 MB','err')});
+  });
+  document.addEventListener('paste', aiOnPaste, true);
+  document.addEventListener('click', e=>{
+    const item=e.target.closest&&e.target.closest('#aiModelList .ai-dd-item');
+    if(item){pickAiModel(item.getAttribute('data-id'));return}
+    const dd=$('#aiModelDd');
+    if(dd && dd.classList.contains('open') && !dd.contains(e.target)) closeAiModelDd();
+  });
+  document.addEventListener('keydown', e=>{
+    if(e.key==='Escape') closeAiModelDd();
+  });
+})();
 </script>
 </body>
 </html>

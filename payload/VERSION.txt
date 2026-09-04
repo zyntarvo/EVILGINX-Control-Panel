@@ -1,5 +1,7 @@
-3.5.7
+3.5.8
 C2 Panel payload
+AI-Assistant: OpenRouter Autofix + chat (key stored only on the server, never in git)
+Searchable model dropdown, mobile compact layout
 Dashboard Session Map: unique session IPs on a dark world map (OpenFreeMap)
 IP markers: mint = tokens, purple = JWT, red = empty; solid = one session, ring = several from the same IP
 Filters ALL / WITH JWT / WITH TOKENS / EMPTY plus phishlet dropdown (default All)

@@ -15,7 +15,7 @@
   &nbsp;
   <img src="https://img.shields.io/badge/Python-3-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
   &nbsp;
-  <img src="https://img.shields.io/badge/version-3.5.7-0ea5e9?style=for-the-badge" alt="3.5.7">
+  <img src="https://img.shields.io/badge/version-3.5.8-0ea5e9?style=for-the-badge" alt="3.5.8">
 </p>
 
 <p align="center"><b>Created by ZynTarvo</b> · Telegram: <a href="https://t.me/zyntarvo">@zyntarvo</a> · <i>Nothing Is Impossible</i></p>
@@ -35,6 +35,7 @@ Built for red teamers, pentesters, and anyone who wants Evilginx running in minu
 - **Proxy Manager** — deploy Linode proxies or paste your own (`ip:port@login:pass`), assign them to phishlets, watch live traffic
 - E-Terminal (Evilginx CLI) and a full Linux shell in the browser
 - Live host Health (CPU, RAM, disk, traffic) and per-service journalctl follow
+- **AI-Assistant** — OpenRouter chat + Autofix for TLS, certs, Evilginx process, config, and phishlet ops (your key stays on the C2 box, never in this repo)
 
 ## Demo
 
@@ -371,6 +372,52 @@ Live host metrics under **Terminal** in the sidebar. Cheap `/proc` reads only wh
 - Status pills: HEALTHY / WARNING / CRITICAL
 - Timer stops when you leave the page or hide the tab — the server is not polled in the background
 
+### AI-Assistant
+
+Sidebar item under **Health**. On-server operator that talks to [OpenRouter](https://openrouter.ai/keys) — you paste **your own** API key in the panel. The key is stored only on the C2 box (`/root/evilginx-panel/ai_openrouter.json`, mode 600). It is **not** shipped in this repository and the installer never uploads one.
+
+**First run**
+
+1. Open **AI-Assistant**
+2. Paste an OpenRouter key (`sk-or-v1-…`) → **Connect**
+3. Pick a model from the searchable dropdown (Free / Paid, vision tag)
+4. Autofix and chat unlock
+
+**AUTOFIX**
+
+One click. The panel collects live diagnostics (Evilginx process, `config.json`, phishlets, ports, disk, certs) and the model is required to call tools — it does not stop at “let me check”. Typical jobs:
+
+- Let's Encrypt 429 / autocert ON with too many hosts
+- Install an existing wildcard cert into `crt/sites/<domain>/`
+- Restart / start / stop Evilginx
+- Broken `unauth_url`, empty lure hostname, phishlet enable
+- systemd / log / disk checks on the box
+
+Live steps show in the chat (tool name + short result). English or Russian — it answers in the language you type.
+
+**CHAT**
+
+Same tools as Autofix, plus your message. You can:
+
+- Type a problem or paste logs
+- Attach a screenshot / photo (paperclip, drag-and-drop, or Ctrl+V)
+- Attach small files (`.txt`, `.log`, `.json`, `.yaml`, `.conf`, `.pem`, `.crt`, up to 8 MB)
+
+**Send** analyzes and can apply a fix on the server.
+
+**What it will not do**
+
+- Dump captured sessions, cookies, passwords, JWT, `.env`, or the OpenRouter key
+- Run blocked shell (`rm -rf /`, `wget`/`curl` outbound, `passwd`, reboot, …)
+- Rewrite a working phishlet YAML unless the file is invalid
+
+**Layout**
+
+- Desktop / tablet: Model on the left (search is **inside** the dropdown), masked key hint, Disconnect, Clear chat
+- Phone: settings collapse to one model strip; Autofix is a slim bar; compose stays one row (clip + input + send)
+
+**Disconnect** removes the key from the box. **Clear chat** wipes the thread file, not the key.
+
 ## Layout
 
 ```
@@ -378,6 +425,7 @@ START.bat                 → launch the GUI installer
 evilginx_setup.py         → SSH installer (Ubuntu 20.04–26.04)
 payload/                  → panel that gets uploaded to the server
   app.py
+  ai_assistant.py         → OpenRouter Autofix + chat (key file is created on the server, not in git)
   proxy_engine.py         → Linode fleet, Squid, 429 rotate, carousel, live traffic
   patches/                → apply_egx_429_hook.py (after clone, before go build)
   templates/              → login + dashboard
