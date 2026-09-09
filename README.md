@@ -70,6 +70,10 @@ Think of it as a companion: the same Evilginx, made simpler to install and opera
    - **INSTALL** — full stack on a **fresh** server: Go 1.20, DNS port 53, clone kgretzky/evilginx2, 429 hook, build, upload the panel, systemd
    - **INSTALL ONLY CP** — panel only. Does **not** install or replace Evilginx. Finds the binary already on the box (stock `build/evilginx`, Pro `evilginx2`, systemd unit, or `PATH`), writes the panel `.env` to that engine, and starts the C2. Extra flags from the existing process (`-developer`, `-dashboard`, `-block-vpn`, …) are kept. The 429 proxy-rotate hook is applied only when `core/http_proxy.go` matches; a custom/Pro binary is never rebuilt.
 
+<p align="center">
+  <img src="docs/screenshots/34-installer.png" alt="Installer — INSTALL and INSTALL ONLY CP" width="420">
+</p>
+
 Panel URL: `http://YOUR_SERVER_IP:8443`  
 Login is the same as SSH (user + password).
 
