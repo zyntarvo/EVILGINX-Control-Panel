@@ -1,5 +1,7 @@
-3.5.8
+3.5.9
 C2 Panel payload
+INSTALL ONLY CP: attach the panel to an already-installed Evilginx of any fork; do not clone or replace the engine
+Panel .env: EVILGINX_BIN / PHISHLETS_DIR / EVILGINX_ARGS so Pro and custom binaries start correctly
 AI-Assistant: OpenRouter Autofix + chat (key stored only on the server, never in git)
 Searchable model dropdown, mobile compact layout
 Dashboard Session Map: unique session IPs on a dark world map (OpenFreeMap)
