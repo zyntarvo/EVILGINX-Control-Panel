@@ -1,5 +1,6 @@
-3.5.9
+3.5.10
 C2 Panel payload
+Carousel OFF: origin 429 does not rotate or detach — assigned hop stays; Carousel ON still rotates the queue
 INSTALL ONLY CP: attach the panel to an already-installed Evilginx of any fork; do not clone or replace the engine
 Panel .env: EVILGINX_BIN / PHISHLETS_DIR / EVILGINX_ARGS so Pro and custom binaries start correctly
 AI-Assistant: OpenRouter Autofix + chat (key stored only on the server, never in git)
