@@ -1003,7 +1003,7 @@ tr:hover td{background:var(--accent-dim)}
         <div class="px-assign-row">
           <div class="field" style="margin:0;min-width:160px;flex:1"><label>PHISHLET</label><select id="pxAssignPh"></select></div>
           <button class="btn fill" id="pxAssignBtn" onclick="pxAssign()"><i class="fa-solid fa-check"></i> Assign</button>
-          <button type="button" class="btn px-carousel-btn" id="pxCarouselBtn" onclick="pxCarouselToggle()" title="On 429: switch to the next proxy without detaching — current hop goes to the end of the queue" aria-pressed="false"><i class="fa-solid fa-repeat"></i> Carousel</button>
+          <button type="button" class="btn px-carousel-btn" id="pxCarouselBtn" onclick="pxCarouselToggle()" title="On: 429 switches to the next proxy (hop stays assigned). Off: 429 does not rotate or detach." aria-pressed="false"><i class="fa-solid fa-repeat"></i> Carousel</button>
           <button class="btn danger" id="pxDetachBtn" onclick="pxDetach()"><i class="fa-solid fa-link-slash"></i> Detach</button>
         </div>
         <div class="px-assign-checks" id="pxAssignChecks"></div>
@@ -2785,7 +2785,7 @@ async function pxCarouselToggle(){
   try{
     const r=await api('/api/proxy/carousel',{method:'POST',body:JSON.stringify({phishlet:ph,enabled:on})});
     if(r.error)toast(r.error,'err');
-    else{toast(on?'Carousel on — 429 rotates without detach':'Carousel off — 429 will detach');await _pxRefreshState()}
+    else{toast(on?'Carousel on — 429 rotates without detach':'Carousel off — 429 stays on the assigned hop');await _pxRefreshState()}
   }finally{_pxSetBusy(false)}
 }
 async function pxDetachOne(ph,id){

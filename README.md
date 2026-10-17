@@ -233,7 +233,7 @@ Paste your own hops — no Linode required. Same assign list, cards, charts, and
 
 | | After 3 origin **429**s in 15 minutes |
 |---|---|
-| **Off** (default) | Current hop is **detached** from the phishlet (Linode kept). Traffic moves to the next assigned proxy, or the Evilginx server IP if the pool is empty. |
+| **Off** (default) | 429 does **nothing**. Assigned hop(s) stay as you set them. No jump to another proxy and no fallback to the Evilginx server IP. |
 | **On** | Current hop **stays assigned** and is moved to the **end of the queue**. Traffic switches to the next live proxy. A → B → C → A. Live Squid CONNECT tunnels of the old hop are closed so the switch is immediate. |
 
 A node that is still booting is never rotated off. Manual Detach / the chip **×** still unbind as before.

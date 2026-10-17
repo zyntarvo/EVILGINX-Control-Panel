@@ -2493,7 +2493,7 @@ def api_proxy_carousel():
     st = pxe.set_carousel(ph, enabled)
     nc_push(
         "Proxy carousel",
-        f"{ph}: carousel {'on — 429 rotates the queue, no detach' if enabled else 'off — 429 will detach the current hop'}.",
+        f"{ph}: carousel {'on — 429 rotates the queue, no detach' if enabled else 'off — 429 does not rotate or detach'}.",
         "info",
     )
     return jsonify(ok=True, **st)

