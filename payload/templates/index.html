@@ -125,7 +125,9 @@ tr:hover td{background:var(--accent-dim)}
 .sessFilter{border:1px solid var(--border);color:var(--text2);border-radius:8px;font-weight:600;transition:all 0.2s}
 .filt-n{display:inline-block;min-width:18px;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:700;font-family:var(--mono);background:rgba(255,255,255,0.08);color:inherit;vertical-align:middle}
 .sessFilter.active .filt-n{background:rgba(10,14,23,0.22)}
-.modal.wide{max-width:980px}
+.modal.wide{max-width:980px;display:flex;flex-direction:column;overflow:hidden}
+.modal.wide #modalBody{overflow-y:auto;flex:1;min-height:0}
+.modal.wide .modal-foot{flex-shrink:0;flex-wrap:wrap}
 .jwt-box{display:flex;flex-direction:column;gap:16px}
 .jwt-range{padding:14px 16px;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);border-radius:10px;color:#fff;font-size:16px;font-weight:600;letter-spacing:0.2px}
 .jwt-range .lbl{display:block;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--purple);margin-bottom:6px}
@@ -185,7 +187,7 @@ tr:hover td{background:var(--accent-dim)}
 .modal .close{background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer;transition:color 0.2s;padding:4px 8px;border-radius:6px}
 .modal .close:hover{color:var(--red);background:rgba(239,68,68,0.1)}
 .modal #modalBody{padding:24px}
-.modal .modal-foot{padding:16px 24px;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--border)}
+.modal .modal-foot{padding:16px 24px;display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px;border-top:1px solid var(--border)}
 .toast-container{position:fixed;top:64px;right:20px;z-index:2000}
 .toast{padding:14px 20px;border-radius:10px;margin-bottom:8px;font-size:13px;font-weight:500;max-width:380px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:toastSlide 0.4s cubic-bezier(0.16,1,0.3,1);border-left:3px solid}
 .toast.ok{background:rgba(0,255,136,0.08);border-color:var(--accent);color:var(--accent)}
@@ -468,6 +470,15 @@ tr:hover td{background:var(--accent-dim)}
 .px-tile.custom:hover{border-color:rgba(167,139,250,0.55)}
 .px-custom-ta{width:100%;min-height:84px;resize:vertical;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:#fff;font-family:var(--mono);font-size:12px;padding:10px 12px;line-height:1.45;box-sizing:border-box}
 .px-custom-ta:focus{outline:none;border-color:var(--accent)}
+.px-rise-script{min-height:160px;max-height:28vh;font-size:11.5px;line-height:1.5;white-space:pre}
+.px-card .sec-title.px-sec-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.px-card .sec-title.px-sec-row .btn{margin:0;height:36px;padding:0 12px}
+.px-sec-btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.px-mi-pem{min-height:110px;max-height:22vh;font-size:11.5px;line-height:1.45;white-space:pre}
+.px-mi-file{font-size:12px;color:var(--text2);margin:0 0 8px}
+.px-mi-file input[type=file]{color:var(--text2);font-size:12px;max-width:100%}
+#pxMiProgress{margin-top:14px}
+.px-mi-line{font-family:var(--mono);font-size:12px;color:var(--accent);word-break:break-all;margin-top:8px}
 .px-custom-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:12px}
 .px-custom-row .field{margin:0;flex:0 0 160px}
 .px-custom-hint{font-size:12px;color:var(--text3);margin:0 0 10px;line-height:1.45}
@@ -980,6 +991,8 @@ tr:hover td{background:var(--accent-dim)}
         <div class="px-deploy-row">
           <div class="field"><label>SERVERS</label><input id="pxCount" type="number" min="1" value="1"></div>
           <button class="btn fill" onclick="pxDeploy()" id="pxDeployBtn"><i class="fa-solid fa-paper-plane"></i> Deploy Proxies</button>
+          <button class="btn cyan" id="pxManualRiseBtn" onclick="pxManualRise()"><i class="fa-solid fa-terminal"></i> Manual Rise</button>
+          <button class="btn cyan" id="pxManualInstallBtn" onclick="pxManualInstall()"><i class="fa-solid fa-hard-drive"></i> Manual Install</button>
           <button class="btn cyan" id="pxRefreshBtn" onclick="loadProxy()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
         </div>
         <div class="px-region-wrap">
@@ -1011,7 +1024,7 @@ tr:hover td{background:var(--accent-dim)}
       </div>
     </div>
     <div class="px-card" id="pxCustomCard">
-      <div class="sec-title"><i class="fa-solid fa-user-gear"></i> Add Custom Proxies</div>
+      <div class="sec-title px-sec-row"><span><i class="fa-solid fa-user-gear"></i> Add Custom Proxies</span><span class="px-sec-btns"><button type="button" class="btn cyan sm" onclick="pxManualRise()"><i class="fa-solid fa-terminal"></i> Manual Rise</button><button type="button" class="btn cyan sm" onclick="pxManualInstall()"><i class="fa-solid fa-hard-drive"></i> Manual Install</button></span></div>
       <p class="px-custom-hint">One per line: <span style="font-family:var(--mono);color:var(--text)">ip:port@login:pass</span>. Protocol applies to the whole paste. Evilginx types: HTTP, HTTPS, SOCKS5, SOCKS5H.</p>
       <textarea id="pxCustomText" class="px-custom-ta" placeholder="38.87.65.114:50100@user:password&#10;1.2.3.4:1080@user:password"></textarea>
       <div class="px-custom-row">
@@ -1025,6 +1038,24 @@ tr:hover td{background:var(--accent-dim)}
         </div>
         <button class="btn fill" id="pxCustomAddBtn" onclick="pxCustomAdd()"><i class="fa-solid fa-plus"></i> Add Proxies</button>
       </div>
+    </div>
+    <div class="px-card" id="pxDiCard">
+      <div class="sec-title"><i class="fa-solid fa-house-signal"></i> DataImpulse Residential</div>
+      <p class="px-custom-hint">Rotating residential gateway (<span style="font-family:var(--mono);color:var(--text)">login__cr.XX__sessid.XXXX</span>). Enable on a phishlet: all Linode/custom hops for that phishlet are detached. After a visitor goes idle (~20s), the next visit gets a new sessid → new IP. Auth 429 also rotates sessid. Does not delete your Linode fleet.</p>
+      <div class="px-custom-row" style="align-items:flex-end">
+        <div class="field" style="flex:1 1 160px;min-width:140px"><label>LOGIN</label><input id="pxDiLogin" type="text" autocomplete="off" spellcheck="false" placeholder="DataImpulse login"></div>
+        <div class="field" style="flex:1 1 160px;min-width:140px"><label>PASSWORD</label><input id="pxDiPass" type="password" autocomplete="new-password" placeholder="leave blank to keep"></div>
+        <div class="field" style="flex:1 1 180px;min-width:160px"><label>HOST</label><input id="pxDiHost" type="text" value="gw.dataimpulse.com" spellcheck="false"></div>
+        <div class="field" style="flex:0 0 100px"><label>PORT</label><input id="pxDiPort" type="number" min="1" max="65535" value="823"></div>
+        <div class="field" style="flex:0 0 90px"><label>COUNTRY</label><input id="pxDiCountry" type="text" value="" maxlength="2" spellcheck="false" placeholder="us" title="ISO country for residential targeting (us, de, tr…)"></div>
+        <button class="btn cyan" id="pxDiSaveBtn" onclick="pxDiSave()"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+      </div>
+      <div class="px-assign-row" style="margin-top:14px">
+        <div class="field" style="margin:0;min-width:160px;flex:1"><label>PHISHLET</label><select id="pxDiPh"></select></div>
+        <button class="btn fill" id="pxDiOnBtn" onclick="pxDiEnable(true)"><i class="fa-solid fa-power-off"></i> Enable</button>
+        <button class="btn danger" id="pxDiOffBtn" onclick="pxDiEnable(false)"><i class="fa-solid fa-ban"></i> Disable</button>
+      </div>
+      <div class="px-cur-assign" id="pxDiStatus" style="margin-top:12px"></div>
     </div>
     <div class="px-chart-card" id="pxTrafficCard">
       <div class="sec-title"><i class="fa-solid fa-chart-column"></i> Traffic by Phishlet</div>
@@ -1705,7 +1736,20 @@ async function createLure(){const data={phishlet:$('#nlPhishlet').value,path:$('
 function editLure(idx){const l=allLures[idx];if(!l)return;let phOpts=allPhishlets.map(p=>`<option value="${p.name}" ${p.name===l.phishlet?'selected':''}>${p.name}</option>`).join('');openModal(`EDIT LURE #${idx}`,`<div class="form-grid"><div class="field"><label>Phishlet</label><select id="elPhishlet">${phOpts}</select></div><div class="field"><label>Path</label><input id="elPath" value="${esc(l.path||'/')}"></div><div class="field"><label>Redirect URL</label><input id="elRedirect" value="${esc(l.redirect_url||'')}"></div><div class="field"><label>UA Filter</label><input id="elUa" value="${esc(l.ua_filter||'')}"></div><div class="field"><label>OG Title</label><input id="elOgTitle" value="${esc(l.og_title||'')}"></div><div class="field"><label>OG Description</label><input id="elOgDesc" value="${esc(l.og_desc||'')}"></div><div class="field"><label>OG Image</label><input id="elOgImg" value="${esc(l.og_image||'')}"></div><div class="field"><label>OG URL</label><input id="elOgUrl" value="${esc(l.og_url||'')}"></div></div>`,`<button class="btn fill" onclick="saveLure(${idx})">SAVE</button> <button class="btn" onclick="closeModal()">CANCEL</button>`)}
 async function saveLure(idx){const data={index:idx,phishlet:$('#elPhishlet').value,path:$('#elPath').value,redirect_url:$('#elRedirect').value,ua_filter:$('#elUa').value,og_title:$('#elOgTitle').value,og_desc:$('#elOgDesc').value,og_image:$('#elOgImg').value,og_url:$('#elOgUrl').value};await withBusy(typeof event!=='undefined'?event:null,'Saving…',async()=>{const r=await api('/api/lures',{method:'PUT',body:JSON.stringify(data)});if(r.ok){closeModal();toast('Lure updated');loadLures()}else toast(r.error||'Error','err')})}
 async function deleteLure(idx){if(!confirm(`Delete lure #${idx}?`))return;await withBusy(typeof event!=='undefined'?event:null,'Deleting…',async()=>{const r=await api('/api/lures',{method:'DELETE',body:JSON.stringify({index:idx})});if(r.ok){toast('Deleted');loadLures()}else toast(r.error||'Error','err')})}
-function copyUrl(url){if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(url).then(()=>toast('URL copied!')).catch(()=>toast('Copy failed','err'))}else{const ta=document.createElement('textarea');ta.value=url;ta.style.cssText='position:fixed;left:-9999px';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('URL copied!')}catch(e){toast('Copy failed','err')}document.body.removeChild(ta)}}
+function copyUrl(url){copyText(url,'URL copied!')}
+function copyText(t,ok){
+  t=t==null?'':String(t);
+  const done=()=>toast(ok||'Copied');
+  if(navigator.clipboard&&window.isSecureContext){
+    navigator.clipboard.writeText(t).then(done).catch(()=>toast('Copy failed','err'));
+  }else{
+    const ta=document.createElement('textarea');
+    ta.value=t;ta.style.cssText='position:fixed;left:-9999px';
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');done()}catch(e){toast('Copy failed','err')}
+    document.body.removeChild(ta);
+  }
+}
 var currentSessFilter='all';
 var _jwtCache={id:null,list:[]};
 var SESS_FILTER_LABELS={all:'all',jwt:'JWT',tokens:'with tokens',empty:'empty'};
@@ -1944,6 +1988,7 @@ function attachFindReplace(root){
   if(!root)return;
   root.querySelectorAll('textarea').forEach(function(ta){
     if(ta.dataset.frAttached)return;
+    if(ta.classList.contains('no-fr'))return;
     ta.dataset.frAttached='1';
     var bar=document.createElement('div');
     bar.className='fr-bar';
@@ -2042,7 +2087,7 @@ function closeModal(){stopJournalFollow();var ov=$('#modalOverlay');ov.classList
 $('#modalOverlay').addEventListener('click',e=>{if(e.target===$('#modalOverlay'))closeModal()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='h'){var ov=$('#modalOverlay');if(ov&&ov.classList.contains('show')){e.preventDefault();var fi=ov.querySelector('.fr-find');if(fi)fi.focus();}}});
 /* ═══ Proxy Manager ═══ */
-let _pxRegions=[],_pxSel=new Set(),_pxPollId=null,_pxRefreshId=null,_pxPowerPollId=null,_pxSeen=new Set(),_pxAssignSt=null,_pxChartMode='',_pxChartCharge=false,_pxPowerJobs={},_pxLastSt=null,_pxRegionQ='';
+let _pxRegions=[],_pxSel=new Set(),_pxPollId=null,_pxRefreshId=null,_pxPowerPollId=null,_pxSeen=new Set(),_pxAssignSt=null,_pxChartMode='',_pxChartCharge=false,_pxPowerJobs={},_pxLastSt=null,_pxRegionQ='',_pxMiPollId=null;
 function pxFlag(cc){
   cc=(cc||'').toLowerCase();
   if(cc.length!==2)return '';
@@ -2452,6 +2497,127 @@ function _pxKindIco(p){
   if(_pxIsCustom(p)) return '<i class="fa-solid fa-user-gear px-kind-ico custom" title="Custom proxy"></i>';
   return '<i class="fa-solid fa-cloud px-kind-ico" title="Linode proxy"></i>';
 }
+async function pxManualRise(){
+  const r=await api('/api/proxy/manual-rise');
+  if(!r||r.error){toast((r&&r.error)||'Manual rise failed','err');return}
+  window._pxRise=r;
+  openModal('MANUAL RISE',
+    '<div class="template-hint"><strong style="color:var(--accent)">Same Squid as Linode Nanode.</strong> Paste as <code>root</code> on any Ubuntu 22.04/24.04. The script detects <code>this server\'s public IP</code>, opens port <code>'+esc(String(r.port||50100))+'</code> from any address, and prints <code>ADD_LINE=ip:port@user:pass</code>. Paste that line into Add Custom Proxies as <code>HTTP</code>.</div>'
+    +'<div class="form-grid">'
+    +'<div class="field"><label>USER</label><input id="pxRiseUser" value="'+esc(r.user||'')+'" readonly></div>'
+    +'<div class="field"><label>PASSWORD</label><input id="pxRisePass" value="'+esc(r.password||'')+'" readonly></div>'
+    +'<div class="field"><label>PORT</label><input id="pxRisePort" value="'+esc(String(r.port||50100))+'" readonly></div>'
+    +'</div>'
+    +'<div class="field" style="margin-top:12px"><label>SCRIPT</label><textarea id="pxRiseScript" class="px-custom-ta px-rise-script no-fr" spellcheck="false">'+esc(r.script||'')+'</textarea></div>',
+    '<button class="btn fill" onclick="pxRiseCopyScript()"><i class="fa-solid fa-copy"></i> Copy Script</button>'
+    +'<button class="btn" onclick="pxManualRise()"><i class="fa-solid fa-key"></i> New Creds</button>'
+    +'<button class="btn" onclick="closeModal()">CLOSE</button>',
+    {wide:true}
+  );
+}
+function pxRiseCopyScript(){
+  const t=($('#pxRiseScript')&&$('#pxRiseScript').value)||((window._pxRise||{}).script)||'';
+  if(!t)return toast('No script','err');
+  copyText(t,'Script copied');
+}
+function pxManualInstall(){
+  openModal('MANUAL INSTALL',
+    '<div class="template-hint"><strong style="color:var(--accent)">Same Squid as Linode Nanode.</strong> Panel SSHs into this Ubuntu, installs port <code>50100</code>, and adds the hop as a custom HTTP proxy when Squid answers.</div>'
+    +'<div class="form-grid">'
+    +'<div class="field"><label>SERVER IP</label><input id="pxMiIp" placeholder="1.2.3.4" autocomplete="off" spellcheck="false"></div>'
+    +'<div class="field"><label>SSH PORT</label><input id="pxMiPort" type="number" min="1" max="65535" value="22"></div>'
+    +'<div class="field"><label>SSH LOGIN</label><input id="pxMiLogin" value="root" autocomplete="off" spellcheck="false"></div>'
+    +'</div>'
+    +'<label class="toggle-row" style="margin-top:14px"><input type="checkbox" id="pxMiPemOn" class="toggle-input" onchange="pxMiAuthMode()"><span class="toggle-switch"></span><span class="toggle-label">PEM key instead of password</span></label>'
+    +'<div id="pxMiPassWrap" class="field" style="margin-top:12px"><label>SSH PASSWORD</label><input id="pxMiPass" type="password" autocomplete="new-password" placeholder="root password"></div>'
+    +'<div id="pxMiPemWrap" style="display:none;margin-top:12px">'
+    +'<div class="px-mi-file"><label>PRIVATE KEY FILE</label><input id="pxMiPemFile" type="file" accept=".pem,.key,.txt" onchange="pxMiLoadPem(this)"></div>'
+    +'<div class="field"><label>PEM KEY</label><textarea id="pxMiPem" class="px-custom-ta px-mi-pem no-fr" spellcheck="false" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"></textarea></div>'
+    +'<div class="field" style="margin-top:10px"><label>KEY PASSPHRASE (optional)</label><input id="pxMiPemPass" type="password" autocomplete="new-password" placeholder="leave blank if the key has no passphrase"></div>'
+    +'</div>'
+    +'<div id="pxMiProgress" style="display:none">'
+    +'<div class="px-progress"><div class="px-progress-bar" id="pxMiBar"></div></div>'
+    +'<div class="px-step" id="pxMiStep"></div>'
+    +'<div class="px-mi-line" id="pxMiLine"></div>'
+    +'</div>',
+    '<button class="btn fill" id="pxMiStartBtn" onclick="pxMiStart()"><i class="fa-solid fa-play"></i> Start</button>'
+    +'<button class="btn" onclick="pxMiStopPoll();closeModal()">CLOSE</button>'
+  );
+  pxMiAuthMode();
+  pxMiHydrate();
+}
+function pxMiAuthMode(){
+  const on=!!($('#pxMiPemOn')&&$('#pxMiPemOn').checked);
+  if($('#pxMiPassWrap')) $('#pxMiPassWrap').style.display=on?'none':'';
+  if($('#pxMiPemWrap')) $('#pxMiPemWrap').style.display=on?'':'none';
+}
+function pxMiLoadPem(inp){
+  const f=inp&&inp.files&&inp.files[0];
+  if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{if($('#pxMiPem')) $('#pxMiPem').value=String(r.result||'')};
+  r.readAsText(f);
+}
+function pxMiApply(st){
+  if(!st||!$('#pxMiProgress')) return;
+  const run=!!st.running, ok=!!st.ok, err=st.error||'';
+  if(run||ok||err) $('#pxMiProgress').style.display='';
+  if($('#pxMiBar')) $('#pxMiBar').style.width=(st.pct||0)+'%';
+  if($('#pxMiStep')) $('#pxMiStep').textContent=(st.step||'')+(err?' — '+err:'');
+  if($('#pxMiLine')) $('#pxMiLine').textContent=st.line||'';
+  const btn=$('#pxMiStartBtn');
+  if(btn){
+    if(run) btnBusy(btn,true,'Installing…');
+    else btnBusy(btn,false);
+  }
+}
+async function pxMiHydrate(){
+  try{
+    const st=await api('/api/proxy/manual-install');
+    pxMiApply(st);
+    if(st&&st.running) _startMiPoll();
+  }catch(e){}
+}
+function pxMiStopPoll(){
+  if(_pxMiPollId){clearInterval(_pxMiPollId);_pxMiPollId=null}
+}
+function _startMiPoll(){
+  pxMiStopPoll();
+  _pxMiPollId=setInterval(async()=>{
+    if(!$('#pxMiProgress')){pxMiStopPoll();return}
+    try{
+      const st=await api('/api/proxy/manual-install');
+      pxMiApply(st);
+      if(!st||!st.running){
+        pxMiStopPoll();
+        if(st&&st.ok){toast('Squid ready');_pxRefreshState()}
+        else if(st&&st.error) toast(st.error,'err');
+      }
+    }catch(e){}
+  },2000);
+}
+async function pxMiStart(){
+  const ip=($('#pxMiIp')&&$('#pxMiIp').value||'').trim();
+  const port=parseInt(($('#pxMiPort')&&$('#pxMiPort').value)||'22',10);
+  const login=($('#pxMiLogin')&&$('#pxMiLogin').value||'root').trim();
+  const usePem=!!($('#pxMiPemOn')&&$('#pxMiPemOn').checked);
+  const password=usePem?'':(($('#pxMiPass')&&$('#pxMiPass').value)||'');
+  const pem=usePem?(($('#pxMiPem')&&$('#pxMiPem').value)||''):'';
+  const pem_pass=usePem?(($('#pxMiPemPass')&&$('#pxMiPemPass').value)||''):'';
+  if(!ip) return toast('Server IP required','err');
+  if(!usePem && !password) return toast('SSH password required','err');
+  if(usePem && !(pem||'').trim()) return toast('Paste or upload a PEM key','err');
+  if($('#pxMiProgress')) $('#pxMiProgress').style.display='';
+  const btn=$('#pxMiStartBtn');
+  if(btn) btnBusy(btn,true,'Starting…');
+  try{
+    const r=await api('/api/proxy/manual-install',{method:'POST',body:JSON.stringify({ip,port,login,password,use_pem:usePem,pem,pem_pass})});
+    if(r.error){if(btn)btnBusy(btn,false);toast(r.error,'err');return}
+    pxMiApply(r);
+    toast('Installing Squid…');
+    _startMiPoll();
+  }catch(e){if(btn)btnBusy(btn,false)}
+}
 async function pxCustomAdd(){
   const text=($('#pxCustomText').value||'').trim();
   const type=$('#pxCustomType').value||'http';
@@ -2618,7 +2784,9 @@ function pxPower(id,action,label){
 async function doPxPower(id,action){await withBusy(typeof event!=='undefined'?event:null,action+'…',async()=>{const r=await api('/api/proxy/power',{method:'POST',body:JSON.stringify({id,action})});closeModal();if(r.error)toast(r.error,'err');else{_pxPowerJobs[id]={action:action,t0:Date.now(),sawTrans:false,pct:8};toast('Proxy '+action+' sent');_startPowerPoll();_pxRefreshState(true)}})}
 function pxRepair(id,label){openModal('REPAIR PROXY','<p style="color:#fff;margin-bottom:12px">Install Squid on <strong style="color:var(--cyan)">'+esc(label||'proxy-'+id)+'</strong>?</p><p style="color:var(--text3);font-size:13px">The Linode is kept. If SSH is locked it will power-cycle once to reset access, then install the proxy.</p>','<button class="btn fill" onclick="doPxRepair('+id+')"><i class="fa-solid fa-wrench"></i> REPAIR</button><button class="btn" onclick="closeModal()">CANCEL</button>')}
 async function doPxRepair(id){await withBusy(typeof event!=='undefined'?event:null,'Repairing…',async()=>{const r=await api('/api/proxy/repair',{method:'POST',body:JSON.stringify({id})});closeModal();if(r.error)toast(r.error,'err');else{toast('Repair started');_startDeployPoll();_pxRefreshState()}})}
-function _pxCheckedIds(){return [...document.querySelectorAll('#pxAssignChecks input:checked')].map(c=>parseInt(c.value))}
+const PX_DI_ID=-900001;
+function _pxCheckedIds(){return [...document.querySelectorAll('#pxAssignChecks input:checked')].map(c=>parseInt(c.value,10))}
+function _pxDiOn(st, ph){return !!(ph&&((((st||{}).dataimpulse||{}).enabled)||{})[ph])}
 function _renderAssign(st){
   _pxAssignSt=st;
   const proxies=(st.proxies||[]).filter(p=>p.ready||p.status==='active');
@@ -2633,53 +2801,57 @@ function _renderAssign(st){
   if(prev)ph.value=prev;
   const selPh=ph.value;
   const assigned=selPh?(assign[selPh]||[]).map(Number):[];
-  let ch='';proxies.forEach(p=>{
+  const di=st.dataimpulse||{};
+  let ch='';
+  if(di.password_set||di.login){
+    ch+='<label class="px-assign-check"><i class="fa-solid fa-house-signal px-kind-ico custom"></i><input type="checkbox" value="'+PX_DI_ID+'" '+(_pxDiOn(st,selPh)?'checked':'')+'> DataImpulse<span class="px-kind-tag">residential</span></label>';
+  }
+  proxies.forEach(p=>{
     const checked=assigned.includes(Number(p.id))?'checked':'';
     ch+='<label class="px-assign-check">'+_pxKindIco(p)+'<input type="checkbox" value="'+p.id+'" '+checked+'> '+esc(p.ipv4||p.label||'proxy-'+p.id)+(_pxIsCustom(p)?'<span class="px-kind-tag">custom</span>':'')+'</label>';
   });
   $('#pxAssignChecks').innerHTML=ch||'<span style="color:var(--text3);font-size:13px">No active proxies</span>';
-  let ca='<h4>Current Assignments</h4>';
-  const keys=Object.keys(assign).filter(k=>(assign[k]||[]).length>0);
-  if(!keys.length)ca+='<div style="color:var(--text3);font-size:13px">No assignments yet</div>';
-  keys.forEach(k=>{
-    const ids=assign[k];
-    const cur=current[k];
-    const chips=ids.map(i=>{
-      const p=(st.proxies||[]).find(x=>Number(x.id)===Number(i));
-      const ip=(p?p.ipv4:i)||i;
-      const mark=_pxIsCustom(p)?'<span class="px-kind-tag">custom</span>':'';
-      return '<span class="px-ip-chip'+(Number(i)===Number(cur)?' on':'')+'">'+_pxKindIco(p||{})+esc(String(ip))+mark+(Number(i)===Number(cur)?' ●':'')+'<button title="Detach" onclick="pxDetachOne(\''+esc(k)+'\','+i+')">&times;</button></span>';
-    }).join('');
-    ca+='<div class="row"><b>'+esc(k)+(carousel[k]?' <span class="px-car-badge">carousel</span>':'')+'</b><span>'+chips+'</span></div>';
-  });
-  $('#pxCurAssign').innerHTML=ca;
+  $('#pxCurAssign').innerHTML=_pxAssignHtml(st);
   const cb=$('#pxCarouselBtn');
   if(cb){
     const on=!!(selPh&&carousel[selPh]);
     cb.classList.toggle('on',on);
     cb.setAttribute('aria-pressed',on?'true':'false');
   }
+  _renderDi(st);
 }
-function _pxPatchAssignLive(st){
+function _pxAssignHtml(st){
   const assign=st.assignments||{};
   const current=st.current||{};
   const carousel=st.carousel||{};
+  const diOn=((st.dataimpulse||{}).enabled)||{};
   let ca='<h4>Current Assignments</h4>';
-  const keys=Object.keys(assign).filter(k=>(assign[k]||[]).length>0);
-  if(!keys.length)ca+='<div style="color:var(--text3);font-size:13px">No assignments yet</div>';
-  keys.forEach(k=>{
-    const ids=assign[k];
+  const keys=new Set(Object.keys(assign).filter(k=>(assign[k]||[]).length>0));
+  Object.keys(diOn).forEach(k=>{if(diOn[k])keys.add(k)});
+  if(!keys.size)ca+='<div style="color:var(--text3);font-size:13px">No assignments yet</div>';
+  [...keys].sort().forEach(k=>{
+    if(diOn[k]){
+      const rt=(((st.dataimpulse||{}).runtime)||{})[k]||{};
+      const sid=rt.sessid?('sess '+rt.sessid):'residential';
+      ca+='<div class="row"><b>'+esc(k)+' <span class="px-car-badge" style="border-color:rgba(167,139,250,0.45);color:#c4b5fd">dataimpulse</span></b><span><span class="px-ip-chip on"><i class="fa-solid fa-house-signal px-kind-ico custom"></i>'+esc(sid)+(rt.open?' · '+rt.open+' tun':'')+'<button title="Detach" onclick="pxDetachOne(\''+esc(k)+'\','+PX_DI_ID+')">&times;</button></span></span></div>';
+      return;
+    }
+    const ids=assign[k]||[];
     const cur=current[k];
     const chips=ids.map(i=>{
-      const p=(st.proxies||[]).find(x=>x.id===i||String(x.id)===String(i));
+      const p=(st.proxies||[]).find(x=>Number(x.id)===Number(i)||String(x.id)===String(i));
       const ip=(p?p.ipv4:i)||i;
       const mark=_pxIsCustom(p)?'<span class="px-kind-tag">custom</span>':'';
       return '<span class="px-ip-chip'+(String(i)===String(cur)?' on':'')+'">'+_pxKindIco(p||{})+esc(String(ip))+mark+(String(i)===String(cur)?' ●':'')+'<button title="Detach" onclick="pxDetachOne(\''+esc(k)+'\','+i+')">&times;</button></span>';
     }).join('');
     ca+='<div class="row"><b>'+esc(k)+(carousel[k]?' <span class="px-car-badge">carousel</span>':'')+'</b><span>'+chips+'</span></div>';
   });
+  return ca;
+}
+function _pxPatchAssignLive(st){
+  const carousel=st.carousel||{};
   const box=$('#pxCurAssign');
-  if(box)box.innerHTML=ca;
+  if(box)box.innerHTML=_pxAssignHtml(st);
   const ph=$('#pxAssignPh');
   const selPh=ph?ph.value:'';
   const cb=$('#pxCarouselBtn');
@@ -2688,6 +2860,7 @@ function _pxPatchAssignLive(st){
     cb.classList.toggle('on',on);
     cb.setAttribute('aria-pressed',on?'true':'false');
   }
+  _renderDi(st, true);
 }
 function _pxPatchCardTraffic(st){
   (st.proxies||[]).forEach(p=>{
@@ -2768,12 +2941,18 @@ async function pxAssign(){
 async function pxDetach(){
   const ph=$('#pxAssignPh').value;
   if(!ph)return toast('Select a phishlet','err');
-  const ids=_pxCheckedIds();
+  let ids=_pxCheckedIds();
+  if(!ids.length && _pxDiOn(_pxAssignSt, ph)) ids=[PX_DI_ID];
   if(!ids.length)return toast('Select proxies to detach','err');
   _pxSetBusy(true,'detach');
   try{
     const r=await api('/api/proxy/detach',{method:'POST',body:JSON.stringify({phishlet:ph,ids})});
-    if(r.error)toast(r.error,'err');else{toast(ph+' detached '+ids.length+' proxy(ies)');await _pxRefreshState()}
+    if(r.error)toast(r.error,'err');
+    else{
+      const di=ids.indexOf(PX_DI_ID)>=0;
+      toast(ph+(di?' DataImpulse detached':' detached '+ids.length+' proxy(ies)'));
+      await _pxRefreshState();
+    }
   }finally{_pxSetBusy(false)}
 }
 async function pxCarouselToggle(){
@@ -2792,6 +2971,78 @@ async function pxDetachOne(ph,id){
   await withBusy(typeof event!=='undefined'?event:null,'Detaching…',async()=>{
     const r=await api('/api/proxy/detach',{method:'POST',body:JSON.stringify({phishlet:ph,ids:[id]})});
     if(r.error)toast(r.error,'err');else{toast(ph+' detached');_pxRefreshState()}
+  });
+}
+function _renderDi(st, liveOnly){
+  const di=st.dataimpulse||{};
+  if(!liveOnly){
+    const login=$('#pxDiLogin'), host=$('#pxDiHost'), port=$('#pxDiPort'), pass=$('#pxDiPass'), cc=$('#pxDiCountry');
+    if(login && document.activeElement!==login) login.value=di.login||'';
+    if(host && document.activeElement!==host) host.value=di.host||'gw.dataimpulse.com';
+    if(port && document.activeElement!==port) port.value=di.port||823;
+    if(cc && document.activeElement!==cc) cc.value=(di.country||'');
+    if(pass && document.activeElement!==pass && !pass.value) pass.placeholder=di.password_set?('saved '+((di.password_mask)||'••••')):'password';
+    const ph=$('#pxDiPh');
+    if(ph){
+      const prev=ph.value;
+      let opts='<option value="">— select phishlet —</option>';
+      allPhishlets.forEach(p=>{opts+='<option value="'+esc(p.name)+'">'+esc(p.name)+'</option>'});
+      ph.innerHTML=opts;
+      if(prev) ph.value=prev;
+    }
+  }
+  const box=$('#pxDiStatus');
+  if(!box)return;
+  const en=di.enabled||{};
+  const onList=Object.keys(en).filter(k=>en[k]);
+  const rt=di.runtime||{};
+  let h='<h4>DataImpulse</h4>';
+  if(!di.password_set && !(di.login||'')) h+='<div style="color:var(--text3);font-size:13px">Save login/password, then Enable on a phishlet.</div>';
+  else if(!onList.length) h+='<div style="color:var(--text3);font-size:13px">Credentials saved. No phishlet using DataImpulse yet.</div>';
+  onList.forEach(k=>{
+    const s=rt[k]||{};
+    h+='<div class="row"><b>'+esc(k)+'</b><span style="font-family:var(--mono);font-size:12px;color:var(--text2)">ON · sess '+(esc(s.sessid||'—'))+(s.open?' · '+s.open+' tunnel(s)':'')+'</span></div>';
+  });
+  box.innerHTML=h;
+  const sel=$('#pxDiPh')?$('#pxDiPh').value:'';
+  const on=!!(sel&&en[sel]);
+  const onBtn=$('#pxDiOnBtn'), offBtn=$('#pxDiOffBtn');
+  if(onBtn){onBtn.disabled=!!on; onBtn.classList.toggle('dim', !!on)}
+  if(offBtn){offBtn.disabled=!on; offBtn.classList.toggle('dim', !on)}
+}
+async function pxDiSave(){
+  const login=($('#pxDiLogin').value||'').trim();
+  const password=$('#pxDiPass').value||'';
+  const host=($('#pxDiHost').value||'').trim();
+  const port=parseInt($('#pxDiPort').value||'823',10);
+  const country=(($('#pxDiCountry')&&$('#pxDiCountry').value)||'').trim().toLowerCase();
+  if(!login)return toast('DataImpulse login required','err');
+  await withBusy(typeof event!=='undefined'?event:null,'Saving…',async()=>{
+    const r=await api('/api/proxy/dataimpulse',{method:'POST',body:JSON.stringify({login,password,host,port,country})});
+    if(r.error){toast(r.error,'err');return}
+    if($('#pxDiPass')) $('#pxDiPass').value='';
+    toast('DataImpulse credentials saved');
+    await _pxRefreshState();
+  });
+}
+async function pxDiEnable(enabled){
+  const ph=$('#pxDiPh')?$('#pxDiPh').value:'';
+  if(!ph)return toast('Select a phishlet','err');
+  const msg=enabled
+    ?('Enable DataImpulse on <strong style="color:var(--accent)">'+esc(ph)+'</strong>?<p style="color:var(--text3);font-size:13px;margin-top:10px">All Linode/custom hops assigned to this phishlet will be detached. Fleet instances are kept.</p>')
+    :('Disable DataImpulse on <strong style="color:var(--accent)">'+esc(ph)+'</strong>?');
+  openModal(enabled?'ENABLE DATAIMPULSE':'DISABLE DATAIMPULSE','<p style="color:#fff">'+msg+'</p>',
+    '<button class="btn '+(enabled?'fill':'danger')+'" onclick="doPxDiEnable('+!!enabled+')">'+(enabled?'ENABLE':'DISABLE')+'</button><button class="btn" onclick="closeModal()">CANCEL</button>');
+}
+async function doPxDiEnable(enabled){
+  const ph=$('#pxDiPh')?$('#pxDiPh').value:'';
+  if(!ph){closeModal();return}
+  await withBusy(typeof event!=='undefined'?event:null,enabled?'Enabling…':'Disabling…',async()=>{
+    const r=await api('/api/proxy/dataimpulse/enable',{method:'POST',body:JSON.stringify({phishlet:ph,enabled:!!enabled})});
+    closeModal();
+    if(r.error){toast(r.error,'err');return}
+    toast(enabled? (ph+' → DataImpulse (hops detached)') : (ph+' DataImpulse off'));
+    await _pxRefreshState();
   });
 }
 

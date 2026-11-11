@@ -15,7 +15,7 @@
   &nbsp;
   <img src="https://img.shields.io/badge/Python-3-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
   &nbsp;
-  <img src="https://img.shields.io/badge/version-3.5.10-0ea5e9?style=for-the-badge" alt="3.5.10">
+  <img src="https://img.shields.io/badge/version-3.5.11-0ea5e9?style=for-the-badge" alt="3.5.11">
 </p>
 
 <p align="center"><b>Created by ZynTarvo</b> · Telegram: <a href="https://t.me/zyntarvo">@zyntarvo</a> · <i>Nothing Is Impossible</i></p>
@@ -32,7 +32,7 @@ Built for red teamers, pentesters, and anyone who wants Evilginx running in minu
 - Web C2 panel with login
 - Manage phishlets, lures and captured sessions from the browser
 - **Session Map** on Dashboard — unique session IPs on a dark world map; search by ID/IP, pick a country, click a marker to zoom country → district → street → max
-- **Proxy Manager** — deploy Linode proxies or paste your own (`ip:port@login:pass`), assign them to phishlets, watch live traffic
+- **Proxy Manager** — Linode Nanodes, custom `ip:port@login:pass`, DataImpulse residential, Manual Rise / Manual Install Squid hops, assign to phishlets, live traffic
 - E-Terminal (Evilginx CLI) and a full Linux shell in the browser
 - Live host Health (CPU, RAM, disk, traffic) and per-service journalctl follow
 - **AI-Assistant** — OpenRouter chat + Autofix for TLS, certs, Evilginx process, config, and phishlet ops (your key stays on the C2 box, never in this repo)
@@ -221,12 +221,24 @@ Paste your own hops — no Linode required. Same assign list, cards, charts, and
 - Tick them on a phishlet and **Assign** — they join the pool. If **Carousel** is on for that phishlet, custom hops rotate with Linode hops
 - Instance card: IP, geo region, endpoint, protocol, assigned phishlets, sidecar traffic. **Remove** deletes the panel record only (the remote proxy is not touched). Start / Stop / Restart stay Linode-only
 
+**Manual Rise**
+
+Same Squid as a Linode Nanode, as a bash script you paste on any Ubuntu 22.04/24.04. The lightbox shows generated user / password / port **50100**. Copy Script, run as `root` on the hop. The script detects **that machine’s public IP**, opens `50100/tcp` from any address, and prints `ADD_LINE=ip:50100@user:pass` — paste that line into Add Custom Proxies as HTTP.
+
+**Manual Install**
+
+The panel SSHs into a server you already have and installs that same Squid (no paste, no Linode). Fields: server IP, SSH port, SSH login, password. Toggle **PEM key instead of password** if the box has no password auth (paste or upload a private key, optional passphrase). **Start** waits for SSH, installs Squid on **50100**, checks CONNECT from the C2, and adds the hop as a custom HTTP proxy. Credentials for SSH are used once for the install and are not stored in git.
+
+**DataImpulse residential**
+
+Optional rotating residential gateway. Paste your DataImpulse login/password (and optional ISO country, host, port) in the Proxy Manager card. **Enable** on a phishlet detaches Linode/custom hops for that phishlet only. Each visitor gets a sticky `sessid`; after ~20s idle — or on an auth 429 — the next visit gets a new sessid → new IP. Gateway credentials stay in `linode_proxy.json` **on the C2 box**, never in this repository. Disable / Detach / the chip **×** turns it off without deleting the Linode fleet.
+
 **Assign to a phishlet**
 
 <p align="center"><img src="docs/screenshots/25-proxy-carousel.png" alt="Assign proxies, Carousel toggle" width="720"></p>
 
-- Choose the phishlet, tick proxy **IP addresses** (Linode and custom), click **Assign**
-- **Detach** unbinds a proxy from that phishlet (the VM stays; traffic history stays on the charts)
+- Choose the phishlet, tick proxy **IP addresses** (Linode, custom, and DataImpulse), click **Assign**
+- **Detach** / chip **×** unbinds that hop (Linode VM stays; DataImpulse is only disabled for that phishlet)
 - **Current assignments** shows every phishlet → IP chip (active hop marked with ●)
 
 **Carousel** sits between Assign and Detach. It is per phishlet (the cyan `CAROUSEL` badge on the row means it is on).
@@ -434,7 +446,7 @@ evilginx_setup.py         → SSH installer (Ubuntu 20.04–26.04)
 payload/                  → panel that gets uploaded to the server
   app.py
   ai_assistant.py         → OpenRouter Autofix + chat (key file is created on the server, not in git)
-  proxy_engine.py         → Linode fleet, Squid, 429 rotate, carousel, live traffic
+  proxy_engine.py         → Linode fleet, custom hops, DataImpulse, Manual Rise/Install Squid, 429 rotate, carousel, live traffic
   patches/                → apply_egx_429_hook.py (after clone, before go build)
   templates/              → login + dashboard
   static/                 → lynx logo + favicons
